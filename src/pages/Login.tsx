@@ -76,6 +76,7 @@ const Login = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Sign up attempt with:", { email, firstName, lastName });
     setLoading(true);
     
     try {
@@ -194,7 +195,10 @@ const Login = () => {
                   {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
                   <button
                     type="button"
-                    onClick={() => setIsSignUp(!isSignUp)}
+                    onClick={() => {
+                      console.log("Toggle clicked, current isSignUp:", isSignUp);
+                      setIsSignUp(!isSignUp);
+                    }}
                     className="text-primary hover:underline"
                   >
                     {isSignUp ? "Sign in" : "Sign up"}

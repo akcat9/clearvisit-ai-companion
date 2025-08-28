@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { Plus, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppointmentModal } from "@/components/AppointmentModal";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Appointment {
   id: string;
@@ -16,30 +17,20 @@ interface Appointment {
 }
 
 const Dashboard = () => {
-  const [user, setUser] = useState<string | null>(null);
+  const { user } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const currentUser = localStorage.getItem("clearvisit_user");
-    if (!currentUser) {
-      navigate("/");
-      return;
-    }
-    setUser(currentUser);
+    if (!user) return;
 
-    // Load sample appointments
-    const savedAppointments = localStorage.getItem("clearvisit_appointments");
+    // Load appointments from localStorage (will be replaced with Supabase later)
+    const savedAppointments = localStorage.getItem("appointments");
     if (savedAppointments) {
       setAppointments(JSON.parse(savedAppointments));
     }
-  }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("clearvisit_user");
-    navigate("/");
-  };
+  }, [user]);
 
   const handleCreateAppointment = (appointmentData: any) => {
     const newAppointment: Appointment = {
@@ -50,7 +41,7 @@ const Dashboard = () => {
     
     const updatedAppointments = [...appointments, newAppointment];
     setAppointments(updatedAppointments);
-    localStorage.setItem("clearvisit_appointments", JSON.stringify(updatedAppointments));
+    localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
     setShowAppointmentModal(false);
   };
 

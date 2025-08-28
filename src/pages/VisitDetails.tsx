@@ -3,105 +3,153 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Header } from "@/components/Header";
-import { ArrowLeft, Mic, MicOff, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, Mic, MicOff } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const VisitDetails = () => {
-  const [user, setUser] = useState<string | null>(null);
+  const { user } = useAuth();
   const [appointment, setAppointment] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [visitNotes, setVisitNotes] = useState("");
   const [prescriptions, setPrescriptions] = useState("");
   const [followUpActions, setFollowUpActions] = useState("");
   const [aiQuestions, setAiQuestions] = useState<string[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
   const { toast } = useToast();
 
   useEffect(() => {
-    const currentUser = localStorage.getItem("clearvisit_user");
-    if (!currentUser) {
-      navigate("/");
-      return;
-    }
-    setUser(currentUser);
+    if (!user) return;
 
     // Load appointment details
-    const savedAppointments = localStorage.getItem("clearvisit_appointments");
-    if (savedAppointments) {
-      const appointments = JSON.parse(savedAppointments);
-      const currentAppointment = appointments.find((apt: any) => apt.id === id);
-      if (currentAppointment) {
-        setAppointment(currentAppointment);
-        generateAIQuestions(currentAppointment);
-      }
-    }
-  }, [navigate, id]);
-
-  const generateAIQuestions = (appointmentData: any) => {
-    // Load medical profile for context
-    const savedProfile = localStorage.getItem("clearvisit_profile");
-    const profile = savedProfile ? JSON.parse(savedProfile) : {};
-
-    // Generate AI questions based on appointment reason and medical history
-    const questions = [];
+    const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
+    const foundAppointment = appointments.find((apt: any) => apt.id === id);
     
-    if (appointmentData.reason.toLowerCase().includes("check")) {
-      questions.push("How has my chronic GI condition been progressing since my last visit?");
-      questions.push("Are there any new medications or treatments you'd recommend?");
-      questions.push("What lifestyle changes should I consider for better health?");
-    } else if (appointmentData.reason.toLowerCase().includes("pain")) {
-      questions.push("What could be causing this specific type of pain?");
-      questions.push("Are there any imaging tests or additional diagnostics needed?");
-      questions.push("What pain management options are available for my condition?");
+    if (foundAppointment) {
+      setAppointment(foundAppointment);
+      setVisitNotes(foundAppointment.visitNotes || "");
+      setPrescriptions(foundAppointment.prescriptions || "");
+      setFollowUpActions(foundAppointment.followUpActions || "");
+      generateAIQuestions(foundAppointment);
     } else {
-      questions.push("Based on my medical history, what should I be monitoring?");
-      questions.push("Are there any preventive measures I should take?");
-      questions.push("When should I schedule my next follow-up appointment?");
+      toast({
+        title: "Appointment not found",
+        description: "The appointment you're looking for doesn't exist.",
+        variant: "destructive",
+      });
+      navigate("/dashboard");
     }
+  }, [id, user, navigate, toast]);
 
-    setAiQuestions(questions);
-  };
+  const generateAIQuestions = async (appointmentData: any) => {
+    try {
+      setIsProcessing(true);
+      
+      // Load medical profile for context
+      const savedProfile = localStorage.getItem("clearvisit_profile");
+      const profile = savedProfile ? JSON.parse(savedProfile) : {};
 
-  const handleLogout = () => {
-    localStorage.removeItem("clearvisit_user");
-    navigate("/");
+      const response = await supabase.functions.invoke('generate-ai-questions', {
+        body: {
+          appointmentReason: appointmentData.reason,
+          medicalHistory: profile.conditions || "",
+          medications: profile.medications || "",
+          allergies: profile.allergies || ""
+        }
+      });
+
+      if (response.data?.questions) {
+        setAiQuestions(response.data.questions);
+      } else {
+        // Fallback questions if API fails
+        const fallbackQuestions = [
+          "Based on my medical history, what should I be monitoring?",
+          "Are there any preventive measures I should take?",
+          "When should I schedule my next follow-up appointment?"
+        ];
+        setAiQuestions(fallbackQuestions);
+      }
+    } catch (error) {
+      console.error('Error generating AI questions:', error);
+      // Fallback questions
+      const fallbackQuestions = [
+        "What specific symptoms should I watch for?",
+        "Are there any lifestyle changes you recommend?",
+        "What's the best way to manage my condition?"
+      ];
+      setAiQuestions(fallbackQuestions);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleStartRecording = () => {
     setIsRecording(true);
     toast({
       title: "Recording started",
-      description: "Your visit is now being recorded for analysis",
+      description: "Your visit is now being recorded for AI analysis",
     });
   };
 
-  const handleStopRecording = () => {
+  const handleStopRecording = async () => {
     setIsRecording(false);
-    // Simulate AI processing
-    setTimeout(() => {
-      setVisitNotes("Doctor noted improvement in GI symptoms. Nexium dosage is effective. Patient reports better sleep and reduced discomfort.");
-      setPrescriptions("Continue Nexium 40mg daily. Added probiotics supplement.");
-      setFollowUpActions("Schedule follow-up in 3 months. Monitor symptoms daily. Call if severe pain returns.");
-      
+    setIsProcessing(true);
+    
+    try {
+      // Simulate processing the recording
       toast({
-        title: "Visit processed",
-        description: "AI has analyzed your visit and generated summary",
+        title: "Processing recording",
+        description: "AI is analyzing your visit conversation...",
       });
-    }, 2000);
+
+      const response = await supabase.functions.invoke('process-visit-recording', {
+        body: {
+          appointmentId: id,
+          appointmentReason: appointment.reason,
+          recordingData: "simulated_audio_data" // In real implementation, this would be actual audio
+        }
+      });
+
+      if (response.data) {
+        setVisitNotes(response.data.visitSummary || "");
+        setPrescriptions(response.data.prescriptions || "");
+        setFollowUpActions(response.data.followUpActions || "");
+        
+        toast({
+          title: "Visit processed successfully",
+          description: "AI has analyzed your visit and generated a comprehensive summary",
+        });
+      }
+    } catch (error) {
+      console.error('Error processing recording:', error);
+      toast({
+        title: "Processing error",
+        description: "There was an issue processing your recording. You can manually add notes below.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleSaveVisit = () => {
     // Mark appointment as completed and save notes
-    const savedAppointments = localStorage.getItem("clearvisit_appointments");
-    if (savedAppointments) {
-      const appointments = JSON.parse(savedAppointments);
-      const updatedAppointments = appointments.map((apt: any) => 
-        apt.id === id ? { ...apt, status: 'completed', notes: visitNotes, prescriptions, followUpActions } : apt
-      );
-      localStorage.setItem("clearvisit_appointments", JSON.stringify(updatedAppointments));
-    }
+    const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
+    const updatedAppointments = appointments.map((apt: any) => 
+      apt.id === id ? { 
+        ...apt, 
+        status: 'completed', 
+        visitNotes, 
+        prescriptions, 
+        followUpActions,
+        completedAt: new Date().toISOString()
+      } : apt
+    );
+    localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
 
     toast({
       title: "Visit saved",
@@ -112,7 +160,14 @@ const VisitDetails = () => {
   };
 
   if (!appointment) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading appointment...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -131,15 +186,6 @@ const VisitDetails = () => {
             Back to Dashboard
           </Button>
           <h1 className="text-3xl font-bold">Visit Details</h1>
-          <div className="ml-auto">
-            <Button 
-              variant="outline" 
-              onClick={handleLogout}
-              className="mr-2"
-            >
-              Logout
-            </Button>
-          </div>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
@@ -177,13 +223,20 @@ const VisitDetails = () => {
                 <CardTitle>AI-Generated Questions to Ask</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {aiQuestions.map((question, index) => (
-                    <div key={index} className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                      <p className="text-sm font-medium text-blue-800">{question}</p>
-                    </div>
-                  ))}
-                </div>
+                {isProcessing ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                    <p className="mt-2 text-sm text-muted-foreground">Generating personalized questions...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {aiQuestions.map((question, index) => (
+                      <div key={index} className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                        <p className="text-sm font-medium text-blue-800">{question}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -197,6 +250,7 @@ const VisitDetails = () => {
                   {!isRecording ? (
                     <Button 
                       onClick={handleStartRecording}
+                      disabled={isProcessing}
                       className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
                     >
                       <Mic className="w-4 h-4" />
@@ -219,6 +273,13 @@ const VisitDetails = () => {
                       <p className="text-sm text-muted-foreground mt-2">Recording in progress...</p>
                     </div>
                   )}
+
+                  {isProcessing && (
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                      <p className="text-sm text-muted-foreground mt-2">AI is processing your recording...</p>
+                    </div>
+                  )}
                   
                   <p className="text-xs text-muted-foreground">
                     AI will analyze your conversation and automatically update your medical records
@@ -230,14 +291,14 @@ const VisitDetails = () => {
 
           {/* Right Column */}
           <div className="space-y-6">
-            {/* Manual Visit Notes */}
+            {/* Visit Notes */}
             <Card>
               <CardHeader>
-                <CardTitle>Manual Visit Notes</CardTitle>
+                <CardTitle>Visit Summary</CardTitle>
               </CardHeader>
               <CardContent>
                 <Textarea
-                  placeholder="Add any additional notes or observations about this visit..."
+                  placeholder="AI-generated visit summary will appear here, or add your own notes..."
                   value={visitNotes}
                   onChange={(e) => setVisitNotes(e.target.value)}
                   rows={6}
@@ -252,7 +313,7 @@ const VisitDetails = () => {
               </CardHeader>
               <CardContent>
                 <Textarea
-                  placeholder="List medications prescribed, dosage changes, or instructions..."
+                  placeholder="Medications prescribed, dosage changes, or instructions will appear here..."
                   value={prescriptions}
                   onChange={(e) => setPrescriptions(e.target.value)}
                   rows={4}
@@ -267,7 +328,7 @@ const VisitDetails = () => {
               </CardHeader>
               <CardContent>
                 <Textarea
-                  placeholder="Note any recommended follow-up appointments, tests, or lifestyle changes..."
+                  placeholder="Recommended follow-up appointments, tests, or lifestyle changes..."
                   value={followUpActions}
                   onChange={(e) => setFollowUpActions(e.target.value)}
                   rows={4}
@@ -276,36 +337,15 @@ const VisitDetails = () => {
             </Card>
 
             {/* Save Visit */}
-            <Button onClick={handleSaveVisit} className="w-full">
+            <Button 
+              onClick={handleSaveVisit} 
+              className="w-full"
+              disabled={isProcessing}
+            >
               Save Visit Notes
             </Button>
           </div>
         </div>
-
-        {/* Medical Profile Summary */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Your Medical Profile</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 gap-6 text-sm">
-              <div>
-                <h4 className="font-medium mb-2">Medical Information</h4>
-                <p><span className="font-medium">Name:</span> Adarsh Karthik</p>
-                <p><span className="font-medium">Blood Type:</span> O+</p>
-                <p><span className="font-medium">Weight:</span> 165</p>
-                <p><span className="font-medium">Allergies:</span> None</p>
-                <p><span className="font-medium">Conditions:</span> Dysplasia, chronic GI issues</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">Healthcare Information</h4>
-                <p><span className="font-medium">Emergency Contact:</span> Karthik Thilairangan</p>
-                <p><span className="font-medium">Emergency Phone:</span> 813-928-8075</p>
-                <p><span className="font-medium">Insurance:</span> ----------</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

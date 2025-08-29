@@ -52,7 +52,17 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenAI Whisper API error:', response.status, errorText);
-      throw new Error(`Whisper API error: ${response.status} - ${errorText}`);
+      
+      // Handle specific error cases
+      if (response.status === 429) {
+        throw new Error('OpenAI API rate limit exceeded. Please try again in a moment.');
+      } else if (response.status === 401) {
+        throw new Error('OpenAI API key is invalid or expired.');
+      } else if (response.status === 402) {
+        throw new Error('OpenAI API quota exceeded. Please check your billing.');
+      } else {
+        throw new Error(`Whisper API error: ${response.status} - ${errorText}`);
+      }
     }
 
     const transcription = await response.text();

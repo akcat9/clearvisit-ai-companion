@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +8,7 @@ import { Header } from '@/components/Header';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Mic, MicOff, Play, Pause } from 'lucide-react';
+import { ArrowLeft, Mic, MicOff, FileText } from 'lucide-react';
 import { AudioRecorder, encodeAudioForAPI, chunkAudio } from '@/utils/AudioRecorder';
 
 const getEducationalContent = (reason: string): string => {
@@ -39,21 +39,28 @@ const VisitDetails = () => {
   const { user } = useAuth();
   const [appointment, setAppointment] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [visitNotes, setVisitNotes] = useState("");
-  const [prescriptions, setPrescriptions] = useState("");
-  const [followUpActions, setFollowUpActions] = useState("");
+  const [manualNotes, setManualNotes] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [audioRecorder, setAudioRecorder] = useState<AudioRecorder | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState('');
   const [fullTranscription, setFullTranscription] = useState('');
-  const [keySymptoms, setKeySymptoms] = useState<string[]>([]);
-  const [doctorRecommendations, setDoctorRecommendations] = useState<string[]>([]);
-  const [postVisitQuestions, setPostVisitQuestions] = useState<string[]>([]);
+  
+  // AI-generated content (only shown after processing)
+  const [aiGeneratedData, setAiGeneratedData] = useState<{
+    visitSummary: string;
+    prescriptions: string;
+    followUpActions: string;
+    keySymptoms: string[];
+    doctorRecommendations: string[];
+    questionsForNextVisit: string[];
+  } | null>(null);
+  
   const navigate = useNavigate();
   const { id } = useParams();
   const { toast } = useToast();
+  const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -64,9 +71,11 @@ const VisitDetails = () => {
     
     if (foundAppointment) {
       setAppointment(foundAppointment);
-      setVisitNotes(foundAppointment.visitNotes || "");
-      setPrescriptions(foundAppointment.prescriptions || "");
-      setFollowUpActions(foundAppointment.followUpActions || "");
+      setManualNotes(foundAppointment.manualNotes || "");
+      // Load AI-generated data if it exists
+      if (foundAppointment.aiGeneratedData) {
+        setAiGeneratedData(foundAppointment.aiGeneratedData);
+      }      
     } else {
       toast({
         title: "Appointment not found",
@@ -92,13 +101,14 @@ const VisitDetails = () => {
       setIsRecording(true);
       setRecordingDuration(0);
       
+      // Clear any existing interval
+      if (durationIntervalRef.current) {
+        clearInterval(durationIntervalRef.current);
+      }
+      
       // Start duration counter
       const startTime = Date.now();
-      const durationInterval = setInterval(() => {
-        if (!isRecording) {
-          clearInterval(durationInterval);
-          return;
-        }
+      durationIntervalRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - startTime) / 1000);
         setRecordingDuration(elapsed);
       }, 1000);
@@ -121,6 +131,12 @@ const VisitDetails = () => {
   const handleStopRecording = async () => {
     if (!audioRecorder) return;
     
+    // Clear the duration interval
+    if (durationIntervalRef.current) {
+      clearInterval(durationIntervalRef.current);
+      durationIntervalRef.current = null;
+    }
+    
     setIsRecording(false);
     setIsProcessing(true);
     setProcessingProgress(10);
@@ -130,7 +146,7 @@ const VisitDetails = () => {
       const audioData = audioRecorder.stop();
       const encodedAudio = encodeAudioForAPI(audioData);
       
-      setCurrentStep('Transcribing audio...');
+      setCurrentStep('Transcribing audio to text...');
       setProcessingProgress(30);
       
       // Transcribe the audio directly
@@ -139,13 +155,18 @@ const VisitDetails = () => {
       });
 
       if (transcriptionError) {
-        throw new Error('Failed to transcribe audio: ' + transcriptionError.message);
+        console.error('Transcription error:', transcriptionError);
+        throw new Error(`Failed to transcribe audio: ${transcriptionError.message}`);
       }
 
       const transcript = transcriptionData?.transcription || '';
+      if (!transcript) {
+        throw new Error('No transcription received from audio');
+      }
+      
       setFullTranscription(transcript);
       
-      setCurrentStep('Analyzing visit content...');
+      setCurrentStep('Analyzing visit content with AI...');
       setProcessingProgress(60);
       
       // Process the transcription for medical insights
@@ -162,16 +183,21 @@ const VisitDetails = () => {
       setProcessingProgress(90);
 
       if (summaryError) {
-        throw new Error('Failed to process visit summary: ' + summaryError.message);
+        console.error('Summary processing error:', summaryError);
+        throw new Error(`Failed to process visit summary: ${summaryError.message}`);
       }
 
       if (summaryData) {
-        setVisitNotes(summaryData.visitSummary || '');
-        setPrescriptions(summaryData.prescriptions || '');
-        setFollowUpActions(summaryData.followUpActions || '');
-        setKeySymptoms(summaryData.keySymptoms || []);
-        setDoctorRecommendations(summaryData.doctorRecommendations || []);
-        setPostVisitQuestions(summaryData.questionsForNextVisit || []);
+        const aiData = {
+          visitSummary: summaryData.visitSummary || '',
+          prescriptions: summaryData.prescriptions || '',
+          followUpActions: summaryData.followUpActions || '',
+          keySymptoms: summaryData.keySymptoms || [],
+          doctorRecommendations: summaryData.doctorRecommendations || [],
+          questionsForNextVisit: summaryData.questionsForNextVisit || []
+        };
+        
+        setAiGeneratedData(aiData);
         
         setCurrentStep('Complete!');
         setProcessingProgress(100);
@@ -183,9 +209,22 @@ const VisitDetails = () => {
       }
     } catch (error) {
       console.error('Error processing recording:', error);
+      
+      // Better error handling with retry suggestion
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      let userMessage = "Failed to process recording. ";
+      
+      if (errorMessage.includes("insufficient_quota")) {
+        userMessage += "OpenAI API quota exceeded. Please check your API credits.";
+      } else if (errorMessage.includes("transcribe")) {
+        userMessage += "Audio transcription failed. Please try recording again.";
+      } else {
+        userMessage += "Please try again or enter notes manually.";
+      }
+      
       toast({
         title: "Processing Failed",
-        description: error instanceof Error ? error.message : "Failed to process recording. Please try again.",
+        description: userMessage,
         variant: "destructive",
       });
     } finally {
@@ -202,9 +241,9 @@ const VisitDetails = () => {
       apt.id === id ? { 
         ...apt, 
         status: 'completed', 
-        visitNotes: appointment.visitNotes || visitNotes,
-        prescriptions: appointment.prescriptions || prescriptions,
-        followUpActions: appointment.followUpActions || followUpActions,
+        manualNotes,
+        aiGeneratedData,
+        fullTranscription,
         completedAt: new Date().toISOString()
       } : apt
     );
@@ -293,14 +332,14 @@ const VisitDetails = () => {
               </Card>
             )}
 
-            {postVisitQuestions.length > 0 && (
+            {aiGeneratedData?.questionsForNextVisit && aiGeneratedData.questionsForNextVisit.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle>Questions for Next Visit</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {postVisitQuestions.map((question, index) => (
+                    {aiGeneratedData.questionsForNextVisit.map((question, index) => (
                       <div key={index} className="p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
                         <p className="text-sm font-medium text-green-800">{question}</p>
                       </div>
@@ -363,93 +402,139 @@ const VisitDetails = () => {
 
           {/* Right Column */}
           <div className="space-y-6">
+            {/* Manual Notes - Always Available */}
             <Card>
               <CardHeader>
-                <CardTitle>Visit Summary</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Your Notes
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <Textarea
-                  value={visitNotes}
-                  onChange={(e) => setVisitNotes(e.target.value)}
-                  placeholder="Visit summary will appear here after processing the recording..."
-                  rows={6}
+                  value={manualNotes}
+                  onChange={(e) => setManualNotes(e.target.value)}
+                  placeholder="Add your own notes about the visit here..."
+                  rows={4}
                   className="resize-none"
                 />
               </CardContent>
             </Card>
 
-            {keySymptoms.length > 0 && (
+            {/* Transcription Display */}
+            {fullTranscription && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Key Symptoms Discussed</CardTitle>
+                  <CardTitle>Voice Transcription</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {keySymptoms.map((symptom, index) => (
-                      <div key={index} className="p-2 bg-red-50 rounded border-l-4 border-red-400">
-                        <p className="text-sm text-red-800">{symptom}</p>
-                      </div>
-                    ))}
+                  <div className="p-4 bg-gray-50 rounded-lg max-h-40 overflow-y-auto">
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {fullTranscription}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {doctorRecommendations.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Doctor's Recommendations</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {doctorRecommendations.map((recommendation, index) => (
-                      <div key={index} className="p-2 bg-purple-50 rounded border-l-4 border-purple-400">
-                        <p className="text-sm text-purple-800">{recommendation}</p>
+            {/* AI-Generated Content - Only Shown After Processing */}
+            {aiGeneratedData && (
+              <>
+                {/* Visit Summary */}
+                {aiGeneratedData.visitSummary && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>AI Visit Summary</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-800 whitespace-pre-wrap">
+                          {aiGeneratedData.visitSummary}
+                        </p>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Key Symptoms */}
+                {aiGeneratedData.keySymptoms && aiGeneratedData.keySymptoms.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Key Symptoms Discussed</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {aiGeneratedData.keySymptoms.map((symptom, index) => (
+                          <div key={index} className="p-2 bg-red-50 rounded border-l-4 border-red-400">
+                            <p className="text-sm text-red-800">{symptom}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Doctor's Recommendations */}
+                {aiGeneratedData.doctorRecommendations && aiGeneratedData.doctorRecommendations.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Doctor's Recommendations</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {aiGeneratedData.doctorRecommendations.map((recommendation, index) => (
+                          <div key={index} className="p-2 bg-purple-50 rounded border-l-4 border-purple-400">
+                            <p className="text-sm text-purple-800">{recommendation}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Prescriptions & Medications */}
+                {aiGeneratedData.prescriptions && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Prescriptions & Medications</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <p className="text-sm text-green-800 whitespace-pre-wrap">
+                          {aiGeneratedData.prescriptions}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Follow-up Actions */}
+                {aiGeneratedData.followUpActions && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Follow-up Actions</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="p-4 bg-yellow-50 rounded-lg">
+                        <p className="text-sm text-yellow-800 whitespace-pre-wrap">
+                          {aiGeneratedData.followUpActions}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
             )}
 
-            {/* Prescriptions & Medications */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Prescriptions & Medications</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  placeholder="Medications prescribed, dosage changes, or instructions will appear here..."
-                  value={prescriptions}
-                  onChange={(e) => setPrescriptions(e.target.value)}
-                  rows={4}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Follow-up Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Follow-up Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  placeholder="Recommended follow-up appointments, tests, or lifestyle changes..."
-                  value={followUpActions}
-                  onChange={(e) => setFollowUpActions(e.target.value)}
-                  rows={4}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Save Visit */}
-            <Button 
-              onClick={handleSaveVisit} 
-              className="w-full"
-              disabled={isProcessing}
-            >
-              Save Visit Notes
-            </Button>
+            <div className="pt-6">
+              <Button 
+                onClick={handleSaveVisit}
+                className="w-full"
+                size="lg"
+              >
+                Save Visit & Return to Dashboard
+              </Button>
+            </div>
           </div>
         </div>
       </div>

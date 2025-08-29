@@ -36,17 +36,20 @@ PATIENT MEDICAL HISTORY: ${medicalHistory || "No previous history provided"}
 VISIT TRANSCRIPTION:
 "${fullTranscription}"
 
-Based on this doctor visit transcription, provide a comprehensive analysis in JSON format with these exact keys:
+Based on this ACTUAL doctor visit transcription, provide a comprehensive analysis. Extract specific information ONLY from what was actually said in the transcription.
 
-1. "visitSummary": A detailed paragraph summarizing what was discussed, symptoms mentioned, examination findings, and doctor's assessment
-2. "prescriptions": List any medications, dosages, and instructions mentioned (or "None mentioned" if no prescriptions)
-3. "followUpActions": Any recommended next steps, tests, appointments, or lifestyle changes (or "None specified" if no follow-ups)
-4. "keySymptoms": List the main symptoms or concerns discussed
-5. "doctorRecommendations": Specific advice or recommendations given by the doctor
-6. "questionsForNextVisit": 3 personalized questions the patient should consider asking at their next visit based on what was discussed
+IMPORTANT: Respond with ONLY valid JSON in this exact format:
 
-Ensure the response is accurate to what was actually said in the transcription.
-`;
+{
+  "visitSummary": "A detailed paragraph summarizing what was actually discussed, symptoms mentioned, examination findings, and doctor's assessment based on the transcription",
+  "prescriptions": "List any medications, dosages, and instructions mentioned (or 'None mentioned' if no prescriptions)",
+  "followUpActions": "Any recommended next steps, tests, appointments, or lifestyle changes (or 'None specified' if no follow-ups)",
+  "keySymptoms": ["List", "the", "main", "symptoms", "or", "concerns", "discussed"],
+  "doctorRecommendations": ["Specific", "advice", "or", "recommendations", "given", "by", "the", "doctor"],
+  "questionsForNextVisit": ["Question 1 based on what was discussed", "Question 2 based on what was discussed", "Question 3 based on what was discussed"]
+}
+
+Do not include any markdown formatting, code blocks, or extra text. Return only the JSON object.`;
 
     console.log('Sending to OpenAI for visit analysis...');
 
@@ -57,15 +60,16 @@ Ensure the response is accurate to what was actually said in the transcription.
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
           { 
             role: 'system', 
-            content: 'You are a medical AI assistant that processes doctor visits. Always respond with valid JSON in the requested format.' 
+            content: 'You are a medical AI assistant that processes doctor visits. ALWAYS respond with ONLY valid JSON in the exact format requested. No markdown, no code blocks, no extra text.' 
           },
           { role: 'user', content: prompt }
         ],
-        max_completion_tokens: 1200,
+        max_tokens: 1200,
+        temperature: 0.1,
       }),
     });
 
@@ -99,15 +103,21 @@ Ensure the response is accurate to what was actually said in the transcription.
     const data = await response.json();
     console.log('Visit analysis completed');
 
-    const content = data.choices[0].message.content;
+    let content = data.choices[0].message.content;
+    console.log('Raw OpenAI response:', content);
+    
+    // Clean up the response - remove any markdown formatting
+    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     
     try {
       const parsedContent = JSON.parse(content);
+      console.log('Successfully parsed AI response');
       return new Response(JSON.stringify(parsedContent), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } catch (parseError) {
       console.error('Failed to parse OpenAI response as JSON:', content);
+      console.error('Parse error:', parseError);
       
       // Fallback response with safe data
       const fallbackResponse = {

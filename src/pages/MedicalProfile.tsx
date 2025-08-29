@@ -9,9 +9,10 @@ import { Header } from "@/components/Header";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const MedicalProfile = () => {
-  const [user, setUser] = useState<string | null>(null);
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -33,27 +34,25 @@ const MedicalProfile = () => {
   });
 
   useEffect(() => {
-    const currentUser = localStorage.getItem("clearvisit_user");
-    if (!currentUser) {
+    if (!user) {
       navigate("/");
       return;
     }
-    setUser(currentUser);
 
-    // Load saved profile
-    const savedProfile = localStorage.getItem("clearvisit_profile");
+    // Load saved profile with user ID key
+    const savedProfile = localStorage.getItem(`clearvisit_profile_${user.id}`);
     if (savedProfile) {
       setProfile(JSON.parse(savedProfile));
     }
-  }, [navigate]);
+  }, [user, navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("clearvisit_user");
-    navigate("/");
+  const handleLogout = async () => {
+    await signOut();
   };
 
   const handleSave = () => {
-    localStorage.setItem("clearvisit_profile", JSON.stringify(profile));
+    if (!user) return;
+    localStorage.setItem(`clearvisit_profile_${user.id}`, JSON.stringify(profile));
     toast({
       title: "Profile saved",
       description: "Your medical profile has been updated successfully",

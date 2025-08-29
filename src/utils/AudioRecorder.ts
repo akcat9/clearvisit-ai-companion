@@ -4,15 +4,22 @@ export class AudioRecorder {
   private processor: ScriptProcessorNode | null = null;
   private source: MediaStreamAudioSourceNode | null = null;
   private audioChunks: Float32Array[] = [];
+  private chunkBuffer: Float32Array[] = [];
   private isRecording = false;
+  private readonly CHUNK_DURATION_MS = 3000; // 3 seconds per chunk
+  private readonly SAMPLE_RATE = 24000;
+  private chunkTimer: NodeJS.Timeout | null = null;
 
-  constructor(private onAudioData: (audioData: Float32Array) => void) {}
+  constructor(
+    private onAudioData: (audioData: Float32Array) => void,
+    private onLiveTranscription?: (transcription: string) => void
+  ) {}
 
   async start() {
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          sampleRate: 24000,
+          sampleRate: this.SAMPLE_RATE,
           channelCount: 1,
           echoCancellation: true,
           noiseSuppression: true,
@@ -21,7 +28,7 @@ export class AudioRecorder {
       });
       
       this.audioContext = new AudioContext({
-        sampleRate: 24000,
+        sampleRate: this.SAMPLE_RATE,
       });
       
       this.source = this.audioContext.createMediaStreamSource(this.stream);
@@ -33,12 +40,18 @@ export class AudioRecorder {
         const inputData = e.inputBuffer.getChannelData(0);
         const chunk = new Float32Array(inputData);
         this.audioChunks.push(chunk);
+        this.chunkBuffer.push(chunk);
         this.onAudioData(chunk);
       };
       
       this.source.connect(this.processor);
       this.processor.connect(this.audioContext.destination);
       this.isRecording = true;
+      
+      // Start live transcription timer if callback provided
+      if (this.onLiveTranscription) {
+        this.startLiveTranscription();
+      }
       
       console.log('Audio recording started');
     } catch (error) {
@@ -47,8 +60,63 @@ export class AudioRecorder {
     }
   }
 
+  private startLiveTranscription() {
+    this.chunkTimer = setInterval(async () => {
+      if (this.chunkBuffer.length > 0 && this.onLiveTranscription) {
+        const chunkData = this.combineChunks(this.chunkBuffer);
+        this.chunkBuffer = []; // Clear buffer after processing
+        
+        try {
+          const encodedAudio = encodeAudioForAPI(chunkData);
+          const transcription = await this.transcribeChunk(encodedAudio);
+          if (transcription) {
+            this.onLiveTranscription(transcription);
+          }
+        } catch (error) {
+          console.error('Live transcription error:', error);
+        }
+      }
+    }, this.CHUNK_DURATION_MS);
+  }
+
+  private async transcribeChunk(encodedAudio: string): Promise<string> {
+    const response = await fetch(`https://hjupkurtumzqrwoytjnn.supabase.co/functions/v1/transcribe-audio`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqdXBrdXJ0dW16cXJ3b3l0am5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MjI2MDQsImV4cCI6MjA3MTk5ODYwNH0.d5LNBkCAZY1ceV9LoMuMR5-cx_J9iZ4VwC1hJ9b30bI`
+      },
+      body: JSON.stringify({ audioData: encodedAudio })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Transcription failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.transcription || '';
+  }
+
+  private combineChunks(chunks: Float32Array[]): Float32Array {
+    const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+    const result = new Float32Array(totalLength);
+    let offset = 0;
+    
+    for (const chunk of chunks) {
+      result.set(chunk, offset);
+      offset += chunk.length;
+    }
+    
+    return result;
+  }
+
   stop(): Float32Array {
     this.isRecording = false;
+    
+    if (this.chunkTimer) {
+      clearInterval(this.chunkTimer);
+      this.chunkTimer = null;
+    }
     
     if (this.source) {
       this.source.disconnect();
@@ -68,34 +136,18 @@ export class AudioRecorder {
     }
 
     // Combine all chunks into one array
-    const totalLength = this.audioChunks.reduce((acc, chunk) => acc + chunk.length, 0);
-    const combinedAudio = new Float32Array(totalLength);
-    let offset = 0;
-    
-    for (const chunk of this.audioChunks) {
-      combinedAudio.set(chunk, offset);
-      offset += chunk.length;
-    }
-    
+    const combinedAudio = this.combineChunks(this.audioChunks);
     console.log('Audio recording stopped, total length:', combinedAudio.length);
     return combinedAudio;
   }
 
   getRecordingData(): Float32Array {
-    const totalLength = this.audioChunks.reduce((acc, chunk) => acc + chunk.length, 0);
-    const combinedAudio = new Float32Array(totalLength);
-    let offset = 0;
-    
-    for (const chunk of this.audioChunks) {
-      combinedAudio.set(chunk, offset);
-      offset += chunk.length;
-    }
-    
-    return combinedAudio;
+    return this.combineChunks(this.audioChunks);
   }
 
   clearChunks() {
     this.audioChunks = [];
+    this.chunkBuffer = [];
   }
 }
 

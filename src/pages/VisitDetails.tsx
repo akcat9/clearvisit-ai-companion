@@ -40,12 +40,12 @@ const VisitDetails = () => {
   const [appointment, setAppointment] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [manualNotes, setManualNotes] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [audioRecorder, setAudioRecorder] = useState<AudioRecorder | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const [processingProgress, setProcessingProgress] = useState(0);
-  const [currentStep, setCurrentStep] = useState('');
+  const [liveTranscription, setLiveTranscription] = useState('');
   const [fullTranscription, setFullTranscription] = useState('');
+  const [recordingComplete, setRecordingComplete] = useState(false);
   
   // AI-generated content (only shown after processing)
   const [aiGeneratedData, setAiGeneratedData] = useState<{
@@ -88,13 +88,27 @@ const VisitDetails = () => {
 
   // Removed generateAIQuestions function since we're using educational content instead
 
-  // Start recording visit conversation
+  // Start recording visit conversation with live transcription
   const handleStartRecording = async () => {
     try {
-      const recorder = new AudioRecorder((audioData) => {
-        // Real-time audio data processing if needed
-        console.log('Receiving audio chunk:', audioData.length);
-      });
+      setLiveTranscription('');
+      setFullTranscription('');
+      setRecordingComplete(false);
+      
+      const recorder = new AudioRecorder(
+        (audioData) => {
+          // Real-time audio data processing if needed
+          console.log('Receiving audio chunk:', audioData.length);
+        },
+        (transcription) => {
+          // Live transcription callback
+          setLiveTranscription(prev => {
+            const newText = prev + ' ' + transcription;
+            setFullTranscription(newText.trim());
+            return newText;
+          });
+        }
+      );
       
       await recorder.start();
       setAudioRecorder(recorder);
@@ -115,7 +129,7 @@ const VisitDetails = () => {
       
       toast({
         title: "Recording Started",
-        description: "Visit recording has begun. Speak clearly for best results.",
+        description: "Live transcription active. Speak clearly for best results.",
       });
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -127,8 +141,8 @@ const VisitDetails = () => {
     }
   };
 
-  // Simplified recording process - transcribe immediately and analyze
-  const handleStopRecording = async () => {
+  // Stop recording - no automatic processing
+  const handleStopRecording = () => {
     if (!audioRecorder) return;
     
     // Clear the duration interval
@@ -137,50 +151,40 @@ const VisitDetails = () => {
       durationIntervalRef.current = null;
     }
     
+    audioRecorder.stop();
     setIsRecording(false);
-    setIsProcessing(true);
-    setProcessingProgress(10);
-    setCurrentStep('Processing recording...');
+    setRecordingComplete(true);
+    
+    toast({
+      title: "Recording Stopped",
+      description: "Recording complete. Click 'Analyze with AI' to process your visit.",
+    });
+  };
+
+  // Separate AI analysis function
+  const handleAnalyzeWithAI = async () => {
+    if (!fullTranscription.trim()) {
+      toast({
+        title: "No Content",
+        description: "Please record something or add notes before analyzing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAnalyzing(true);
     
     try {
-      const audioData = audioRecorder.stop();
-      const encodedAudio = encodeAudioForAPI(audioData);
-      
-      setCurrentStep('Transcribing audio to text...');
-      setProcessingProgress(30);
-      
-      // Transcribe the audio directly
-      const { data: transcriptionData, error: transcriptionError } = await supabase.functions.invoke('transcribe-audio', {
-        body: { audioData: encodedAudio }
-      });
-
-      if (transcriptionError) {
-        console.error('Transcription error:', transcriptionError);
-        throw new Error(`Failed to transcribe audio: ${transcriptionError.message}`);
-      }
-
-      const transcript = transcriptionData?.transcription || '';
-      if (!transcript) {
-        throw new Error('No transcription received from audio');
-      }
-      
-      setFullTranscription(transcript);
-      
-      setCurrentStep('Analyzing visit content with AI...');
-      setProcessingProgress(60);
-      
       // Process the transcription for medical insights
       const medicalHistory = user ? localStorage.getItem(`clearvisit_profile_${user.id}`) : null;
       
       const { data: summaryData, error: summaryError } = await supabase.functions.invoke('process-visit-summary', {
         body: {
-          fullTranscription: transcript,
+          fullTranscription: fullTranscription,
           appointmentReason: appointment?.reason || 'General consultation',
           medicalHistory: medicalHistory ? JSON.parse(medicalHistory) : null
         }
       });
-
-      setProcessingProgress(90);
 
       if (summaryError) {
         console.error('Summary processing error:', summaryError);
@@ -199,38 +203,30 @@ const VisitDetails = () => {
         
         setAiGeneratedData(aiData);
         
-        setCurrentStep('Complete!');
-        setProcessingProgress(100);
-        
         toast({
-          title: "Recording Processed",
-          description: "Your visit has been successfully analyzed!",
+          title: "Analysis Complete",
+          description: "Your visit has been successfully analyzed with AI!",
         });
       }
     } catch (error) {
-      console.error('Error processing recording:', error);
+      console.error('Error analyzing visit:', error);
       
-      // Better error handling with retry suggestion
       const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
-      let userMessage = "Failed to process recording. ";
+      let userMessage = "Failed to analyze visit. ";
       
       if (errorMessage.includes("insufficient_quota")) {
         userMessage += "OpenAI API quota exceeded. Please check your API credits.";
-      } else if (errorMessage.includes("transcribe")) {
-        userMessage += "Audio transcription failed. Please try recording again.";
       } else {
         userMessage += "Please try again or enter notes manually.";
       }
       
       toast({
-        title: "Processing Failed",
+        title: "Analysis Failed",
         description: userMessage,
         variant: "destructive",
       });
     } finally {
-      setIsProcessing(false);
-      setProcessingProgress(0);
-      setCurrentStep('');
+      setIsAnalyzing(false);
     }
   };
 
@@ -362,7 +358,7 @@ const VisitDetails = () => {
                   {!isRecording ? (
                     <Button 
                       onClick={handleStartRecording}
-                      disabled={isProcessing}
+                      disabled={isAnalyzing}
                       className="flex items-center gap-2"
                     >
                       <Mic className="w-4 h-4" />
@@ -371,12 +367,22 @@ const VisitDetails = () => {
                   ) : (
                     <Button 
                       onClick={handleStopRecording}
-                      disabled={isProcessing}
                       variant="destructive"
                       className="flex items-center gap-2"
                     >
                       <MicOff className="w-4 h-4" />
-                      Stop & Process ({Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')})
+                      Stop Recording ({Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')})
+                    </Button>
+                  )}
+                  
+                  {recordingComplete && !aiGeneratedData && (
+                    <Button 
+                      onClick={handleAnalyzeWithAI}
+                      disabled={isAnalyzing}
+                      variant="secondary"
+                      className="flex items-center gap-2"
+                    >
+                      {isAnalyzing ? "Analyzing..." : "Analyze with AI"}
                     </Button>
                   )}
                 </div>
@@ -384,16 +390,17 @@ const VisitDetails = () => {
                 {isRecording && (
                   <div className="text-sm text-muted-foreground flex items-center gap-2">
                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                    Recording... Speak clearly for best results.
+                    Recording... Live transcription active.
                   </div>
                 )}
                 
-                {isProcessing && (
-                  <div className="space-y-3">
-                    <div className="text-sm text-muted-foreground">
-                      🤖 {currentStep}
+                {/* Live Transcription Box */}
+                {isRecording && liveTranscription && (
+                  <div className="p-3 bg-blue-50 rounded-lg border">
+                    <div className="text-xs font-medium text-blue-700 mb-2">Live Transcription:</div>
+                    <div className="text-sm text-blue-800 max-h-24 overflow-y-auto">
+                      {liveTranscription}
                     </div>
-                    <Progress value={processingProgress} className="w-full" />
                   </div>
                 )}
               </CardContent>
@@ -425,7 +432,7 @@ const VisitDetails = () => {
             {fullTranscription && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Voice Transcription</CardTitle>
+                  <CardTitle>Complete Transcription</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="p-4 bg-gray-50 rounded-lg max-h-40 overflow-y-auto">
@@ -433,6 +440,11 @@ const VisitDetails = () => {
                       {fullTranscription}
                     </p>
                   </div>
+                  {!aiGeneratedData && recordingComplete && (
+                    <div className="mt-3 text-sm text-muted-foreground">
+                      Click "Analyze with AI" to get visit summary and next steps.
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}

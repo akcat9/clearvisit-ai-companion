@@ -37,9 +37,10 @@ serve(async (req) => {
     // Create form data for Whisper API
     const formData = new FormData();
     const audioBlob = new Blob([bytes], { type: 'audio/wav' });
-    formData.append('file', audioBlob, 'recording.wav');
+    formData.append('file', audioBlob, 'audio.wav');
     formData.append('model', 'whisper-1');
     formData.append('response_format', 'text');
+    formData.append('language', 'en');
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',

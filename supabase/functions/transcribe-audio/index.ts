@@ -19,30 +19,28 @@ serve(async (req) => {
       throw new Error('OPENAI_API_KEY is not set');
     }
 
-    const { audioData, chunkIndex, totalChunks } = await req.json();
-    console.log(`Processing audio chunk ${chunkIndex + 1} of ${totalChunks}`);
-
+    const { audioData } = await req.json();
+    
     if (!audioData) {
       throw new Error('No audio data provided');
     }
 
-    // Convert base64 audio to blob for Whisper API
+    console.log('Processing audio data, size:', audioData.length);
+
+    // Convert base64 to binary
     const binaryString = atob(audioData);
     const bytes = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
-    
-    const audioBlob = new Blob([bytes], { type: 'audio/wav' });
-    
-    // Prepare form data for Whisper API
+
+    // Create form data for Whisper API
     const formData = new FormData();
-    formData.append('file', audioBlob, `audio_chunk_${chunkIndex}.wav`);
+    const audioBlob = new Blob([bytes], { type: 'audio/wav' });
+    formData.append('file', audioBlob, 'recording.wav');
     formData.append('model', 'whisper-1');
-    formData.append('language', 'en'); // Specify English for better accuracy
-    
-    console.log('Sending to Whisper API...');
-    
+    formData.append('response_format', 'text');
+
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: {
@@ -53,18 +51,15 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Whisper API error: ${response.status} - ${errorText}`);
-      throw new Error(`Whisper API error: ${response.status}`);
+      console.error('OpenAI Whisper API error:', response.status, errorText);
+      throw new Error(`Whisper API error: ${response.status} - ${errorText}`);
     }
 
-    const data = await response.json();
-    console.log(`Transcription completed for chunk ${chunkIndex + 1}:`, data.text?.substring(0, 100) + '...');
+    const transcription = await response.text();
+    console.log('Audio transcribed successfully, length:', transcription.length);
 
-    return new Response(JSON.stringify({
-      transcription: data.text || '',
-      chunkIndex,
-      totalChunks,
-      timestamp: new Date().toISOString()
+    return new Response(JSON.stringify({ 
+      transcription: transcription.trim()
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -73,7 +68,7 @@ serve(async (req) => {
     console.error('Error in transcribe-audio function:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
-      chunkIndex: -1 
+      transcription: '' 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

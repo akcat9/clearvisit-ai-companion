@@ -11,6 +11,30 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, Mic, MicOff, Play, Pause } from 'lucide-react';
 import { AudioRecorder, encodeAudioForAPI, chunkAudio } from '@/utils/AudioRecorder';
 
+const getEducationalContent = (reason: string): string => {
+  const content: { [key: string]: string } = {
+    'headache': 'Headaches can be caused by tension, migraines, dehydration, or underlying conditions. Your doctor will assess the type, frequency, and triggers to determine the best treatment approach.',
+    'fever': 'Fever is your body\'s natural response to infection. It\'s important to monitor your temperature and stay hydrated. Seek immediate care if fever exceeds 103°F or is accompanied by severe symptoms.',
+    'chest pain': 'Chest pain can have various causes from muscle strain to heart conditions. Never ignore chest pain - your doctor will perform tests to determine the cause and appropriate treatment.',
+    'fatigue': 'Chronic fatigue can result from sleep disorders, stress, medical conditions, or lifestyle factors. Your doctor will help identify underlying causes and develop a treatment plan.',
+    'anxiety': 'Anxiety is a treatable condition that affects millions. Your doctor can discuss therapy options, lifestyle changes, and medications that can help manage symptoms effectively.',
+    'depression': 'Depression is a serious but treatable mental health condition. Your doctor can help you understand treatment options including therapy, medication, and lifestyle modifications.',
+    'back pain': 'Back pain is very common and often resolves with proper treatment. Your doctor will assess the cause and recommend appropriate treatments ranging from physical therapy to medication.',
+    'diabetes': 'Diabetes management involves monitoring blood sugar, medication, diet, and exercise. Regular check-ups help prevent complications and maintain optimal health.',
+    'hypertension': 'High blood pressure often has no symptoms but increases risk of heart disease and stroke. Regular monitoring and treatment can effectively control blood pressure.',
+    'cold symptoms': 'Common colds are viral infections that typically resolve in 7-10 days. Your doctor can help distinguish between cold, flu, or other respiratory conditions.',
+  };
+  
+  const lowerReason = reason.toLowerCase();
+  for (const [condition, info] of Object.entries(content)) {
+    if (lowerReason.includes(condition)) {
+      return info;
+    }
+  }
+  
+  return 'Your doctor will conduct a thorough evaluation to understand your symptoms and provide appropriate care. Be prepared to discuss your symptoms, their duration, and any factors that make them better or worse.';
+};
+
 const VisitDetails = () => {
   const { user } = useAuth();
   const [appointment, setAppointment] = useState<any>(null);
@@ -18,7 +42,6 @@ const VisitDetails = () => {
   const [visitNotes, setVisitNotes] = useState("");
   const [prescriptions, setPrescriptions] = useState("");
   const [followUpActions, setFollowUpActions] = useState("");
-  const [aiQuestions, setAiQuestions] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [audioRecorder, setAudioRecorder] = useState<AudioRecorder | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -44,7 +67,6 @@ const VisitDetails = () => {
       setVisitNotes(foundAppointment.visitNotes || "");
       setPrescriptions(foundAppointment.prescriptions || "");
       setFollowUpActions(foundAppointment.followUpActions || "");
-      generateAIQuestions(foundAppointment);
     } else {
       toast({
         title: "Appointment not found",
@@ -55,47 +77,7 @@ const VisitDetails = () => {
     }
   }, [id, user, navigate, toast]);
 
-  const generateAIQuestions = async (appointmentData: any) => {
-    try {
-      setIsProcessing(true);
-      
-      // Load medical profile for context
-      const savedProfile = user ? localStorage.getItem(`clearvisit_profile_${user.id}`) : null;
-      const profile = savedProfile ? JSON.parse(savedProfile) : {};
-
-      const response = await supabase.functions.invoke('generate-ai-questions', {
-        body: {
-          appointmentReason: appointmentData.reason,
-          medicalHistory: profile.conditions || "",
-          medications: profile.medications || "",
-          allergies: profile.allergies || ""
-        }
-      });
-
-      if (response.data?.questions) {
-        setAiQuestions(response.data.questions);
-      } else {
-        // Fallback questions if API fails
-        const fallbackQuestions = [
-          "Based on my medical history, what should I be monitoring?",
-          "Are there any preventive measures I should take?",
-          "When should I schedule my next follow-up appointment?"
-        ];
-        setAiQuestions(fallbackQuestions);
-      }
-    } catch (error) {
-      console.error('Error generating AI questions:', error);
-      // Fallback questions
-      const fallbackQuestions = [
-        "What specific symptoms should I watch for?",
-        "Are there any lifestyle changes you recommend?",
-        "What's the best way to manage my condition?"
-      ];
-      setAiQuestions(fallbackQuestions);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+  // Removed generateAIQuestions function since we're using educational content instead
 
   // Start recording visit conversation
   const handleStartRecording = async () => {
@@ -135,74 +117,43 @@ const VisitDetails = () => {
     }
   };
 
-  // Stop recording and process the conversation with chunked processing
+  // Simplified recording process - transcribe immediately and analyze
   const handleStopRecording = async () => {
     if (!audioRecorder) return;
     
     setIsRecording(false);
     setIsProcessing(true);
-    setProcessingProgress(0);
-    setCurrentStep('Stopping recording...');
+    setProcessingProgress(10);
+    setCurrentStep('Processing recording...');
     
     try {
-      // Get the complete audio data
       const audioData = audioRecorder.stop();
-      console.log('Recording stopped, processing audio data:', audioData.length);
+      const encodedAudio = encodeAudioForAPI(audioData);
       
-      setCurrentStep('Preparing audio for processing...');
-      setProcessingProgress(10);
+      setCurrentStep('Transcribing audio...');
+      setProcessingProgress(30);
       
-      // Split audio into chunks for processing (30-second chunks)
-      const audioChunks = chunkAudio(audioData, 30);
-      console.log(`Split audio into ${audioChunks.length} chunks`);
-      
-      setCurrentStep(`Transcribing audio (${audioChunks.length} chunks)...`);
-      setProcessingProgress(20);
-      
-      // Process each chunk with Whisper API
-      const transcriptions: string[] = [];
-      for (let i = 0; i < audioChunks.length; i++) {
-        const chunk = audioChunks[i];
-        const encodedChunk = encodeAudioForAPI(chunk);
-        
-        setCurrentStep(`Transcribing chunk ${i + 1} of ${audioChunks.length}...`);
-        setProcessingProgress(20 + (30 * i) / audioChunks.length);
-        
-        try {
-          const { data: transcriptionData, error: transcriptionError } = await supabase.functions.invoke('transcribe-audio', {
-            body: {
-              audioData: encodedChunk,
-              chunkIndex: i,
-              totalChunks: audioChunks.length
-            }
-          });
+      // Transcribe the audio directly
+      const { data: transcriptionData, error: transcriptionError } = await supabase.functions.invoke('transcribe-audio', {
+        body: { audioData: encodedAudio }
+      });
 
-          if (transcriptionError) {
-            console.error(`Error transcribing chunk ${i}:`, transcriptionError);
-            transcriptions.push(`[Transcription failed for segment ${i + 1}]`);
-          } else {
-            transcriptions.push(transcriptionData?.transcription || '');
-          }
-        } catch (chunkError) {
-          console.error(`Error processing chunk ${i}:`, chunkError);
-          transcriptions.push(`[Processing failed for segment ${i + 1}]`);
-        }
+      if (transcriptionError) {
+        throw new Error('Failed to transcribe audio: ' + transcriptionError.message);
       }
-      
-      // Combine all transcriptions
-      const fullTranscript = transcriptions.filter(t => t && !t.includes('[Transcription failed')).join(' ');
-      setFullTranscription(fullTranscript);
+
+      const transcript = transcriptionData?.transcription || '';
+      setFullTranscription(transcript);
       
       setCurrentStep('Analyzing visit content...');
       setProcessingProgress(60);
       
-      // Get medical history for context
+      // Process the transcription for medical insights
       const medicalHistory = user ? localStorage.getItem(`clearvisit_profile_${user.id}`) : null;
       
-      // Process the full transcription with enhanced AI analysis
       const { data: summaryData, error: summaryError } = await supabase.functions.invoke('process-visit-summary', {
         body: {
-          fullTranscription: fullTranscript,
+          fullTranscription: transcript,
           appointmentReason: appointment?.reason || 'General consultation',
           medicalHistory: medicalHistory ? JSON.parse(medicalHistory) : null
         }
@@ -211,8 +162,7 @@ const VisitDetails = () => {
       setProcessingProgress(90);
 
       if (summaryError) {
-        console.error('Error processing visit summary:', summaryError);
-        throw new Error(summaryError.message || 'Failed to process visit summary');
+        throw new Error('Failed to process visit summary: ' + summaryError.message);
       }
 
       if (summaryData) {
@@ -228,7 +178,7 @@ const VisitDetails = () => {
         
         toast({
           title: "Recording Processed",
-          description: "Your visit analysis is complete with personalized insights!",
+          description: "Your visit has been successfully analyzed!",
         });
       }
     } catch (error) {
@@ -326,27 +276,19 @@ const VisitDetails = () => {
               </CardContent>
             </Card>
 
-            {/* AI-Generated Questions */}
-            {aiQuestions.length > 0 && (
+            {/* Educational Information */}
+            {appointment?.reason && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Pre-Visit Questions</CardTitle>
+                  <CardTitle>About Your Visit</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {isProcessing ? (
-                    <div className="text-center py-4">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-                      <p className="mt-2 text-sm text-muted-foreground">Generating personalized questions...</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {aiQuestions.map((question, index) => (
-                        <div key={index} className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                          <p className="text-sm font-medium text-blue-800">{question}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                    <h4 className="font-medium text-blue-900 mb-2">{appointment.reason}</h4>
+                    <p className="text-sm text-blue-800">
+                      {getEducationalContent(appointment.reason)}
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -368,12 +310,12 @@ const VisitDetails = () => {
               </Card>
             )}
 
-            {/* Recording Controls */}
+            {/* Recording Interface */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Mic className="w-5 h-5" />
-                  Visit Recording
+                  Record Visit
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -395,14 +337,15 @@ const VisitDetails = () => {
                       className="flex items-center gap-2"
                     >
                       <MicOff className="w-4 h-4" />
-                      Stop Recording ({Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')})
+                      Stop & Process ({Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')})
                     </Button>
                   )}
                 </div>
                 
                 {isRecording && (
-                  <div className="text-sm text-muted-foreground">
-                    🔴 Recording in progress... Speak clearly for best results.
+                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                    Recording... Speak clearly for best results.
                   </div>
                 )}
                 
@@ -412,9 +355,6 @@ const VisitDetails = () => {
                       🤖 {currentStep}
                     </div>
                     <Progress value={processingProgress} className="w-full" />
-                    <div className="text-xs text-muted-foreground">
-                      {processingProgress}% complete
-                    </div>
                   </div>
                 )}
               </CardContent>

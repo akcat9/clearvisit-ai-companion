@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "ClearVisit AI",
+    "slug": "clearvisit-ai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#4F8EF7"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.clearvisit.ai",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "This app needs microphone access to record doctor visits for transcription and analysis.",
+        "NSCameraUsageDescription": "This app needs camera access to scan medical documents.",
+        "NSHealthShareUsageDescription": "This app helps you manage your medical visits and health information."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#4F8EF7"
+      },
+      "package": "com.clearvisit.ai",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow ClearVisit AI to access your microphone to record doctor visits."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow ClearVisit AI to access your camera to scan medical documents."
+        }
+      ]
+    ],
+    "scheme": "clearvisit",
+    "extra": {
+      "router": {
+        "origin": false
+      }
+    }
+  }
+}

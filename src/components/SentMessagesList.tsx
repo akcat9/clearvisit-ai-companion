@@ -114,37 +114,13 @@ const SentMessagesList = () => {
             )}
             
             {message.visit_summary && (
-              <div className="text-sm bg-green-50 rounded-lg p-3">
-                <strong>Visit Summary:</strong>
-                <div className="mt-2 space-y-2">
-                  {message.visit_summary.visitSummary && (
+              <div className="text-sm">
+                <strong>Summary:</strong>
+                <div className="mt-1 space-y-1">
+                  {message.visit_summary.keyPoints && (
                     <div>
-                      <p className="text-gray-700">{message.visit_summary.visitSummary}</p>
-                    </div>
-                  )}
-                  
-                  {message.visit_summary.keySymptoms && message.visit_summary.keySymptoms.length > 0 && (
-                    <div>
-                      <em className="text-gray-600">Symptoms:</em> 
-                      <span className="ml-1">{message.visit_summary.keySymptoms.join(', ')}</span>
-                    </div>
-                  )}
-                  
-                  {message.visit_summary.prescriptions && message.visit_summary.prescriptions.length > 0 && (
-                    <div>
-                      <em className="text-gray-600">Prescriptions:</em>
-                      <span className="ml-1">{message.visit_summary.prescriptions.join(', ')}</span>
-                    </div>
-                  )}
-                  
-                  {message.visit_summary.doctorRecommendations && (
-                    <div>
-                      <em className="text-gray-600">Recommendations:</em>
-                      <span className="ml-1">
-                        {Array.isArray(message.visit_summary.doctorRecommendations) 
-                          ? message.visit_summary.doctorRecommendations.join(', ')
-                          : message.visit_summary.doctorRecommendations}
-                      </span>
+                      <em>Key Points:</em> {message.visit_summary.keyPoints.slice(0, 2).join(', ')}
+                      {message.visit_summary.keyPoints.length > 2 && '...'}
                     </div>
                   )}
                 </div>

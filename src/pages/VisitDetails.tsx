@@ -4,18 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { MobileHeader } from '@/components/MobileHeader';
-import { MobileNavigation } from '@/components/MobileNavigation';
-import { MobileRecordingInterface } from '@/components/MobileRecordingInterface';
-import { MobileVisitSummary } from '@/components/MobileVisitSummary';
+import { Header } from '@/components/Header';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Mic, MicOff, FileText, BookOpen, ExternalLink, User } from 'lucide-react';
+import { ArrowLeft, Mic, MicOff, FileText } from 'lucide-react';
 import ShareVisitModal from '@/components/ShareVisitModal';
 import { AudioRecorder, encodeAudioForAPI, chunkAudio } from '@/utils/AudioRecorder';
-import { useMobileFeatures } from '@/hooks/useMobileFeatures';
-import { Badge } from '@/components/ui/badge';
 
 const generateEducationalContent = async (reason: string, symptoms?: string, goal?: string): Promise<string> => {
   try {
@@ -43,75 +38,40 @@ const generateEducationalContent = async (reason: string, symptoms?: string, goa
   }
 };
 
-const findMedicalArticles = async (reason: string, symptoms?: string): Promise<{title: string, url: string, source: string}[]> => {
-  try {
-    const response = await supabase.functions.invoke('find-medical-articles', {
-      body: { reason, symptoms }
-    });
-
-    if (response.error) {
-      console.error('Error finding medical articles:', response.error);
-      return getDefaultArticles(reason);
-    }
-
-    return response.data?.articles || getDefaultArticles(reason);
-  } catch (error) {
-    console.error('Error calling medical articles function:', error);
-    return getDefaultArticles(reason);
-  }
-};
-
-const getDefaultArticles = (reason: string): {title: string, url: string, source: string}[] => {
-  return [
-    {
-      title: `Understanding ${reason} - Mayo Clinic`,
-      url: `https://www.mayoclinic.org/search/search-results?q=${encodeURIComponent(reason)}`,
-      source: 'Mayo Clinic'
-    },
-    {
-      title: `${reason} Information - WebMD`,
-      url: `https://www.webmd.com/search/search_results/default.aspx?query=${encodeURIComponent(reason)}`,
-      source: 'WebMD'
-    },
-    {
-      title: `${reason} Treatment - Healthline`,
-      url: `https://www.healthline.com/search?q1=${encodeURIComponent(reason)}`,
-      source: 'Healthline'
-    }
-  ];
-};
-
 const getStaticEducationalContent = (reason: string): string => {
   const content: { [key: string]: string } = {
-    'headache': 'What it is: Head pain resulting from tension in muscles, vascular changes, or neurological processes. Common triggers include stress, dehydration, eye strain, hormonal fluctuations, or underlying medical conditions affecting blood vessels or nerves.\n\nWhat to expect: Your physician will conduct a thorough neurological examination, assess pain characteristics including location and intensity, review triggers and patterns, and may order imaging studies like CT or MRI if concerning features are present.\n\nCommon treatments: Acute management includes analgesics like acetaminophen or NSAIDs, triptans for migraines, preventive medications such as beta-blockers or anticonvulsants for chronic cases, lifestyle modifications including stress reduction and sleep hygiene.\n\nQuestions to ask: What specific type of headache am I experiencing and what triggers should I avoid? Are there any warning signs that would require immediate medical attention? What preventive strategies would be most effective for my situation?',
-    
-    'fever': 'What it is: Elevated body temperature above 100.4°F (38°C) indicating immune system activation in response to pathogens, inflammatory processes, or other physiological stressors. The hypothalamus resets the body temperature setpoint to help fight infection.\n\nWhat to expect: Comprehensive assessment including vital signs monitoring, physical examination to identify infection source, possible laboratory tests including complete blood count and blood cultures, and evaluation for serious bacterial infections requiring immediate treatment.\n\nCommon treatments: Symptomatic relief with antipyretics like acetaminophen or ibuprofen, increased fluid intake to prevent dehydration, targeted antimicrobial therapy if bacterial infection is identified, supportive care with rest and monitoring for complications.\n\nQuestions to ask: What is the likely source of my infection and how long should the fever last? Are there any complications I should watch for? When should I seek immediate medical attention if symptoms worsen?',
-    
-    'chest pain': 'What it is: Thoracic discomfort that can originate from cardiac, pulmonary, gastrointestinal, musculoskeletal, or psychological causes. Cardiac origins include ischemia, while non-cardiac causes include gastroesophageal reflux, pneumonia, or anxiety disorders.\n\nWhat to expect: Immediate cardiovascular assessment including electrocardiogram, chest X-ray, cardiac enzymes, detailed pain characterization, risk factor evaluation, and possible stress testing or cardiac catheterization if coronary artery disease is suspected.\n\nCommon treatments: Depends on etiology - antiplatelet therapy and statins for coronary disease, proton pump inhibitors for GERD, bronchodilators for respiratory causes, anxiolytics for panic disorders, with emergency interventions for acute coronary syndromes.\n\nQuestions to ask: Is this chest pain related to my heart or another organ system? What tests are needed to determine the cause? What lifestyle changes can reduce my risk of future episodes?',
-    
-    'hearing problems in cochlea': 'What it is: Sensorineural hearing loss affecting the cochlea, the spiral-shaped organ in the inner ear containing hair cells that convert sound vibrations to electrical signals. Damage can result from aging, noise exposure, infections, medications, or genetic factors.\n\nWhat to expect: Comprehensive audiological evaluation including pure tone audiometry, speech discrimination testing, tympanometry, otoacoustic emissions testing, and possible MRI to rule out retrocochlear pathology like acoustic neuroma.\n\nCommon treatments: Hearing aid amplification for mild to moderate loss, cochlear implantation for severe to profound hearing loss, assistive listening devices, auditory rehabilitation therapy, and management of underlying conditions like Meniere disease or autoimmune disorders.\n\nQuestions to ask: What is causing my hearing loss and is it likely to progress? What are the benefits and limitations of different treatment options? How can I protect my remaining hearing from further damage?'
+    'headache': '**What it is:** Head pain from tension, stress, or other causes.\n\n**What to expect:** Doctor will ask about pain patterns and triggers.\n\n**Common treatments:** Pain medication, stress management, lifestyle changes.\n\n**Questions to ask:** What might be causing my headaches?',
+    'fever': '**What it is:** High body temperature, usually from fighting infection.\n\n**What to expect:** Temperature check and examination for infection source.\n\n**Common treatments:** Rest, fluids, fever reducers, treating underlying cause.\n\n**Questions to ask:** What infection am I fighting?',
+    'chest pain': '**What it is:** Discomfort in chest area with various possible causes.\n\n**What to expect:** Heart tests, examination, and symptom discussion.\n\n**Common treatments:** Depends on cause - medication, lifestyle changes, procedures.\n\n**Questions to ask:** Is this related to my heart?',
+    'cough': '**What it is:** Body\'s way to clear throat and lung irritation.\n\n**What to expect:** Lung listening, throat check, symptom questions.\n\n**Common treatments:** Cough medicine, treating underlying cause, rest.\n\n**Questions to ask:** What\'s causing my cough?',
+    'back pain': '**What it is:** Pain in spine or back muscles.\n\n**What to expect:** Movement tests and back examination.\n\n**Common treatments:** Physical therapy, pain relief, exercise.\n\n**Questions to ask:** How can I prevent this pain?',
+    'hearing problems': '**What it is:** Difficulty hearing sounds clearly.\n\n**What to expect:** Hearing tests and ear examination.\n\n**Common treatments:** Hearing aids, medication, ear cleaning.\n\n**Questions to ask:** Will my hearing get worse?',
+    'hearing problems in cochlea': '**What it is:** Inner ear problems affecting sound processing.\n\n**What to expect:** Detailed hearing tests and specialist referral.\n\n**Common treatments:** Hearing aids, cochlear implants, sound therapy.\n\n**Questions to ask:** What treatments are best for me?',
+    'anxiety': '**What it is:** Feeling worried, nervous, or fearful regularly.\n\n**What to expect:** Discussion about triggers and symptoms.\n\n**Common treatments:** Therapy, relaxation techniques, sometimes medication.\n\n**Questions to ask:** What coping strategies work best?',
+    'depression': '**What it is:** Persistent sadness affecting daily life.\n\n**What to expect:** Mental health screening and symptom discussion.\n\n**Common treatments:** Therapy, medication, lifestyle changes.\n\n**Questions to ask:** How long does treatment take?'
   };
   
   const lowerReason = reason.toLowerCase();
   
+  // Check for exact matches first
   if (content[lowerReason]) {
     return content[lowerReason];
   }
   
+  // Check for partial matches
   for (const [key, value] of Object.entries(content)) {
     if (lowerReason.includes(key) || key.includes(lowerReason)) {
       return value;
     }
   }
   
-  return `What it is: A medical condition or concern related to ${reason} requiring professional evaluation to determine underlying pathophysiology, risk factors, and appropriate diagnostic workup for accurate diagnosis and treatment planning.\n\nWhat to expect: Comprehensive medical history taking, focused physical examination relevant to your symptoms, possible diagnostic testing including laboratory studies or imaging, and discussion of differential diagnoses and treatment options.\n\nCommon treatments: Treatment approach will be individualized based on specific diagnosis, severity of condition, patient factors, and evidence-based guidelines, potentially including medications, therapeutic interventions, lifestyle modifications, or referral to specialists.\n\nQuestions to ask: What is the most likely diagnosis for my symptoms and what additional tests might be needed? What are my treatment options and their expected outcomes? Are there any lifestyle changes that could improve my condition?`;
+  return `**What it is:** Medical concern about ${reason}.\n\n**What to expect:** Doctor will examine you and ask questions.\n\n**Common treatments:** Depends on diagnosis and your specific needs.\n\n**Questions to ask:** What\'s the best treatment for me?`;
 };
 
 const VisitDetails = () => {
   const { user } = useAuth();
   const [appointment, setAppointment] = useState<any>(null);
   const [educationalContent, setEducationalContent] = useState<string>('');
-  const [medicalArticles, setMedicalArticles] = useState<{title: string, url: string, source: string}[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [manualNotes, setManualNotes] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
@@ -122,7 +82,6 @@ const VisitDetails = () => {
   const [fullTranscription, setFullTranscription] = useState('');
   const [recordingComplete, setRecordingComplete] = useState(false);
   const [medicalTermsExplanation, setMedicalTermsExplanation] = useState<any>(null);
-  const { triggerHaptic } = useMobileFeatures();
   
   // AI-generated content (only shown after processing)
   const [aiGeneratedData, setAiGeneratedData] = useState<{
@@ -153,17 +112,12 @@ const VisitDetails = () => {
   const loadEducationalContent = async () => {
     if (!appointment?.reason) return;
     
-    const [content, articles] = await Promise.all([
-      generateEducationalContent(
-        appointment.reason,
-        appointment.symptoms,
-        appointment.goal
-      ),
-      findMedicalArticles(appointment.reason, appointment.symptoms)
-    ]);
-    
+    const content = await generateEducationalContent(
+      appointment.reason,
+      appointment.symptoms,
+      appointment.goal
+    );
     setEducationalContent(content);
-    setMedicalArticles(articles);
   };
 
   const fetchAppointment = async () => {
@@ -565,30 +519,10 @@ const VisitDetails = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Desktop Header */}
-      <div className="hidden md:block">
-        <div className="bg-primary text-primary-foreground px-6 py-4">
-          <div className="flex items-center justify-between max-w-7xl mx-auto">
-            <div className="flex items-center gap-2">
-              <User className="w-6 h-6" />
-              <span className="text-xl font-semibold">ClearVisit AI</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Header */}
-      <div className="md:hidden">
-        <MobileHeader 
-          title="Visit Details" 
-          showBackButton 
-          backPath="/dashboard"
-        />
-      </div>
+      <Header />
       
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-8">
-        {/* Desktop Back Button */}
-        <div className="hidden md:flex items-center gap-4 mb-8">
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="flex items-center gap-4 mb-8">
           <Button 
             variant="outline" 
             size="sm" 
@@ -601,101 +535,7 @@ const VisitDetails = () => {
           <h1 className="text-3xl font-bold">Visit Details</h1>
         </div>
 
-        {/* Mobile Layout */}
-        <div className="md:hidden space-y-4">
-          {/* Visit Info Card */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Visit Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium text-muted-foreground">Doctor</span>
-                  <p className="font-semibold">{appointment.doctorName}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-muted-foreground">Date</span>
-                  <p className="font-semibold">{appointment.date}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-muted-foreground">Time</span>
-                  <p className="font-semibold">{appointment.time}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-muted-foreground">Status</span>
-                  <Badge className="text-xs">{appointment.status}</Badge>
-                </div>
-              </div>
-              <div>
-                <span className="font-medium text-muted-foreground text-sm">Reason for Visit</span>
-                <p className="text-sm mt-1">{appointment.reason}</p>
-              </div>
-              {appointment.goal && (
-                <div>
-                  <span className="font-medium text-muted-foreground text-sm">Goal</span>
-                  <p className="text-sm mt-1">{appointment.goal}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Mobile Recording Interface */}
-          <MobileRecordingInterface
-            isRecording={isRecording}
-            recordingDuration={recordingDuration}
-            onStartRecording={handleStartRecording}
-            onStopRecording={handleStopRecording}
-            onAnalyzeWithAI={handleAnalyzeWithAI}
-            isAnalyzing={isAnalyzing}
-            recordingComplete={recordingComplete}
-            liveTranscription={liveTranscription}
-          />
-
-          {/* Manual Notes */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FileText className="w-5 h-5" />
-                Your Notes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Textarea
-                value={manualNotes}
-                onChange={(e) => setManualNotes(e.target.value)}
-                placeholder="Add your own notes about the visit here..."
-                rows={4}
-                className="resize-none"
-              />
-              <Button 
-                onClick={handleSaveNotes}
-                disabled={isSavingNotes}
-                size="sm"
-                className="w-full"
-              >
-                {isSavingNotes ? "Saving..." : "Save Notes"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* AI-Generated Content for Mobile */}
-          {aiGeneratedData && (
-            <MobileVisitSummary 
-              aiGeneratedData={aiGeneratedData}
-              appointmentData={{
-                doctor_name: appointment.doctorName || appointment.doctor_name,
-                date: appointment.date,
-                time: appointment.time,
-                reason: appointment.reason,
-                goal: appointment.goal
-              }}
-            />
-          )}
-        </div>
-
-        {/* Desktop Layout */}
-        <div className="hidden md:grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-2 gap-6">
           {/* Left Column */}
           <div className="space-y-6">
             {/* Visit Info */}
@@ -728,59 +568,14 @@ const VisitDetails = () => {
             {appointment?.reason && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="w-5 h-5" />
-                    About Your Visit
-                  </CardTitle>
+                  <CardTitle>About Your Visit</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {educationalContent ? (
-                      <div className="space-y-3">
-                        {educationalContent.split('\n\n').map((section, index) => {
-                          const [header, ...content] = section.split(': ');
-                          return (
-                            <div key={index} className="border-l-2 border-primary/20 pl-4">
-                              <h4 className="font-semibold text-foreground mb-1">{header}:</h4>
-                              <p className="text-sm text-muted-foreground leading-relaxed">
-                                {content.join(': ')}
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">Loading educational content...</p>
-                    )}
-                    
-                    {/* Medical Articles */}
-                    {medicalArticles.length > 0 && (
-                      <div className="mt-6 pt-4 border-t">
-                        <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                          <ExternalLink className="w-4 h-4" />
-                          Learn More
-                        </h4>
-                        <div className="space-y-2">
-                          {medicalArticles.map((article, index) => (
-                            <a
-                              key={index}
-                              href={article.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent/50 transition-colors group"
-                            >
-                              <div>
-                                <p className="font-medium text-sm group-hover:text-primary transition-colors">
-                                  {article.title}
-                                </p>
-                                <p className="text-xs text-muted-foreground">{article.source}</p>
-                              </div>
-                              <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                  <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                    <h4 className="font-medium text-blue-900 mb-2">{appointment.reason}</h4>
+                    <p className="text-sm text-blue-800">
+                      {educationalContent || getStaticEducationalContent(appointment.reason)}
+                    </p>
                   </div>
                 </CardContent>
               </Card>

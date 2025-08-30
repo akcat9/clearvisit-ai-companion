@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MobileHeader } from "@/components/MobileHeader";
-import { MobileNavigation } from "@/components/MobileNavigation";
-import { MobileAppointmentCard } from "@/components/MobileAppointmentCard";
+import { Header } from "@/components/Header";
 import { Plus, User, Share2, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppointmentModal } from "@/components/AppointmentModal";
@@ -12,8 +10,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUnreadSharedVisits } from "@/hooks/useUnreadSharedVisits";
-import { useMobileFeatures } from "@/hooks/useMobileFeatures";
-import { ImpactStyle } from "@capacitor/haptics";
 
 interface Appointment {
   id: string;
@@ -37,7 +33,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { unreadCount } = useUnreadSharedVisits();
-  const { triggerHaptic } = useMobileFeatures();
 
   useEffect(() => {
     if (!user) return;
@@ -104,8 +99,6 @@ const Dashboard = () => {
 
   const handleCreateAppointment = async (appointmentData: any) => {
     if (!user) return;
-    
-    await triggerHaptic(ImpactStyle.Light);
 
     try {
       const { data, error } = await supabase
@@ -149,39 +142,10 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Desktop Header */}
-      <div className="hidden md:block">
-        <div className="bg-primary text-primary-foreground px-6 py-4">
-          <div className="flex items-center justify-between max-w-7xl mx-auto">
-            <div className="flex items-center gap-2">
-              <User className="w-6 h-6" />
-              <span className="text-xl font-semibold">ClearVisit AI</span>
-            </div>
-            {user && (
-              <div className="flex items-center gap-4">
-                <span className="text-sm">Welcome, {user.email}</span>
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
-                  onClick={() => navigate("/")}
-                  className="flex items-center gap-2"
-                >
-                  Logout
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Header */}
-      <div className="md:hidden">
-        <MobileHeader title="My Appointments" />
-      </div>
+      <Header />
       
-      <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-8">
-        {/* Desktop Header Actions */}
-        <div className="hidden md:flex items-center justify-between mb-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold">My Appointments</h1>
           <div className="flex gap-3">
             <Button 
@@ -213,89 +177,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Mobile Action Buttons */}
-        <div className="md:hidden flex gap-2 mb-6 overflow-x-auto pb-2">
-          <Button 
-            onClick={() => setShowAppointmentModal(true)}
-            className="flex items-center gap-2 whitespace-nowrap"
-            size="sm"
-          >
-            <Plus className="w-4 h-4" />
-            New Appointment
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate("/shared-visits")}
-            className="flex items-center gap-2 whitespace-nowrap relative"
-            size="sm"
-          >
-            <Share2 className="w-4 h-4" />
-            Shared Visits
-            {unreadCount > 0 && (
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
-            )}
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate("/profile")}
-            className="flex items-center gap-2 whitespace-nowrap"
-            size="sm"
-          >
-            <User className="w-4 h-4" />
-            Profile
-          </Button>
-        </div>
-
-        {/* Mobile Layout */}
-        <div className="md:hidden space-y-6">
-          {/* Upcoming Appointments */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Upcoming</h2>
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-2 text-muted-foreground">Loading...</p>
-              </div>
-            ) : upcomingAppointments.length === 0 ? (
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <p className="text-muted-foreground">No upcoming appointments</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-3">
-                {upcomingAppointments.map((appointment) => (
-                  <MobileAppointmentCard
-                    key={appointment.id}
-                    appointment={appointment}
-                    onDelete={handleDeleteAppointment}
-                    onClick={() => navigate(`/visit/${appointment.id}`)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Previous Appointments */}
-          {previousAppointments.length > 0 && (
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Previous</h2>
-              <div className="space-y-3">
-                {previousAppointments.map((appointment) => (
-                  <MobileAppointmentCard
-                    key={appointment.id}
-                    appointment={appointment}
-                    onDelete={handleDeleteAppointment}
-                    onClick={() => navigate(`/visit/${appointment.id}`)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Desktop Layout */}
-        <div className="hidden md:grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Upcoming Appointments</CardTitle>
@@ -376,13 +258,10 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        <div className="text-center text-sm text-muted-foreground mt-12 mb-20 md:mb-0">
+        <div className="text-center text-sm text-muted-foreground mt-12">
           © 2025 ClearVisit AI. All rights reserved.
         </div>
       </div>
-
-      {/* Mobile Navigation */}
-      <MobileNavigation />
 
       {showAppointmentModal && (
         <AppointmentModal

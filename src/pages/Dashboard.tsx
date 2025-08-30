@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/Header";
-import { Plus, User, Share2 } from "lucide-react";
+import { Plus, User, Share2, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppointmentModal } from "@/components/AppointmentModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -61,6 +61,39 @@ const Dashboard = () => {
       console.error('Error fetching appointments:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAppointment = async (appointmentId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent navigation when clicking delete
+    
+    if (!confirm('Are you sure you want to delete this appointment?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('id', appointmentId);
+
+      if (error) {
+        console.error('Error deleting appointment:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete appointment",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setAppointments(prev => prev.filter(apt => apt.id !== appointmentId));
+      toast({
+        title: "Success",
+        description: "Appointment deleted successfully"
+      });
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
     }
   };
 
@@ -162,7 +195,7 @@ const Dashboard = () => {
                   {upcomingAppointments.map((appointment) => (
                     <div 
                       key={appointment.id} 
-                      className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                      className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer group relative"
                       onClick={() => navigate(`/visit/${appointment.id}`)}
                     >
                       <div className="font-medium">{appointment.doctor_name}</div>
@@ -172,6 +205,14 @@ const Dashboard = () => {
                       <div className="text-sm text-muted-foreground mt-1">
                         {appointment.reason}
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={(e) => handleDeleteAppointment(appointment.id, e)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -191,7 +232,7 @@ const Dashboard = () => {
                   {previousAppointments.map((appointment) => (
                     <div 
                       key={appointment.id} 
-                      className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                      className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer group relative"
                       onClick={() => navigate(`/visit/${appointment.id}`)}
                     >
                       <div className="font-medium">{appointment.doctor_name}</div>
@@ -201,6 +242,14 @@ const Dashboard = () => {
                       <div className="text-sm text-muted-foreground mt-1">
                         {appointment.reason}
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={(e) => handleDeleteAppointment(appointment.id, e)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   ))}
                 </div>

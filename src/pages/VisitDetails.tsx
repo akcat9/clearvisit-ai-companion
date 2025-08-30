@@ -270,6 +270,15 @@ const VisitDetails = () => {
             console.error('Error auto-saving visit record:', visitError);
           } else {
             console.log('Visit data automatically saved to database');
+            
+            // Update appointment status to completed
+            await supabase
+              .from('appointments')
+              .update({ 
+                status: 'completed',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', id);
           }
         } catch (autoSaveError) {
           console.error('Error during auto-save:', autoSaveError);
@@ -277,8 +286,13 @@ const VisitDetails = () => {
         
         toast({
           title: "Analysis Complete",
-          description: "Your visit has been successfully analyzed with AI!",
+          description: "Your visit has been analyzed and saved automatically!",
         });
+
+        // Auto-navigate back to dashboard after a short delay
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 2000);
       }
     } catch (error) {
       console.error('Error analyzing visit:', error);
@@ -669,11 +683,12 @@ const VisitDetails = () => {
                 />
               )}
               <Button 
-                onClick={handleSaveVisit}
+                onClick={() => navigate("/dashboard")}
+                variant="outline"
                 className="w-full"
                 size="lg"
               >
-                Save Visit & Return to Dashboard
+                Return to Dashboard
               </Button>
             </div>
           </div>

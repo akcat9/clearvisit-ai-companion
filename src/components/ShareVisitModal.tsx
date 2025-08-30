@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -8,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Share2 } from "lucide-react";
+import MultiEmailInput from "./MultiEmailInput";
 
 interface ShareVisitModalProps {
   visitSummary: any;
@@ -22,7 +22,7 @@ interface ShareVisitModalProps {
 }
 
 const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitModalProps) => {
-  const [recipientEmail, setRecipientEmail] = useState("");
+  const [recipientEmails, setRecipientEmails] = useState<string[]>([]);
   const [message, setMessage] = useState("");
   const [isSharing, setIsSharing] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -30,21 +30,10 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
   const { user } = useAuth();
 
   const handleShare = async () => {
-    if (!recipientEmail.trim()) {
+    if (recipientEmails.length === 0) {
       toast({
         title: "Email required",
-        description: "Please enter a recipient email address",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(recipientEmail)) {
-      toast({
-        title: "Invalid email",
-        description: "Please enter a valid email address",
+        description: "Please enter at least one recipient email address",
         variant: "destructive",
       });
       return;
@@ -69,29 +58,39 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
         .eq('user_id', user.id)
         .single();
 
-      const { error } = await supabase
-        .from('shared_visits')
-        .insert({
-          sender_id: user.id,
-          recipient_email: recipientEmail.trim(),
-          visit_summary: visitSummary,
-          appointment_data: appointmentData || null,
-          sender_profile: senderProfile || null,
-          message: message.trim() || null,
-        });
+      // Create share records for each recipient
+      const sharePromises = recipientEmails.map(email => 
+        supabase
+          .from('shared_visits')
+          .insert({
+            sender_id: user.id,
+            recipient_email: email,
+            visit_summary: visitSummary,
+            appointment_data: appointmentData || null,
+            sender_profile: senderProfile || null,
+            message: message.trim() || null,
+          })
+      );
 
-      if (error) {
-        console.error('Error sharing visit:', error);
-        throw error;
+      const results = await Promise.all(sharePromises);
+      const errors = results.filter(result => result.error);
+
+      if (errors.length > 0) {
+        console.error('Some shares failed:', errors);
+        toast({
+          title: "Partial success",
+          description: `Shared with ${recipientEmails.length - errors.length} of ${recipientEmails.length} recipients`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Visit shared successfully",
+          description: `Visit summary has been shared with ${recipientEmails.length} recipient${recipientEmails.length > 1 ? 's' : ''}`,
+        });
       }
 
-      toast({
-        title: "Visit shared successfully",
-        description: `Visit summary has been shared with ${recipientEmail}`,
-      });
-
       // Reset form and close modal
-      setRecipientEmail("");
+      setRecipientEmails([]);
       setMessage("");
       setIsOpen(false);
     } catch (error) {
@@ -122,13 +121,11 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Recipient Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter email address"
-              value={recipientEmail}
-              onChange={(e) => setRecipientEmail(e.target.value)}
+            <Label htmlFor="emails">Recipient Emails</Label>
+            <MultiEmailInput
+              emails={recipientEmails}
+              onEmailsChange={setRecipientEmails}
+              placeholder="Enter email addresses..."
             />
           </div>
           <div className="space-y-2">

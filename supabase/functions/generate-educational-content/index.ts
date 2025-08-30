@@ -23,17 +23,17 @@ serve(async (req) => {
 
     const prompt = `Generate educational content for a patient visiting their doctor for: ${reason}${symptoms ? `. Symptoms: ${symptoms}` : ''}${goal ? `. Goal: ${goal}` : ''}
 
-Break it into 4 short sections:
+Create 4 detailed sections with medical specificity:
 
-**What it is:** (1-2 simple sentences explaining the condition)
+What it is: (Explain the condition with basic medical/scientific details, causes, and mechanisms. Include relevant anatomy or physiology. 35-50 words)
 
-**What to expect:** (1-2 sentences about the visit)
+What to expect: (Describe the visit process, tests, examinations, and what the doctor will likely do. Be specific about procedures. 35-50 words)
 
-**Common treatments:** (1-2 sentences about typical treatments)
+Common treatments: (List specific treatment options, medications, therapies, or procedures. Include how they work and success rates when relevant. 35-50 words)
 
-**Questions to ask:** (1 key question they should ask their doctor)
+Questions to ask: (Provide 2-3 specific, important questions patients should ask their doctor about their condition. 25-35 words)
 
-Keep each section under 25 words. Use simple language. Format with section headers and line breaks.`;
+Use plain text only - NO markdown symbols, asterisks, or special formatting. Use simple medical language that patients can understand but include proper medical terminology. Make content informative and evidence-based.`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -50,8 +50,8 @@ Keep each section under 25 words. Use simple language. Format with section heade
           },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 200,
-        temperature: 0.5,
+        max_completion_tokens: 400,
+        
       }),
     });
 

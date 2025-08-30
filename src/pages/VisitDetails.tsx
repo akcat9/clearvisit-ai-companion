@@ -65,27 +65,72 @@ const VisitDetails = () => {
 
   useEffect(() => {
     if (!user) return;
+    fetchAppointment();
+  }, [id, user, navigate, toast]);
 
-    // Load appointment details
-    const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
-    const foundAppointment = appointments.find((apt: any) => apt.id === id);
-    
-    if (foundAppointment) {
-      setAppointment(foundAppointment);
-      setManualNotes(foundAppointment.manualNotes || "");
-      // Load AI-generated data if it exists
-      if (foundAppointment.aiGeneratedData) {
-        setAiGeneratedData(foundAppointment.aiGeneratedData);
-      }      
-    } else {
+  const fetchAppointment = async () => {
+    try {
+      // First try to load from Supabase
+      const { data: supabaseAppointment, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (!error && supabaseAppointment) {
+        setAppointment({
+          id: supabaseAppointment.id,
+          doctorName: supabaseAppointment.doctor_name,
+          date: supabaseAppointment.date,
+          time: supabaseAppointment.time,
+          reason: supabaseAppointment.reason,
+          goal: supabaseAppointment.goal,
+          status: supabaseAppointment.status,
+        });
+        
+        // Load visit record if exists
+        const { data: visitRecord } = await supabase
+          .from('visit_records')
+          .select('*')
+          .eq('appointment_id', id)
+          .single();
+
+        if (visitRecord) {
+          setManualNotes(visitRecord.transcription || "");
+        if (visitRecord.summary) {
+          setAiGeneratedData(visitRecord.summary as any);
+        }
+        }
+        return;
+      }
+
+      // Fallback to localStorage for migration period
+      const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
+      const foundAppointment = appointments.find((apt: any) => apt.id === id);
+      
+      if (foundAppointment) {
+        setAppointment(foundAppointment);
+        setManualNotes(foundAppointment.manualNotes || "");
+        if (foundAppointment.aiGeneratedData) {
+          setAiGeneratedData(foundAppointment.aiGeneratedData);
+        }
+      } else {
+        toast({
+          title: "Appointment not found",
+          description: "The appointment you're looking for doesn't exist.",
+          variant: "destructive",
+        });
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      console.error('Error fetching appointment:', error);
       toast({
-        title: "Appointment not found",
-        description: "The appointment you're looking for doesn't exist.",
+        title: "Error loading appointment",
+        description: "Please try again later.",
         variant: "destructive",
       });
-      navigate("/dashboard");
     }
-  }, [id, user, navigate, toast]);
+  };
 
   // Removed generateAIQuestions function since we're using educational content instead
 
@@ -541,7 +586,16 @@ const VisitDetails = () => {
 
             <div className="pt-6 space-y-3">
               {aiGeneratedData && (
-                <ShareVisitModal visitSummary={aiGeneratedData} />
+                <ShareVisitModal 
+                  visitSummary={aiGeneratedData} 
+                  appointmentData={{
+                    doctor_name: appointment.doctorName || appointment.doctor_name,
+                    date: appointment.date,
+                    time: appointment.time,
+                    reason: appointment.reason,
+                    goal: appointment.goal
+                  }}
+                />
               )}
               <Button 
                 onClick={handleSaveVisit}

@@ -11,10 +11,17 @@ import { Share2 } from "lucide-react";
 
 interface ShareVisitModalProps {
   visitSummary: any;
+  appointmentData?: {
+    doctor_name: string;
+    date: string;
+    time: string;
+    reason: string;
+    goal?: string;
+  };
   trigger?: React.ReactNode;
 }
 
-const ShareVisitModal = ({ visitSummary, trigger }: ShareVisitModalProps) => {
+const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitModalProps) => {
   const [recipientEmail, setRecipientEmail] = useState("");
   const [message, setMessage] = useState("");
   const [isSharing, setIsSharing] = useState(false);
@@ -55,12 +62,21 @@ const ShareVisitModal = ({ visitSummary, trigger }: ShareVisitModalProps) => {
     setIsSharing(true);
 
     try {
+      // Get sender profile data
+      const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, email')
+        .eq('user_id', user.id)
+        .single();
+
       const { error } = await supabase
         .from('shared_visits')
         .insert({
           sender_id: user.id,
           recipient_email: recipientEmail.trim(),
           visit_summary: visitSummary,
+          appointment_data: appointmentData || null,
+          sender_profile: senderProfile || null,
           message: message.trim() || null,
         });
 

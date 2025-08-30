@@ -88,28 +88,34 @@ export type Database = {
       }
       shared_visits: {
         Row: {
+          appointment_data: Json | null
           id: string
           message: string | null
           recipient_email: string
           sender_id: string
+          sender_profile: Json | null
           shared_at: string
           viewed_at: string | null
           visit_summary: Json
         }
         Insert: {
+          appointment_data?: Json | null
           id?: string
           message?: string | null
           recipient_email: string
           sender_id: string
+          sender_profile?: Json | null
           shared_at?: string
           viewed_at?: string | null
           visit_summary: Json
         }
         Update: {
+          appointment_data?: Json | null
           id?: string
           message?: string | null
           recipient_email?: string
           sender_id?: string
+          sender_profile?: Json | null
           shared_at?: string
           viewed_at?: string | null
           visit_summary?: Json

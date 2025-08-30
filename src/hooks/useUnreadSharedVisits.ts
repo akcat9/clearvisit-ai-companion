@@ -45,11 +45,12 @@ export const useUnreadSharedVisits = () => {
 
       if (!profile?.email) return;
 
-      // Count unread shared visits
+      // Count unread shared visits (only received messages, not sent)
       const { count } = await supabase
         .from('shared_visits')
         .select('*', { count: 'exact', head: true })
         .eq('recipient_email', profile.email)
+        .neq('sender_id', user.id)
         .is('viewed_at', null);
 
       setUnreadCount(count || 0);

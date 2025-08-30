@@ -21,15 +21,17 @@ serve(async (req) => {
 
     const { reason, symptoms, goal } = await req.json();
 
-    const prompt = `Generate simple educational content for a patient visiting their doctor for: ${reason}${symptoms ? `. Symptoms: ${symptoms}` : ''}${goal ? `. Goal: ${goal}` : ''}
+    const prompt = `Generate very short educational content for a patient visiting their doctor for: ${reason}${symptoms ? `. Symptoms: ${symptoms}` : ''}${goal ? `. Goal: ${goal}` : ''}
 
-Write 2-3 short, easy sentences explaining:
-1. What this condition/reason means in simple terms
-2. What to expect during the visit
+Write exactly 2 short sentences (max 30 words total):
+1. What this condition means in simple terms (10-15 words)
+2. What to expect during the visit (10-15 words)
 
-Keep it under 100 words, use simple language a 12-year-old could understand. Be reassuring and avoid medical jargon.
+Use simple language. Separate sentences with a line break.
 
-Example format: "This means... During your visit, the doctor will... This is common and treatable."`;
+Example: "Hearing problems in the cochlea affect how you process sounds.
+
+Your doctor will test your hearing and discuss treatment options."`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -46,8 +48,8 @@ Example format: "This means... During your visit, the doctor will... This is com
           },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 400,
-        temperature: 0.7,
+        max_tokens: 100,
+        temperature: 0.5,
       }),
     });
 

@@ -40,26 +40,36 @@ const generateEducationalContent = async (reason: string, symptoms?: string, goa
 
 const getStaticEducationalContent = (reason: string): string => {
   const content: { [key: string]: string } = {
-    'headache': 'Headaches can be caused by tension, migraines, dehydration, or underlying conditions. Your doctor will assess the type, frequency, and triggers to determine the best treatment approach.',
-    'fever': 'Fever is your body\'s natural response to infection. It\'s important to monitor your temperature and stay hydrated. Seek immediate care if fever exceeds 103°F or is accompanied by severe symptoms.',
-    'chest pain': 'Chest pain can have various causes from muscle strain to heart conditions. Never ignore chest pain - your doctor will perform tests to determine the cause and appropriate treatment.',
-    'fatigue': 'Chronic fatigue can result from sleep disorders, stress, medical conditions, or lifestyle factors. Your doctor will help identify underlying causes and develop a treatment plan.',
-    'anxiety': 'Anxiety is a treatable condition that affects millions. Your doctor can discuss therapy options, lifestyle changes, and medications that can help manage symptoms effectively.',
-    'depression': 'Depression is a serious but treatable mental health condition. Your doctor can help you understand treatment options including therapy, medication, and lifestyle modifications.',
-    'back pain': 'Back pain is very common and often resolves with proper treatment. Your doctor will assess the cause and recommend appropriate treatments ranging from physical therapy to medication.',
-    'diabetes': 'Diabetes management involves monitoring blood sugar, medication, diet, and exercise. Regular check-ups help prevent complications and maintain optimal health.',
-    'hypertension': 'High blood pressure often has no symptoms but increases risk of heart disease and stroke. Regular monitoring and treatment can effectively control blood pressure.',
-    'cold symptoms': 'Common colds are viral infections that typically resolve in 7-10 days. Your doctor can help distinguish between cold, flu, or other respiratory conditions.',
+    'headache': 'Headaches can be caused by tension, stress, or other factors.\n\nYour doctor will check your symptoms and suggest treatments.',
+    'fever': 'Fever means your body is fighting an infection.\n\nThe doctor will check your temperature and find the cause.',
+    'chest pain': 'Chest pain can have different causes, from minor to serious.\n\nYour doctor will do tests to find out what\'s wrong.',
+    'cough': 'Coughs help clear your throat and lungs.\n\nThe doctor will listen to your lungs and check for infection.',
+    'back pain': 'Back pain is common and usually gets better with treatment.\n\nYour doctor will examine your back and suggest pain relief.',
+    'stomach pain': 'Stomach pain can come from many different causes.\n\nThe doctor will ask questions and examine your belly.',
+    'hearing problems': 'Hearing problems affect how sounds reach your brain.\n\nYour doctor will test your hearing and discuss options.',
+    'hearing problems in cochlea': 'Cochlea problems affect how you process sounds.\n\nYour doctor will test your hearing and discuss treatment options.',
+    'fatigue': 'Feeling very tired can have many causes.\n\nYour doctor will ask questions and do tests.',
+    'anxiety': 'Anxiety is when you feel worried or nervous often.\n\nYour doctor can help with treatments and coping strategies.',
+    'depression': 'Depression makes you feel sad or empty for weeks.\n\nYour doctor can discuss therapy and medication options.',
+    'diabetes': 'Diabetes affects how your body uses sugar for energy.\n\nYour doctor will check your blood sugar levels.',
+    'hypertension': 'High blood pressure puts strain on your heart.\n\nYour doctor will measure your blood pressure and discuss treatment.'
   };
   
   const lowerReason = reason.toLowerCase();
-  for (const [condition, info] of Object.entries(content)) {
-    if (lowerReason.includes(condition)) {
-      return info;
+  
+  // Check for exact matches first
+  if (content[lowerReason]) {
+    return content[lowerReason];
+  }
+  
+  // Check for partial matches
+  for (const [key, value] of Object.entries(content)) {
+    if (lowerReason.includes(key) || key.includes(lowerReason)) {
+      return value;
     }
   }
   
-  return 'Your doctor will conduct a thorough evaluation to understand your symptoms and provide appropriate care. Be prepared to discuss your symptoms, their duration, and any factors that make them better or worse.';
+  return `This visit is about ${reason}.\n\nYour doctor will examine you and discuss the best treatment.`;
 };
 
 const VisitDetails = () => {

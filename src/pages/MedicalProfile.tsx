@@ -5,16 +5,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Header } from "@/components/Header";
+import { MobileHeader } from "@/components/MobileHeader";
+import { MobileNavigation } from "@/components/MobileNavigation";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMobileFeatures } from "@/hooks/useMobileFeatures";
+import { ImpactStyle } from "@capacitor/haptics";
 
 const MedicalProfile = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { triggerHaptic } = useMobileFeatures();
 
   const [profile, setProfile] = useState({
     fullName: "",
@@ -52,6 +56,7 @@ const MedicalProfile = () => {
 
   const handleSave = () => {
     if (!user) return;
+    triggerHaptic(ImpactStyle.Light);
     localStorage.setItem(`clearvisit_profile_${user.id}`, JSON.stringify(profile));
     toast({
       title: "Profile saved",
@@ -84,10 +89,30 @@ const MedicalProfile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      {/* Desktop Header */}
+      <div className="hidden md:block">
+        <div className="bg-primary text-primary-foreground px-6 py-4">
+          <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div className="flex items-center gap-2">
+              <User className="w-6 h-6" />
+              <span className="text-xl font-semibold">ClearVisit AI</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Header */}
+      <div className="md:hidden">
+        <MobileHeader 
+          title="Medical Profile" 
+          showBackButton 
+          backPath="/dashboard"
+        />
+      </div>
       
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="flex items-center gap-4 mb-8">
+      <div className="max-w-4xl mx-auto px-4 md:px-6 py-4 md:py-8 pb-24 md:pb-8">
+        {/* Desktop Back Button */}
+        <div className="hidden md:flex items-center gap-4 mb-8">
           <Button 
             variant="outline" 
             size="sm" 
@@ -98,24 +123,15 @@ const MedicalProfile = () => {
             Back to Dashboard
           </Button>
           <h1 className="text-3xl font-bold">Medical Profile</h1>
-          <div className="ml-auto">
-            <Button 
-              variant="outline" 
-              onClick={handleLogout}
-              className="mr-2"
-            >
-              Logout
-            </Button>
-          </div>
         </div>
 
         <div className="space-y-6">
           {/* Personal Information */}
           <Card>
             <CardHeader className="bg-blue-50">
-              <CardTitle className="text-blue-800">Personal Information</CardTitle>
+              <CardTitle className="text-blue-800 text-lg md:text-xl">Personal Information</CardTitle>
             </CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-4 pt-6">
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6">
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name</Label>
                 <Input
@@ -140,9 +156,9 @@ const MedicalProfile = () => {
           {/* Physical Information */}
           <Card>
             <CardHeader className="bg-green-50">
-              <CardTitle className="text-green-800">Physical Information</CardTitle>
+              <CardTitle className="text-green-800 text-lg md:text-xl">Physical Information</CardTitle>
             </CardHeader>
-            <CardContent className="grid md:grid-cols-3 gap-4 pt-6">
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
               <div className="space-y-2">
                 <Label htmlFor="bloodType">Blood Type</Label>
                 <Select value={profile.bloodType} onValueChange={(value) => handleChange("bloodType", value)}>
@@ -185,9 +201,9 @@ const MedicalProfile = () => {
           {/* Emergency Contact */}
           <Card>
             <CardHeader className="bg-red-50">
-              <CardTitle className="text-red-800">Emergency Contact</CardTitle>
+              <CardTitle className="text-red-800 text-lg md:text-xl">Emergency Contact</CardTitle>
             </CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-4 pt-6">
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6">
               <div className="space-y-2">
                 <Label htmlFor="emergencyContactName">Contact Name</Label>
                 <Input
@@ -212,9 +228,9 @@ const MedicalProfile = () => {
           {/* Medical History */}
           <Card>
             <CardHeader className="bg-yellow-50">
-              <CardTitle className="text-yellow-800">Medical History</CardTitle>
+              <CardTitle className="text-yellow-800 text-lg md:text-xl">Medical History</CardTitle>
             </CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-4 pt-6">
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6">
               <div className="space-y-2">
                 <Label htmlFor="medicalConditions">Medical Conditions</Label>
                 <Textarea
@@ -261,9 +277,9 @@ const MedicalProfile = () => {
           {/* Healthcare & Insurance */}
           <Card>
             <CardHeader className="bg-purple-50">
-              <CardTitle className="text-purple-800">Healthcare & Insurance</CardTitle>
+              <CardTitle className="text-purple-800 text-lg md:text-xl">Healthcare & Insurance</CardTitle>
             </CardHeader>
-            <CardContent className="grid md:grid-cols-2 gap-4 pt-6">
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6">
               <div className="space-y-2">
                 <Label htmlFor="healthcareProviders">Healthcare Providers</Label>
                 <Textarea
@@ -290,7 +306,7 @@ const MedicalProfile = () => {
           {/* Vaccination History */}
           <Card>
             <CardHeader className="bg-indigo-50">
-              <CardTitle className="text-indigo-800">Vaccination History</CardTitle>
+              <CardTitle className="text-indigo-800 text-lg md:text-xl">Vaccination History</CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-2">
@@ -307,16 +323,19 @@ const MedicalProfile = () => {
           </Card>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-6">
+          <div className="flex flex-col md:flex-row gap-3 pt-6">
             <Button variant="outline" onClick={handleClearAll}>
               Clear All Fields
             </Button>
-            <Button onClick={handleSave} className="ml-auto">
+            <Button onClick={handleSave} className="md:ml-auto">
               Save Profile
             </Button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Navigation */}
+      <MobileNavigation />
     </div>
   );
 };

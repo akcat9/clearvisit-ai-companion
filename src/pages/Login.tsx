@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Header } from "@/components/Header";
+import { Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from '@supabase/supabase-js';
+import { useMobileFeatures } from '@/hooks/useMobileFeatures';
+import { ImpactStyle } from '@capacitor/haptics';
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -20,6 +22,7 @@ const Login = () => {
   const [session, setSession] = useState<Session | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { triggerHaptic } = useMobileFeatures();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -56,6 +59,7 @@ const Login = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    await triggerHaptic(ImpactStyle.Light);
     setLoading(true);
     
     try {
@@ -84,6 +88,7 @@ const Login = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Sign up attempt with:", { email, firstName, lastName });
+    await triggerHaptic(ImpactStyle.Light);
     setLoading(true);
     
     try {
@@ -131,18 +136,26 @@ const Login = () => {
   }
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      {/* Mobile-First Header */}
+      <div className="bg-primary text-primary-foreground px-4 md:px-6 py-4">
+        <div className="flex items-center justify-center">
+          <div className="flex items-center gap-2">
+            <Heart className="w-6 h-6" />
+            <span className="text-xl font-semibold">ClearVisit AI</span>
+          </div>
+        </div>
+      </div>
       
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4">
-        <div className="w-full max-w-md space-y-6">
+        <div className="w-full max-w-md space-y-6 pb-8">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900">Welcome to ClearVisit AI</h1>
-            <p className="mt-2 text-gray-600">Record, analyze, and remember your doctor visits</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Welcome to ClearVisit AI</h1>
+            <p className="mt-2 text-gray-600 text-sm md:text-base">Record, analyze, and remember your doctor visits</p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-center text-xl">
+              <CardTitle className="text-center text-lg md:text-xl">
                 {isSignUp ? "Create Account" : "Sign In"}
               </CardTitle>
               <p className="text-center text-sm text-muted-foreground">
@@ -209,7 +222,7 @@ const Login = () => {
                   {loading ? "Loading..." : (isSignUp ? "Create Account" : "Sign In")}
                 </Button>
 
-                <p className="text-center text-sm text-muted-foreground">
+                <div className="text-center text-sm text-muted-foreground">
                   {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
                   <button
                     type="button"
@@ -221,7 +234,7 @@ const Login = () => {
                   >
                     {isSignUp ? "Sign in" : "Sign up"}
                   </button>
-                </p>
+                </div>
               </form>
             </CardContent>
           </Card>

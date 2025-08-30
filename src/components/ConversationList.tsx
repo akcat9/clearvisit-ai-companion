@@ -144,10 +144,10 @@ const ConversationList: React.FC<ConversationListProps> = ({ onSelectConversatio
         <div
           key={conversation.senderId}
           onClick={() => onSelectConversation(conversation.senderId, conversation.senderProfile)}
-          className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer rounded-lg transition-colors"
+          className="flex items-center gap-3 p-3 hover:bg-gray-50 active:bg-gray-100 cursor-pointer rounded-lg transition-colors"
         >
           <div className="relative">
-            <Avatar className="h-12 w-12">
+            <Avatar className="h-10 w-10 md:h-12 md:w-12">
               <AvatarFallback className="bg-primary/10 text-primary font-medium">
                 {getInitials(conversation.senderProfile)}
               </AvatarFallback>
@@ -159,14 +159,14 @@ const ConversationList: React.FC<ConversationListProps> = ({ onSelectConversatio
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
-              <p className="font-medium text-sm truncate">
+              <p className="font-medium text-sm md:text-base truncate">
                 {getSenderName(conversation.senderProfile)}
               </p>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs md:text-sm text-muted-foreground">
                 {format(new Date(conversation.lastMessageTime), 'MMM d')}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground truncate">
+            <p className="text-xs md:text-sm text-muted-foreground truncate">
               {conversation.lastMessage}
             </p>
           </div>

@@ -4,13 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { Header } from '@/components/Header';
+import { MobileHeader } from '@/components/MobileHeader';
+import { MobileNavigation } from '@/components/MobileNavigation';
+import { MobileRecordingInterface } from '@/components/MobileRecordingInterface';
+import { MobileVisitSummary } from '@/components/MobileVisitSummary';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Mic, MicOff, FileText, BookOpen, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Mic, MicOff, FileText, BookOpen, ExternalLink, User } from 'lucide-react';
 import ShareVisitModal from '@/components/ShareVisitModal';
 import { AudioRecorder, encodeAudioForAPI, chunkAudio } from '@/utils/AudioRecorder';
+import { useMobileFeatures } from '@/hooks/useMobileFeatures';
+import { Badge } from '@/components/ui/badge';
 
 const generateEducationalContent = async (reason: string, symptoms?: string, goal?: string): Promise<string> => {
   try {
@@ -117,6 +122,7 @@ const VisitDetails = () => {
   const [fullTranscription, setFullTranscription] = useState('');
   const [recordingComplete, setRecordingComplete] = useState(false);
   const [medicalTermsExplanation, setMedicalTermsExplanation] = useState<any>(null);
+  const { triggerHaptic } = useMobileFeatures();
   
   // AI-generated content (only shown after processing)
   const [aiGeneratedData, setAiGeneratedData] = useState<{
@@ -559,10 +565,30 @@ const VisitDetails = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      {/* Desktop Header */}
+      <div className="hidden md:block">
+        <div className="bg-primary text-primary-foreground px-6 py-4">
+          <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div className="flex items-center gap-2">
+              <User className="w-6 h-6" />
+              <span className="text-xl font-semibold">ClearVisit AI</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Header */}
+      <div className="md:hidden">
+        <MobileHeader 
+          title="Visit Details" 
+          showBackButton 
+          backPath="/dashboard"
+        />
+      </div>
       
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="flex items-center gap-4 mb-8">
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 md:py-8">
+        {/* Desktop Back Button */}
+        <div className="hidden md:flex items-center gap-4 mb-8">
           <Button 
             variant="outline" 
             size="sm" 
@@ -575,7 +601,101 @@ const VisitDetails = () => {
           <h1 className="text-3xl font-bold">Visit Details</h1>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        {/* Mobile Layout */}
+        <div className="md:hidden space-y-4">
+          {/* Visit Info Card */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Visit Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-muted-foreground">Doctor</span>
+                  <p className="font-semibold">{appointment.doctorName}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-muted-foreground">Date</span>
+                  <p className="font-semibold">{appointment.date}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-muted-foreground">Time</span>
+                  <p className="font-semibold">{appointment.time}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-muted-foreground">Status</span>
+                  <Badge className="text-xs">{appointment.status}</Badge>
+                </div>
+              </div>
+              <div>
+                <span className="font-medium text-muted-foreground text-sm">Reason for Visit</span>
+                <p className="text-sm mt-1">{appointment.reason}</p>
+              </div>
+              {appointment.goal && (
+                <div>
+                  <span className="font-medium text-muted-foreground text-sm">Goal</span>
+                  <p className="text-sm mt-1">{appointment.goal}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Mobile Recording Interface */}
+          <MobileRecordingInterface
+            isRecording={isRecording}
+            recordingDuration={recordingDuration}
+            onStartRecording={handleStartRecording}
+            onStopRecording={handleStopRecording}
+            onAnalyzeWithAI={handleAnalyzeWithAI}
+            isAnalyzing={isAnalyzing}
+            recordingComplete={recordingComplete}
+            liveTranscription={liveTranscription}
+          />
+
+          {/* Manual Notes */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <FileText className="w-5 h-5" />
+                Your Notes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Textarea
+                value={manualNotes}
+                onChange={(e) => setManualNotes(e.target.value)}
+                placeholder="Add your own notes about the visit here..."
+                rows={4}
+                className="resize-none"
+              />
+              <Button 
+                onClick={handleSaveNotes}
+                disabled={isSavingNotes}
+                size="sm"
+                className="w-full"
+              >
+                {isSavingNotes ? "Saving..." : "Save Notes"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* AI-Generated Content for Mobile */}
+          {aiGeneratedData && (
+            <MobileVisitSummary 
+              aiGeneratedData={aiGeneratedData}
+              appointmentData={{
+                doctor_name: appointment.doctorName || appointment.doctor_name,
+                date: appointment.date,
+                time: appointment.time,
+                reason: appointment.reason,
+                goal: appointment.goal
+              }}
+            />
+          )}
+        </div>
+
+        {/* Desktop Layout */}
+        <div className="hidden md:grid lg:grid-cols-2 gap-6">
           {/* Left Column */}
           <div className="space-y-6">
             {/* Visit Info */}

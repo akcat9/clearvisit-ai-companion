@@ -68,6 +68,7 @@ const VisitDetails = () => {
   const [educationalContent, setEducationalContent] = useState<string>('');
   const [isRecording, setIsRecording] = useState(false);
   const [manualNotes, setManualNotes] = useState("");
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [audioRecorder, setAudioRecorder] = useState<AudioRecorder | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -423,6 +424,49 @@ const VisitDetails = () => {
     }
   };
 
+  const handleSaveNotes = async () => {
+    setIsSavingNotes(true);
+    try {
+      // Save notes to Supabase database
+      const { error: visitError } = await supabase
+        .from('visit_records')
+        .upsert({
+          appointment_id: id,
+          user_id: user?.id,
+          transcription: manualNotes,
+          updated_at: new Date().toISOString()
+        }, { 
+          onConflict: 'appointment_id'
+        });
+
+      if (visitError) {
+        console.error('Error saving notes:', visitError);
+        throw visitError;
+      }
+
+      // Also save to localStorage for backward compatibility
+      const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
+      const updatedAppointments = appointments.map((apt: any) => 
+        apt.id === id ? { ...apt, manualNotes } : apt
+      );
+      localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
+
+      toast({
+        title: "Notes saved",
+        description: "Your notes have been successfully saved.",
+      });
+    } catch (error) {
+      console.error('Error saving notes:', error);
+      toast({
+        title: "Error saving notes",
+        description: "There was a problem saving your notes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingNotes(false);
+    }
+  };
+
   if (!appointment) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -587,7 +631,7 @@ const VisitDetails = () => {
                   Your Notes
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <Textarea
                   value={manualNotes}
                   onChange={(e) => setManualNotes(e.target.value)}
@@ -595,6 +639,14 @@ const VisitDetails = () => {
                   rows={4}
                   className="resize-none"
                 />
+                <Button 
+                  onClick={handleSaveNotes}
+                  disabled={isSavingNotes}
+                  size="sm"
+                  className="w-full"
+                >
+                  {isSavingNotes ? "Saving..." : "Save Notes"}
+                </Button>
               </CardContent>
             </Card>
 

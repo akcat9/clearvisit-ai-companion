@@ -41,7 +41,7 @@ Return only the educational content as plain text, no JSON formatting.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
           { 
             role: 'system', 
@@ -49,7 +49,8 @@ Return only the educational content as plain text, no JSON formatting.`;
           },
           { role: 'user', content: prompt }
         ],
-        max_completion_tokens: 500,
+        max_tokens: 400,
+        temperature: 0.7,
       }),
     });
 

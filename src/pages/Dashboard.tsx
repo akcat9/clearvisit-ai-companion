@@ -6,43 +6,99 @@ import { Plus, User, Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppointmentModal } from "@/components/AppointmentModal";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface Appointment {
   id: string;
-  doctorName: string;
+  doctor_name: string;
   date: string;
   time: string;
   reason: string;
-  status: 'upcoming' | 'completed';
+  goal?: string;
+  symptoms?: string;
+  status: 'upcoming' | 'completed' | 'cancelled';
+  created_at?: string;
+  updated_at?: string;
+  user_id?: string;
 }
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) return;
-
-    // Load appointments from localStorage (will be replaced with Supabase later)
-    const savedAppointments = localStorage.getItem("appointments");
-    if (savedAppointments) {
-      setAppointments(JSON.parse(savedAppointments));
-    }
+    fetchAppointments();
   }, [user]);
 
-  const handleCreateAppointment = (appointmentData: any) => {
-    const newAppointment: Appointment = {
-      id: Date.now().toString(),
-      ...appointmentData,
-      status: 'upcoming' as const
-    };
-    
-    const updatedAppointments = [...appointments, newAppointment];
-    setAppointments(updatedAppointments);
-    localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
-    setShowAppointmentModal(false);
+  const fetchAppointments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .order('date', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load appointments",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setAppointments((data || []) as Appointment[]);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateAppointment = async (appointmentData: any) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .insert([{
+          user_id: user.id,
+          doctor_name: appointmentData.doctorName,
+          date: appointmentData.date,
+          time: appointmentData.time,
+          reason: appointmentData.reason,
+          goal: appointmentData.goal,
+          symptoms: appointmentData.symptoms,
+          status: 'upcoming'
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating appointment:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create appointment",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setAppointments(prev => [...prev, data as Appointment]);
+      setShowAppointmentModal(false);
+      toast({
+        title: "Success",
+        description: "Appointment created successfully"
+      });
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+    }
   };
 
   const upcomingAppointments = appointments.filter(apt => apt.status === 'upcoming');
@@ -88,7 +144,12 @@ const Dashboard = () => {
               <CardTitle>Upcoming Appointments</CardTitle>
             </CardHeader>
             <CardContent>
-              {upcomingAppointments.length === 0 ? (
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <p className="mt-2 text-muted-foreground">Loading appointments...</p>
+                </div>
+              ) : upcomingAppointments.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">No upcoming appointments</p>
               ) : (
                 <div className="space-y-4">
@@ -98,7 +159,7 @@ const Dashboard = () => {
                       className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
                       onClick={() => navigate(`/visit/${appointment.id}`)}
                     >
-                      <div className="font-medium">{appointment.doctorName}</div>
+                      <div className="font-medium">{appointment.doctor_name}</div>
                       <div className="text-sm text-muted-foreground">
                         {appointment.date} at {appointment.time}
                       </div>
@@ -127,7 +188,7 @@ const Dashboard = () => {
                       className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
                       onClick={() => navigate(`/visit/${appointment.id}`)}
                     >
-                      <div className="font-medium">{appointment.doctorName}</div>
+                      <div className="font-medium">{appointment.doctor_name}</div>
                       <div className="text-sm text-muted-foreground">
                         {appointment.date} at {appointment.time}
                       </div>

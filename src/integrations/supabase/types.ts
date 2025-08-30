@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          created_at: string
+          date: string
+          doctor_name: string
+          goal: string | null
+          id: string
+          reason: string
+          status: string
+          symptoms: string | null
+          time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          doctor_name: string
+          goal?: string | null
+          id?: string
+          reason: string
+          status?: string
+          symptoms?: string | null
+          time: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          doctor_name?: string
+          goal?: string | null
+          id?: string
+          reason?: string
+          status?: string
+          symptoms?: string | null
+          time?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -73,6 +115,47 @@ export type Database = {
           visit_summary?: Json
         }
         Relationships: []
+      }
+      visit_records: {
+        Row: {
+          appointment_id: string
+          created_at: string
+          id: string
+          recording_url: string | null
+          summary: Json | null
+          transcription: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          appointment_id: string
+          created_at?: string
+          id?: string
+          recording_url?: string | null
+          summary?: Json | null
+          transcription?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          appointment_id?: string
+          created_at?: string
+          id?: string
+          recording_url?: string | null
+          summary?: Json | null
+          transcription?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_records_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

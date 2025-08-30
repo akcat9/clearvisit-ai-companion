@@ -136,7 +136,7 @@ const SharedVisits = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <p className="text-sm text-muted-foreground">From: {visit.recipient_email}</p>
+              <p className="text-sm text-muted-foreground">Shared with: {visit.recipient_email}</p>
               {visit.message && (
                 <div className="mt-2 p-3 bg-blue-50 rounded-lg">
                   <p className="text-sm">{visit.message}</p>

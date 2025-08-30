@@ -249,6 +249,32 @@ const VisitDetails = () => {
         
         setAiGeneratedData(aiData);
         
+        // Automatically save to database after AI analysis
+        try {
+          const visitData = {
+            appointment_id: id,
+            user_id: user?.id,
+            transcription: fullTranscription || manualNotes,
+            summary: aiData,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          const { error: visitError } = await supabase
+            .from('visit_records')
+            .upsert(visitData, { 
+              onConflict: 'appointment_id'
+            });
+
+          if (visitError) {
+            console.error('Error auto-saving visit record:', visitError);
+          } else {
+            console.log('Visit data automatically saved to database');
+          }
+        } catch (autoSaveError) {
+          console.error('Error during auto-save:', autoSaveError);
+        }
+        
         toast({
           title: "Analysis Complete",
           description: "Your visit has been successfully analyzed with AI!",
@@ -276,27 +302,72 @@ const VisitDetails = () => {
     }
   };
 
-  const handleSaveVisit = () => {
-    // Mark appointment as completed and save notes
-    const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
-    const updatedAppointments = appointments.map((apt: any) => 
-      apt.id === id ? { 
-        ...apt, 
-        status: 'completed', 
-        manualNotes,
-        aiGeneratedData,
-        fullTranscription,
-        completedAt: new Date().toISOString()
-      } : apt
-    );
-    localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
+  const handleSaveVisit = async () => {
+    try {
+      // Save to Supabase database
+      const visitData = {
+        appointment_id: id,
+        user_id: user?.id,
+        transcription: fullTranscription || manualNotes,
+        summary: aiGeneratedData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-    toast({
-      title: "Visit saved",
-      description: "Your visit details have been saved to your medical records",
-    });
+      // Insert or update visit record
+      const { error: visitError } = await supabase
+        .from('visit_records')
+        .upsert(visitData, { 
+          onConflict: 'appointment_id'
+        });
 
-    navigate("/dashboard");
+      if (visitError) {
+        console.error('Error saving visit record:', visitError);
+        throw visitError;
+      }
+
+      // Update appointment status
+      const { error: appointmentError } = await supabase
+        .from('appointments')
+        .update({ 
+          status: 'completed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (appointmentError) {
+        console.error('Error updating appointment:', appointmentError);
+        throw appointmentError;
+      }
+
+      // Also save to localStorage for backward compatibility
+      const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
+      const updatedAppointments = appointments.map((apt: any) => 
+        apt.id === id ? { 
+          ...apt, 
+          status: 'completed', 
+          manualNotes,
+          aiGeneratedData,
+          fullTranscription,
+          completedAt: new Date().toISOString()
+        } : apt
+      );
+      localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
+
+      toast({
+        title: "Visit saved",
+        description: "Your visit details have been successfully saved to your medical records",
+      });
+
+      navigate("/dashboard");
+    } catch (error) {
+      console.error('Error saving visit:', error);
+      toast({
+        title: "Error saving visit",
+        description: "There was a problem saving your visit. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!appointment) {

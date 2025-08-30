@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, Mic, MicOff, FileText } from 'lucide-react';
+import ShareVisitModal from '@/components/ShareVisitModal';
 import { AudioRecorder, encodeAudioForAPI, chunkAudio } from '@/utils/AudioRecorder';
 
 const getEducationalContent = (reason: string): string => {
@@ -54,7 +55,7 @@ const VisitDetails = () => {
     followUpActions: string;
     keySymptoms: string[];
     doctorRecommendations: string[];
-    questionsForNextVisit: string[];
+    questionsForDoctor: string[];
   } | null>(null);
   
   const navigate = useNavigate();
@@ -198,7 +199,7 @@ const VisitDetails = () => {
           followUpActions: summaryData.followUpActions || '',
           keySymptoms: summaryData.keySymptoms || [],
           doctorRecommendations: summaryData.doctorRecommendations || [],
-          questionsForNextVisit: summaryData.questionsForNextVisit || []
+          questionsForDoctor: summaryData.questionsForDoctor || []
         };
         
         setAiGeneratedData(aiData);
@@ -328,16 +329,16 @@ const VisitDetails = () => {
               </Card>
             )}
 
-            {aiGeneratedData?.questionsForNextVisit && aiGeneratedData.questionsForNextVisit.length > 0 && (
+            {aiGeneratedData?.questionsForDoctor && aiGeneratedData.questionsForDoctor.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Questions for Next Visit</CardTitle>
+                  <CardTitle>Questions to Ask Your Doctor</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {aiGeneratedData.questionsForNextVisit.map((question, index) => (
-                      <div key={index} className="p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
-                        <p className="text-sm font-medium text-green-800">{question}</p>
+                    {aiGeneratedData.questionsForDoctor.map((question, index) => (
+                      <div key={index} className="p-3 bg-orange-50 rounded-lg border-l-4 border-orange-400">
+                        <p className="text-sm font-medium text-orange-800">{question}</p>
                       </div>
                     ))}
                   </div>
@@ -538,7 +539,10 @@ const VisitDetails = () => {
               </>
             )}
 
-            <div className="pt-6">
+            <div className="pt-6 space-y-3">
+              {aiGeneratedData && (
+                <ShareVisitModal visitSummary={aiGeneratedData} />
+              )}
               <Button 
                 onClick={handleSaveVisit}
                 className="w-full"

@@ -122,7 +122,7 @@ const MedicalProfile = () => {
                   id="fullName"
                   value={profile.fullName}
                   onChange={(e) => handleChange("fullName", e.target.value)}
-                  placeholder="Adarsh Karthik"
+                  placeholder="Enter your full name"
                 />
               </div>
               <div className="space-y-2">
@@ -167,7 +167,7 @@ const MedicalProfile = () => {
                   id="height"
                   value={profile.height}
                   onChange={(e) => handleChange("height", e.target.value)}
-                  placeholder="5.10"
+                  placeholder="Enter your height"
                 />
               </div>
               <div className="space-y-2">
@@ -176,7 +176,7 @@ const MedicalProfile = () => {
                   id="weight"
                   value={profile.weight}
                   onChange={(e) => handleChange("weight", e.target.value)}
-                  placeholder="165"
+                  placeholder="Enter your weight"
                 />
               </div>
             </CardContent>
@@ -194,7 +194,7 @@ const MedicalProfile = () => {
                   id="emergencyContactName"
                   value={profile.emergencyContactName}
                   onChange={(e) => handleChange("emergencyContactName", e.target.value)}
-                  placeholder="Karthik Thilairangan"
+                  placeholder="Enter emergency contact name"
                 />
               </div>
               <div className="space-y-2">
@@ -203,7 +203,7 @@ const MedicalProfile = () => {
                   id="emergencyContactPhone"
                   value={profile.emergencyContactPhone}
                   onChange={(e) => handleChange("emergencyContactPhone", e.target.value)}
-                  placeholder="813-928-8075"
+                  placeholder="Enter phone number"
                 />
               </div>
             </CardContent>
@@ -221,7 +221,7 @@ const MedicalProfile = () => {
                   id="medicalConditions"
                   value={profile.medicalConditions}
                   onChange={(e) => handleChange("medicalConditions", e.target.value)}
-                  placeholder="dysplasia, chronic GI issues"
+                  placeholder="List any medical conditions"
                   rows={3}
                 />
               </div>
@@ -231,7 +231,7 @@ const MedicalProfile = () => {
                   id="currentMedications"
                   value={profile.currentMedications}
                   onChange={(e) => handleChange("currentMedications", e.target.value)}
-                  placeholder="nexium"
+                  placeholder="List current medications"
                   rows={3}
                 />
               </div>
@@ -241,7 +241,7 @@ const MedicalProfile = () => {
                   id="allergies"
                   value={profile.allergies}
                   onChange={(e) => handleChange("allergies", e.target.value)}
-                  placeholder="none"
+                  placeholder="List any allergies"
                   rows={3}
                 />
               </div>
@@ -251,7 +251,7 @@ const MedicalProfile = () => {
                   id="pastSurgeries"
                   value={profile.pastSurgeries}
                   onChange={(e) => handleChange("pastSurgeries", e.target.value)}
-                  placeholder="endoscopy"
+                  placeholder="List any past surgeries or major illnesses"
                   rows={3}
                 />
               </div>
@@ -270,7 +270,7 @@ const MedicalProfile = () => {
                   id="healthcareProviders"
                   value={profile.healthcareProviders}
                   onChange={(e) => handleChange("healthcareProviders", e.target.value)}
-                  placeholder="Dr. Tan"
+                  placeholder="List your healthcare providers"
                   rows={3}
                 />
               </div>
@@ -280,7 +280,7 @@ const MedicalProfile = () => {
                   id="insuranceInfo"
                   value={profile.insuranceInfo}
                   onChange={(e) => handleChange("insuranceInfo", e.target.value)}
-                  placeholder="----------"
+                  placeholder="Enter insurance information"
                   rows={3}
                 />
               </div>
@@ -299,7 +299,7 @@ const MedicalProfile = () => {
                   id="vaccinationHistory"
                   value={profile.vaccinationHistory}
                   onChange={(e) => handleChange("vaccinationHistory", e.target.value)}
-                  placeholder="Covid, Flu, etc. - all vaccines up to date"
+                  placeholder="List your vaccination history"
                   rows={4}
                 />
               </div>

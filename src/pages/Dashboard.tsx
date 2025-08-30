@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/Header";
-import { Plus, User } from "lucide-react";
+import { Plus, User, Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppointmentModal } from "@/components/AppointmentModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -62,6 +62,14 @@ const Dashboard = () => {
             >
               <Plus className="w-4 h-4" />
               New Appointment
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/shared-visits")}
+              className="flex items-center gap-2"
+            >
+              <Share2 className="w-4 h-4" />
+              Shared Visits
             </Button>
             <Button 
               variant="outline" 

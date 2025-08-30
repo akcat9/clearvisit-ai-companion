@@ -44,6 +44,36 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_visits: {
+        Row: {
+          id: string
+          message: string | null
+          recipient_email: string
+          sender_id: string
+          shared_at: string
+          viewed_at: string | null
+          visit_summary: Json
+        }
+        Insert: {
+          id?: string
+          message?: string | null
+          recipient_email: string
+          sender_id: string
+          shared_at?: string
+          viewed_at?: string | null
+          visit_summary: Json
+        }
+        Update: {
+          id?: string
+          message?: string | null
+          recipient_email?: string
+          sender_id?: string
+          shared_at?: string
+          viewed_at?: string | null
+          visit_summary?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -40,19 +40,15 @@ const generateEducationalContent = async (reason: string, symptoms?: string, goa
 
 const getStaticEducationalContent = (reason: string): string => {
   const content: { [key: string]: string } = {
-    'headache': 'Headaches can be caused by tension, stress, or other factors.\n\nYour doctor will check your symptoms and suggest treatments.',
-    'fever': 'Fever means your body is fighting an infection.\n\nThe doctor will check your temperature and find the cause.',
-    'chest pain': 'Chest pain can have different causes, from minor to serious.\n\nYour doctor will do tests to find out what\'s wrong.',
-    'cough': 'Coughs help clear your throat and lungs.\n\nThe doctor will listen to your lungs and check for infection.',
-    'back pain': 'Back pain is common and usually gets better with treatment.\n\nYour doctor will examine your back and suggest pain relief.',
-    'stomach pain': 'Stomach pain can come from many different causes.\n\nThe doctor will ask questions and examine your belly.',
-    'hearing problems': 'Hearing problems affect how sounds reach your brain.\n\nYour doctor will test your hearing and discuss options.',
-    'hearing problems in cochlea': 'Cochlea problems affect how you process sounds.\n\nYour doctor will test your hearing and discuss treatment options.',
-    'fatigue': 'Feeling very tired can have many causes.\n\nYour doctor will ask questions and do tests.',
-    'anxiety': 'Anxiety is when you feel worried or nervous often.\n\nYour doctor can help with treatments and coping strategies.',
-    'depression': 'Depression makes you feel sad or empty for weeks.\n\nYour doctor can discuss therapy and medication options.',
-    'diabetes': 'Diabetes affects how your body uses sugar for energy.\n\nYour doctor will check your blood sugar levels.',
-    'hypertension': 'High blood pressure puts strain on your heart.\n\nYour doctor will measure your blood pressure and discuss treatment.'
+    'headache': '**What it is:** Head pain from tension, stress, or other causes.\n\n**What to expect:** Doctor will ask about pain patterns and triggers.\n\n**Common treatments:** Pain medication, stress management, lifestyle changes.\n\n**Questions to ask:** What might be causing my headaches?',
+    'fever': '**What it is:** High body temperature, usually from fighting infection.\n\n**What to expect:** Temperature check and examination for infection source.\n\n**Common treatments:** Rest, fluids, fever reducers, treating underlying cause.\n\n**Questions to ask:** What infection am I fighting?',
+    'chest pain': '**What it is:** Discomfort in chest area with various possible causes.\n\n**What to expect:** Heart tests, examination, and symptom discussion.\n\n**Common treatments:** Depends on cause - medication, lifestyle changes, procedures.\n\n**Questions to ask:** Is this related to my heart?',
+    'cough': '**What it is:** Body\'s way to clear throat and lung irritation.\n\n**What to expect:** Lung listening, throat check, symptom questions.\n\n**Common treatments:** Cough medicine, treating underlying cause, rest.\n\n**Questions to ask:** What\'s causing my cough?',
+    'back pain': '**What it is:** Pain in spine or back muscles.\n\n**What to expect:** Movement tests and back examination.\n\n**Common treatments:** Physical therapy, pain relief, exercise.\n\n**Questions to ask:** How can I prevent this pain?',
+    'hearing problems': '**What it is:** Difficulty hearing sounds clearly.\n\n**What to expect:** Hearing tests and ear examination.\n\n**Common treatments:** Hearing aids, medication, ear cleaning.\n\n**Questions to ask:** Will my hearing get worse?',
+    'hearing problems in cochlea': '**What it is:** Inner ear problems affecting sound processing.\n\n**What to expect:** Detailed hearing tests and specialist referral.\n\n**Common treatments:** Hearing aids, cochlear implants, sound therapy.\n\n**Questions to ask:** What treatments are best for me?',
+    'anxiety': '**What it is:** Feeling worried, nervous, or fearful regularly.\n\n**What to expect:** Discussion about triggers and symptoms.\n\n**Common treatments:** Therapy, relaxation techniques, sometimes medication.\n\n**Questions to ask:** What coping strategies work best?',
+    'depression': '**What it is:** Persistent sadness affecting daily life.\n\n**What to expect:** Mental health screening and symptom discussion.\n\n**Common treatments:** Therapy, medication, lifestyle changes.\n\n**Questions to ask:** How long does treatment take?'
   };
   
   const lowerReason = reason.toLowerCase();
@@ -69,7 +65,7 @@ const getStaticEducationalContent = (reason: string): string => {
     }
   }
   
-  return `This visit is about ${reason}.\n\nYour doctor will examine you and discuss the best treatment.`;
+  return `**What it is:** Medical concern about ${reason}.\n\n**What to expect:** Doctor will examine you and ask questions.\n\n**Common treatments:** Depends on diagnosis and your specific needs.\n\n**Questions to ask:** What\'s the best treatment for me?`;
 };
 
 const VisitDetails = () => {

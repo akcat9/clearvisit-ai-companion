@@ -12,7 +12,48 @@ import { ArrowLeft, Mic, MicOff, FileText } from 'lucide-react';
 import ShareVisitModal from '@/components/ShareVisitModal';
 import { AudioRecorder, encodeAudioForAPI, chunkAudio } from '@/utils/AudioRecorder';
 
-const getEducationalContent = (reason: string): string => {
+const generateEducationalContent = async (reason: string, symptoms?: string, goal?: string): Promise<string> => {
+  try {
+    const prompt = `Generate educational content for a patient visiting their doctor for: ${reason}${symptoms ? `. Symptoms include: ${symptoms}` : ''}${goal ? `. Patient's goal: ${goal}` : ''}
+
+Please provide:
+1. Brief explanation of the condition/symptoms
+2. What the patient can expect during the visit
+3. Common treatment approaches
+4. Important questions they should ask their doctor
+5. Self-care tips if appropriate
+
+Keep it informative but not alarming, under 300 words, written in a compassionate tone for someone who may be anxious about their health.`;
+
+    const response = await supabase.functions.invoke('generate-ai-questions', {
+      body: { 
+        transcript: prompt,
+        appointmentDetails: {
+          reason,
+          symptoms,
+          goal
+        }
+      }
+    });
+
+    if (response.error) {
+      console.error('Error generating educational content:', response.error);
+      return getStaticEducationalContent(reason);
+    }
+
+    // Extract educational content from AI response
+    if (response.data?.questions) {
+      return response.data.questions;
+    }
+
+    return getStaticEducationalContent(reason);
+  } catch (error) {
+    console.error('Error generating educational content:', error);
+    return getStaticEducationalContent(reason);
+  }
+};
+
+const getStaticEducationalContent = (reason: string): string => {
   const content: { [key: string]: string } = {
     'headache': 'Headaches can be caused by tension, migraines, dehydration, or underlying conditions. Your doctor will assess the type, frequency, and triggers to determine the best treatment approach.',
     'fever': 'Fever is your body\'s natural response to infection. It\'s important to monitor your temperature and stay hydrated. Seek immediate care if fever exceeds 103°F or is accompanied by severe symptoms.',
@@ -39,6 +80,7 @@ const getEducationalContent = (reason: string): string => {
 const VisitDetails = () => {
   const { user } = useAuth();
   const [appointment, setAppointment] = useState<any>(null);
+  const [educationalContent, setEducationalContent] = useState<string>('');
   const [isRecording, setIsRecording] = useState(false);
   const [manualNotes, setManualNotes] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -67,6 +109,23 @@ const VisitDetails = () => {
     if (!user) return;
     fetchAppointment();
   }, [id, user, navigate, toast]);
+
+  useEffect(() => {
+    if (appointment?.reason) {
+      loadEducationalContent();
+    }
+  }, [appointment]);
+
+  const loadEducationalContent = async () => {
+    if (!appointment?.reason) return;
+    
+    const content = await generateEducationalContent(
+      appointment.reason,
+      appointment.symptoms,
+      appointment.goal
+    );
+    setEducationalContent(content);
+  };
 
   const fetchAppointment = async () => {
     try {
@@ -288,11 +347,6 @@ const VisitDetails = () => {
           title: "Analysis Complete",
           description: "Your visit has been analyzed and saved automatically!",
         });
-
-        // Auto-navigate back to dashboard after a short delay
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 2000);
       }
     } catch (error) {
       console.error('Error analyzing visit:', error);
@@ -452,7 +506,7 @@ const VisitDetails = () => {
                   <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
                     <h4 className="font-medium text-blue-900 mb-2">{appointment.reason}</h4>
                     <p className="text-sm text-blue-800">
-                      {getEducationalContent(appointment.reason)}
+                      {educationalContent || getStaticEducationalContent(appointment.reason)}
                     </p>
                   </div>
                 </CardContent>

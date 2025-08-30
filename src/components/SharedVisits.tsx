@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { formatDistanceToNow } from "date-fns";
-import { Eye, EyeOff } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { Calendar, Clock, User, MessageSquare, Check } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface SharedVisit {
   id: string;
@@ -102,152 +102,156 @@ const SharedVisits = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="text-center py-4">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-        <p className="mt-2 text-muted-foreground">Loading shared visits...</p>
-      </div>
-    );
-  }
-
-  if (sharedVisits.length === 0) {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center">
-          <p className="text-muted-foreground">No shared visits yet</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const unreadCount = sharedVisits.filter(visit => !visit.viewed_at).length;
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-bold">Medical Inbox</h2>
-          {unreadCount > 0 && (
-            <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
-              {unreadCount} unread
-            </Badge>
-          )}
+    <div className="max-w-4xl mx-auto">
+      {loading ? (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading messages...</p>
         </div>
-      </div>
-      
-      <div className="grid gap-4">
-        {sharedVisits.map((visit) => (
-          <Card key={visit.id} className={`transition-all duration-200 ${!visit.viewed_at ? "border-l-4 border-l-blue-500 shadow-md bg-gradient-to-r from-blue-50/50 to-transparent" : "border-l-4 border-l-gray-200"}`}>
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="text-lg">
-                      {visit.appointment_data ? `Visit with Dr. ${visit.appointment_data.doctor_name}` : 'Visit Summary'}
-                    </CardTitle>
-                    {!visit.viewed_at && (
-                      <Badge className="bg-blue-100 text-blue-800 border-blue-200">New</Badge>
+      ) : sharedVisits.length === 0 ? (
+        <div className="text-center py-12">
+          <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium mb-2">No shared visits yet</h3>
+          <p className="text-muted-foreground">
+            When someone shares a visit summary with you, it will appear here.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {sharedVisits.map((visit) => {
+            const isUnread = !visit.viewed_at;
+            const senderName = visit.sender_profile?.first_name && visit.sender_profile?.last_name
+              ? `${visit.sender_profile.first_name} ${visit.sender_profile.last_name}`
+              : visit.sender_profile?.email || 'Unknown sender';
+            
+            return (
+              <div key={visit.id} className="flex justify-start">
+                <div className={`max-w-3xl ${isUnread ? 'animate-pulse' : ''}`}>
+                  {/* Message bubble */}
+                  <div className={`
+                    rounded-2xl p-4 shadow-sm border
+                    ${isUnread 
+                      ? 'bg-primary/10 border-primary/30' 
+                      : 'bg-white border-gray-200'
+                    }
+                  `}>
+                    {/* Sender info and timestamp */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                          <User className="w-4 h-4 text-primary" />
+                        </div>
+                        <span className="font-medium text-sm">{senderName}</span>
+                        {isUnread && (
+                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(visit.shared_at), 'MMM d, h:mm a')}
+                      </span>
+                    </div>
+
+                    {/* Personal message */}
+                    {visit.message && (
+                      <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-blue-900 italic">"{visit.message}"</p>
+                      </div>
+                    )}
+
+                    {/* Appointment details */}
+                    {visit.appointment_data && (
+                      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-2">
+                          <div className="flex items-center gap-1">
+                            <User className="w-3 h-3" />
+                            Dr. {visit.appointment_data.doctor_name}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {visit.appointment_data.date}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {visit.appointment_data.time}
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          <span className="font-medium">Visit reason: </span>
+                          {visit.appointment_data.reason}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Visit summary */}
+                    <div className="space-y-3">
+                      {visit.visit_summary.visitSummary && (
+                        <div>
+                          <h6 className="font-medium text-xs text-gray-600 mb-1">📋 Summary</h6>
+                          <p className="text-sm">{visit.visit_summary.visitSummary}</p>
+                        </div>
+                      )}
+
+                      {visit.visit_summary.keySymptoms && visit.visit_summary.keySymptoms.length > 0 && (
+                        <div>
+                          <h6 className="font-medium text-xs text-gray-600 mb-1">🩺 Symptoms</h6>
+                          <div className="flex flex-wrap gap-1">
+                            {visit.visit_summary.keySymptoms.map((symptom: string, index: number) => (
+                              <Badge key={index} variant="secondary" className="text-xs">{symptom}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {visit.visit_summary.prescriptions && visit.visit_summary.prescriptions !== "None mentioned" && (
+                        <div>
+                          <h6 className="font-medium text-xs text-gray-600 mb-1">💊 Prescriptions</h6>
+                          <p className="text-sm">{visit.visit_summary.prescriptions}</p>
+                        </div>
+                      )}
+
+                      {visit.visit_summary.followUpActions && visit.visit_summary.followUpActions !== "None specified" && (
+                        <div>
+                          <h6 className="font-medium text-xs text-gray-600 mb-1">📅 Follow-up</h6>
+                          <p className="text-sm">{visit.visit_summary.followUpActions}</p>
+                        </div>
+                      )}
+
+                      {visit.visit_summary.questionsForDoctor && visit.visit_summary.questionsForDoctor.length > 0 && (
+                        <div>
+                          <h6 className="font-medium text-xs text-gray-600 mb-1">❓ Questions</h6>
+                          <ul className="text-sm space-y-1">
+                            {visit.visit_summary.questionsForDoctor.map((question: string, index: number) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <span className="text-primary text-xs">•</span>
+                                <span className="text-sm">{question}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Mark as read button */}
+                    {isUnread && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => markAsViewed(visit.id)}
+                          className="text-xs h-7"
+                        >
+                          Mark as read
+                        </Button>
+                      </div>
                     )}
                   </div>
-                  {visit.sender_profile && (
-                    <p className="text-sm text-muted-foreground">
-                      From: {visit.sender_profile.first_name} {visit.sender_profile.last_name} ({visit.sender_profile.email})
-                    </p>
-                  )}
-                  {visit.appointment_data && (
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      <span>📅 {visit.appointment_data.date}</span>
-                      <span>🕐 {visit.appointment_data.time}</span>
-                      <span>📋 {visit.appointment_data.reason}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(visit.shared_at), { addSuffix: true })}
-                  </span>
-                  {!visit.viewed_at ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => markAsViewed(visit.id)}
-                      className="flex items-center gap-1 text-xs"
-                    >
-                      <Eye className="w-3 h-3" />
-                      Mark read
-                    </Button>
-                  ) : (
-                    <Badge variant="outline" className="flex items-center gap-1 text-xs">
-                      <EyeOff className="w-3 h-3" />
-                      Read
-                    </Badge>
-                  )}
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-0">
-              {visit.message && (
-                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-                  <p className="text-sm text-amber-800 font-medium mb-1">Personal Message:</p>
-                  <p className="text-sm text-amber-700">{visit.message}</p>
-                </div>
-              )}
-              
-              {/* Visit Summary Content */}
-              {visit.visit_summary && (
-                <div className="space-y-3">
-                  {visit.visit_summary.visitSummary && (
-                    <div>
-                      <h4 className="font-medium mb-1">Visit Summary</h4>
-                      <p className="text-sm text-muted-foreground">{visit.visit_summary.visitSummary}</p>
-                    </div>
-                  )}
-                  
-                  {visit.visit_summary.keySymptoms && visit.visit_summary.keySymptoms.length > 0 && (
-                    <div>
-                      <h4 className="font-medium mb-1">Key Symptoms</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {visit.visit_summary.keySymptoms.map((symptom: string, index: number) => (
-                          <Badge key={index} variant="secondary">{symptom}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {visit.visit_summary.prescriptions && visit.visit_summary.prescriptions !== "None mentioned" && (
-                    <div>
-                      <h4 className="font-medium mb-1">Prescriptions</h4>
-                      <p className="text-sm text-muted-foreground">{visit.visit_summary.prescriptions}</p>
-                    </div>
-                  )}
-                  
-                  {visit.visit_summary.followUpActions && visit.visit_summary.followUpActions !== "None specified" && (
-                    <div>
-                      <h4 className="font-medium mb-1">Follow-up Actions</h4>
-                      <p className="text-sm text-muted-foreground">{visit.visit_summary.followUpActions}</p>
-                    </div>
-                  )}
-                  
-                  {visit.visit_summary.questionsForDoctor && visit.visit_summary.questionsForDoctor.length > 0 && (
-                    <div>
-                      <h4 className="font-medium mb-1">Questions for Doctor</h4>
-                      <ul className="text-sm text-muted-foreground space-y-1">
-                        {visit.visit_summary.questionsForDoctor.map((question: string, index: number) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <span className="text-primary">•</span>
-                            {question}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

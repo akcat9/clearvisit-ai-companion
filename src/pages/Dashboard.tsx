@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/Header";
 import { Plus, User, Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +9,7 @@ import { AppointmentModal } from "@/components/AppointmentModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useUnreadSharedVisits } from "@/hooks/useUnreadSharedVisits";
 
 interface Appointment {
   id: string;
@@ -30,6 +32,7 @@ const Dashboard = () => {
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { unreadCount } = useUnreadSharedVisits();
 
   useEffect(() => {
     if (!user) return;
@@ -122,10 +125,18 @@ const Dashboard = () => {
             <Button 
               variant="outline" 
               onClick={() => navigate("/shared-visits")}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 relative"
             >
               <Share2 className="w-4 h-4" />
               Shared Visits
+              {unreadCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
+                >
+                  {unreadCount}
+                </Badge>
+              )}
             </Button>
             <Button 
               variant="outline" 

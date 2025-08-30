@@ -34,12 +34,7 @@ export const AppointmentModal = ({ onClose, onSubmit }: AppointmentModalProps) =
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            Create New Appointment
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="w-4 h-4" />
-            </Button>
-          </DialogTitle>
+          <DialogTitle>Create New Appointment</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

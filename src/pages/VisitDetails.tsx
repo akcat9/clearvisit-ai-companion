@@ -75,6 +75,7 @@ const VisitDetails = () => {
   const [liveTranscription, setLiveTranscription] = useState('');
   const [fullTranscription, setFullTranscription] = useState('');
   const [recordingComplete, setRecordingComplete] = useState(false);
+  const [medicalTermsExplanation, setMedicalTermsExplanation] = useState<any>(null);
   
   // AI-generated content (only shown after processing)
   const [aiGeneratedData, setAiGeneratedData] = useState<{
@@ -115,7 +116,11 @@ const VisitDetails = () => {
 
   const fetchAppointment = async () => {
     try {
-      // First try to load from Supabase
+      if (!id || !user?.id) {
+        console.error('Missing required data for appointment fetch');
+        navigate("/dashboard");
+        return;
+      }
       const { data: supabaseAppointment, error } = await supabase
         .from('appointments')
         .select('*')
@@ -293,6 +298,25 @@ const VisitDetails = () => {
         };
         
         setAiGeneratedData(aiData);
+
+        // Generate medical terms explanation if there are symptoms or recommendations
+        const medicalTerms = [
+          ...(summaryData.keySymptoms || []),
+          ...(summaryData.doctorRecommendations || [])
+        ].filter(term => term.length > 0);
+
+        if (medicalTerms.length > 0) {
+          try {
+            const { data: termsData } = await supabase.functions.invoke('explain-medical-terms', {
+              body: { medicalTerms: medicalTerms.slice(0, 5) } // Limit to 5 terms
+            });
+            if (termsData?.explanations) {
+              setMedicalTermsExplanation(termsData);
+            }
+          } catch (termsError) {
+            console.error('Error explaining medical terms:', termsError);
+          }
+        }
         
         // Automatically save to database after AI analysis
         try {
@@ -425,6 +449,15 @@ const VisitDetails = () => {
   };
 
   const handleSaveNotes = async () => {
+    if (!user?.id || !id) {
+      toast({
+        title: "Error",
+        description: "Unable to save notes. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSavingNotes(true);
     try {
       // Save notes to Supabase database
@@ -432,8 +465,8 @@ const VisitDetails = () => {
         .from('visit_records')
         .upsert({
           appointment_id: id,
-          user_id: user?.id,
-          transcription: manualNotes,
+          user_id: user.id,
+          transcription: manualNotes || '',
           updated_at: new Date().toISOString()
         }, { 
           onConflict: 'appointment_id'
@@ -753,6 +786,26 @@ const VisitDetails = () => {
                         <p className="text-sm text-yellow-800 whitespace-pre-wrap">
                           {aiGeneratedData.followUpActions}
                         </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Medical Terms Explanation */}
+                {medicalTermsExplanation?.explanations && medicalTermsExplanation.explanations.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Medical Terms Explained</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {medicalTermsExplanation.explanations.map((explanation: any, index: number) => (
+                          <div key={index} className="p-3 bg-indigo-50 rounded-lg border-l-4 border-indigo-400">
+                            <h5 className="font-medium text-indigo-900 mb-1">{explanation?.term || "Medical Term"}</h5>
+                            <p className="text-sm text-indigo-800 mb-1">{explanation?.definition || "Definition not available"}</p>
+                            <p className="text-xs text-indigo-600 italic">{explanation?.relevance || "Relevance not available"}</p>
+                          </div>
+                        ))}
                       </div>
                     </CardContent>
                   </Card>

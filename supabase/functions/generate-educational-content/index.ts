@@ -21,18 +21,15 @@ serve(async (req) => {
 
     const { reason, symptoms, goal } = await req.json();
 
-    const prompt = `Generate educational content for a patient visiting their doctor for: ${reason}${symptoms ? `. Symptoms include: ${symptoms}` : ''}${goal ? `. Patient's goal: ${goal}` : ''}
+    const prompt = `Generate simple educational content for a patient visiting their doctor for: ${reason}${symptoms ? `. Symptoms: ${symptoms}` : ''}${goal ? `. Goal: ${goal}` : ''}
 
-Please provide:
-1. Brief explanation of the condition/symptoms
-2. What the patient can expect during the visit
-3. Common treatment approaches
-4. Important questions they should ask their doctor
-5. Self-care tips if appropriate
+Write 2-3 short, easy sentences explaining:
+1. What this condition/reason means in simple terms
+2. What to expect during the visit
 
-Keep it informative but not alarming, under 300 words, written in a compassionate tone for someone who may be anxious about their health.
+Keep it under 100 words, use simple language a 12-year-old could understand. Be reassuring and avoid medical jargon.
 
-Return only the educational content as plain text, no JSON formatting.`;
+Example format: "This means... During your visit, the doctor will... This is common and treatable."`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',

@@ -1,4 +1,4 @@
-import { Heart, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -13,9 +13,13 @@ export const Header = () => {
   return (
     <header className="bg-primary text-primary-foreground px-6 py-4">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-          <Heart className="w-6 h-6" />
-          <span className="text-xl font-semibold">ClearVisit AI</span>
+        <div className="flex items-center gap-3">
+          <img 
+            src="/lovable-uploads/25aed346-1b70-4e98-9471-b68cf415940b.png" 
+            alt="Clearvisit Logo" 
+            className="w-8 h-8 object-contain"
+          />
+          <span className="text-xl font-semibold">Clearvisit</span>
         </div>
         
         {user && (

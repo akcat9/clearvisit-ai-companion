@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/Header";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Session } from '@supabase/supabase-js';
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -16,43 +16,15 @@ const Login = () => {
   const [lastName, setLastName] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("Auth state change:", event, session?.user?.email);
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          console.log("User detected, redirecting to dashboard");
-          // Use setTimeout to ensure the state update completes
-          setTimeout(() => {
-            navigate("/dashboard", { replace: true });
-          }, 100);
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("Existing session check:", session?.user?.email);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        console.log("Existing user found, redirecting to dashboard");
-        navigate("/dashboard", { replace: true });
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+  // Redirect if user is already logged in
+  if (!authLoading && user) {
+    navigate("/dashboard", { replace: true });
+    return null;
+  }
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +40,7 @@ const Login = () => {
       
       toast({
         title: "Signed in successfully",
-        description: "Welcome back to ClearVisit AI",
+        description: "Welcome back to Clearvisit",
       });
     } catch (error: any) {
       toast({
@@ -119,12 +91,12 @@ const Login = () => {
   };
 
   // Show loading while checking auth state
-  if (user) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Redirecting...</p>
+          <p className="mt-2 text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -136,7 +108,7 @@ const Login = () => {
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900">Welcome to ClearVisit AI</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Welcome to Clearvisit</h1>
             <p className="mt-2 text-gray-600">Record, analyze, and remember your doctor visits</p>
           </div>
 

@@ -14,25 +14,11 @@ import { AudioRecorder, encodeAudioForAPI, chunkAudio } from '@/utils/AudioRecor
 
 const generateEducationalContent = async (reason: string, symptoms?: string, goal?: string): Promise<string> => {
   try {
-    const prompt = `Generate educational content for a patient visiting their doctor for: ${reason}${symptoms ? `. Symptoms include: ${symptoms}` : ''}${goal ? `. Patient's goal: ${goal}` : ''}
-
-Please provide:
-1. Brief explanation of the condition/symptoms
-2. What the patient can expect during the visit
-3. Common treatment approaches
-4. Important questions they should ask their doctor
-5. Self-care tips if appropriate
-
-Keep it informative but not alarming, under 300 words, written in a compassionate tone for someone who may be anxious about their health.`;
-
-    const response = await supabase.functions.invoke('generate-ai-questions', {
+    const response = await supabase.functions.invoke('generate-educational-content', {
       body: { 
-        transcript: prompt,
-        appointmentDetails: {
-          reason,
-          symptoms,
-          goal
-        }
+        reason,
+        symptoms,
+        goal
       }
     });
 
@@ -41,9 +27,8 @@ Keep it informative but not alarming, under 300 words, written in a compassionat
       return getStaticEducationalContent(reason);
     }
 
-    // Extract educational content from AI response
-    if (response.data?.questions) {
-      return response.data.questions;
+    if (response.data?.content) {
+      return response.data.content;
     }
 
     return getStaticEducationalContent(reason);
@@ -155,10 +140,10 @@ const VisitDetails = () => {
           .single();
 
         if (visitRecord) {
-          setManualNotes(visitRecord.transcription || "");
-        if (visitRecord.summary) {
-          setAiGeneratedData(visitRecord.summary as any);
-        }
+          // Don't load transcription into manual notes - keep them separate
+          if (visitRecord.summary) {
+            setAiGeneratedData(visitRecord.summary as any);
+          }
         }
         return;
       }

@@ -240,7 +240,6 @@ const VisitDetails = () => {
       const recorder = new AudioRecorder(
         (audioData) => {
           // Real-time audio data processing if needed
-          console.log('Receiving audio chunk:', audioData.length);
         },
         (transcription) => {
           // Live transcription callback
@@ -382,9 +381,9 @@ const VisitDetails = () => {
             });
 
           if (visitError) {
-            console.error('Error auto-saving visit record:', visitError);
+            // Error auto-saving visit record
           } else {
-            console.log('Visit data automatically saved to database');
+            // Visit data automatically saved to database
             
             // Update appointment status to completed
             await supabase

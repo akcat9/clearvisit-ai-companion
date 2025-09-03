@@ -51,6 +51,29 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
     setIsSharing(true);
 
     try {
+      // Validate recipient emails exist in profiles table
+      const { data: existingProfiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('email')
+        .in('email', recipientEmails);
+
+      if (profileError) {
+        throw profileError;
+      }
+
+      const existingEmails = existingProfiles?.map(p => p.email) || [];
+      const invalidEmails = recipientEmails.filter(email => !existingEmails.includes(email));
+
+      if (invalidEmails.length > 0) {
+        toast({
+          title: "Invalid recipients",
+          description: `The following email addresses are not registered: ${invalidEmails.join(', ')}`,
+          variant: "destructive",
+        });
+        setIsSharing(false);
+        return;
+      }
+
       // Get sender profile data
       const { data: senderProfile } = await supabase
         .from('profiles')
@@ -76,7 +99,6 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
       const errors = results.filter(result => result.error);
 
       if (errors.length > 0) {
-        console.error('Some shares failed:', errors);
         toast({
           title: "Partial success",
           description: `Shared with ${recipientEmails.length - errors.length} of ${recipientEmails.length} recipients`,
@@ -94,7 +116,6 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
       setMessage("");
       setIsOpen(false);
     } catch (error) {
-      console.error('Error sharing visit:', error);
       toast({
         title: "Failed to share visit",
         description: "Please try again later",
@@ -115,7 +136,7 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Share Visit Summary</DialogTitle>
         </DialogHeader>

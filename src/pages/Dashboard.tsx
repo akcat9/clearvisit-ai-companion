@@ -145,23 +145,25 @@ const Dashboard = () => {
       <Header />
       
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">My Appointments</h1>
-          <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold">My Appointments</h1>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <Button 
               onClick={() => setShowAppointmentModal(true)}
-              className="flex items-center gap-2"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto"
+              size="sm"
             >
               <Plus className="w-4 h-4" />
-              New Appointment
+              <span className="sm:inline">New Appointment</span>
             </Button>
             <Button 
               variant="outline" 
               onClick={() => navigate("/shared-visits")}
-              className="flex items-center gap-2 relative"
+              className="flex items-center justify-center gap-2 relative w-full sm:w-auto"
+              size="sm"
             >
               <Share2 className="w-4 h-4" />
-              Shared Visits
+              <span className="sm:inline">Shared Visits</span>
               {unreadCount > 0 && (
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
               )}
@@ -169,10 +171,11 @@ const Dashboard = () => {
             <Button 
               variant="outline" 
               onClick={() => navigate("/profile")}
-              className="flex items-center gap-2"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto"
+              size="sm"
             >
               <User className="w-4 h-4" />
-              View Medical Profile
+              <span className="sm:inline">Medical Profile</span>
             </Button>
           </div>
         </div>
@@ -259,7 +262,7 @@ const Dashboard = () => {
         </div>
 
         <div className="text-center text-sm text-muted-foreground mt-12">
-          © 2025 ClearVisit AI. All rights reserved.
+          © 2025 Clearvisit. All rights reserved.
         </div>
       </div>
 

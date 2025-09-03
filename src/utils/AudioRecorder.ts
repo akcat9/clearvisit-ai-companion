@@ -52,8 +52,6 @@ export class AudioRecorder {
       if (this.onLiveTranscription) {
         this.startLiveTranscription();
       }
-      
-      console.log('Audio recording started');
     } catch (error) {
       console.error('Error accessing microphone:', error);
       throw error;
@@ -137,7 +135,6 @@ export class AudioRecorder {
 
     // Combine all chunks into one array
     const combinedAudio = this.combineChunks(this.audioChunks);
-    console.log('Audio recording stopped, total length:', combinedAudio.length);
     return combinedAudio;
   }
 

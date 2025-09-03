@@ -55,7 +55,7 @@ const Login = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Sign up attempt with:", { email, firstName, lastName });
+    
     setLoading(true);
     
     try {
@@ -127,7 +127,7 @@ const Login = () => {
             <CardContent>
               <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-4">
                 {isSignUp && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">First Name</Label>
                       <Input
@@ -185,10 +185,7 @@ const Login = () => {
                   {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
                   <button
                     type="button"
-                    onClick={() => {
-                      console.log("Toggle clicked, current isSignUp:", isSignUp);
-                      setIsSignUp(!isSignUp);
-                    }}
+                    onClick={() => setIsSignUp(!isSignUp)}
                     className="text-primary hover:underline"
                   >
                     {isSignUp ? "Sign in" : "Sign up"}

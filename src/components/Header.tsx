@@ -12,7 +12,7 @@ export const Header = () => {
   };
   return (
     <header className="bg-primary text-primary-foreground px-6 py-4">
-      <div className="flex items-center justify-between max-w-7xl mx-auto">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-3">
           <img 
             src="/lovable-uploads/25aed346-1b70-4e98-9471-b68cf415940b.png" 
@@ -23,13 +23,13 @@ export const Header = () => {
         </div>
         
         {user && (
-          <div className="flex items-center gap-4">
-            <span className="text-sm">Welcome, {user.email}</span>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <span className="text-sm truncate">Welcome, {user.email}</span>
             <Button 
               variant="secondary" 
               size="sm" 
               onClick={handleSignOut}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 self-start sm:self-auto"
             >
               <LogOut className="w-4 h-4" />
               Logout

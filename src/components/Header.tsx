@@ -14,7 +14,7 @@ export const Header = () => {
     <header className="bg-primary text-primary-foreground px-6 py-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-3">
-          <span className="text-xl font-semibold">Clearvisit</span>
+          <span className="text-xl font-semibold">Clearvisit AI</span>
         </div>
         
         {user && (

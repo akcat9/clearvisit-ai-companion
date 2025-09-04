@@ -1,15 +1,22 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/Header";
-import { Plus, User, Share2, Trash2 } from "lucide-react";
+import { Plus, User, Share2, Trash2, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppointmentModal } from "@/components/AppointmentModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUnreadSharedVisits } from "@/hooks/useUnreadSharedVisits";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface Appointment {
   id: string;
@@ -146,7 +153,30 @@ const Dashboard = () => {
       
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold">My Appointments</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold">My Appointments</h1>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <HelpCircle className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>How to Use Clearvisit</DialogTitle>
+                  <DialogDescription>
+                    Simple steps to get started:
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3 text-sm">
+                  <div>• <strong>Create appointments</strong> - Click "New Appointment" to schedule visits</div>
+                  <div>• <strong>Record visits</strong> - Click on any appointment to record audio during your visit</div>
+                  <div>• <strong>Share visits</strong> - Share visit recordings with family or other doctors</div>
+                  <div>• <strong>Medical profile</strong> - Keep track of your health information</div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <Button 
               onClick={() => setShowAppointmentModal(true)}
@@ -165,7 +195,7 @@ const Dashboard = () => {
               <Share2 className="w-4 h-4" />
               <span className="sm:inline">Shared Visits</span>
               {unreadCount > 0 && (
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full"></div>
               )}
             </Button>
             <Button 
@@ -192,7 +222,10 @@ const Dashboard = () => {
                   <p className="mt-2 text-muted-foreground">Loading appointments...</p>
                 </div>
               ) : upcomingAppointments.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">No upcoming appointments</p>
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No upcoming appointments</p>
+                  <p className="text-sm text-muted-foreground mt-1">Click "New Appointment" to schedule your first visit</p>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {upcomingAppointments.map((appointment) => (
@@ -211,7 +244,7 @@ const Dashboard = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                         onClick={(e) => handleDeleteAppointment(appointment.id, e)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -229,7 +262,10 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               {previousAppointments.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">No previous appointments</p>
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No previous appointments</p>
+                  <p className="text-sm text-muted-foreground mt-1">Completed appointments will appear here</p>
+                </div>
               ) : (
                 <div className="space-y-4">
                   {previousAppointments.map((appointment) => (
@@ -248,7 +284,7 @@ const Dashboard = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                         onClick={(e) => handleDeleteAppointment(appointment.id, e)}
                       >
                         <Trash2 className="h-4 w-4" />

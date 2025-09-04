@@ -65,6 +65,7 @@ export type Database = {
           last_name: string | null
           updated_at: string
           user_id: string
+          username: string | null
         }
         Insert: {
           created_at?: string
@@ -74,6 +75,7 @@ export type Database = {
           last_name?: string | null
           updated_at?: string
           user_id: string
+          username?: string | null
         }
         Update: {
           created_at?: string
@@ -83,6 +85,7 @@ export type Database = {
           last_name?: string | null
           updated_at?: string
           user_id?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -168,7 +171,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_email_exists: {
+        Args: { email_address: string }
+        Returns: boolean
+      }
+      get_user_by_username: {
+        Args: { username_input: string }
+        Returns: string
+      }
+      log_auth_attempt: {
+        Args: { success: boolean; username_input: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

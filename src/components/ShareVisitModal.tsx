@@ -51,18 +51,17 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
     setIsSharing(true);
 
     try {
-      // Validate recipient emails exist in profiles table
-      const { data: existingProfiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('email')
-        .in('email', recipientEmails);
+      // Validate recipient emails exist using secure database function
+      const emailChecks = await Promise.all(
+        recipientEmails.map(email => 
+          supabase.rpc('check_email_exists', { email_address: email })
+        )
+      );
 
-      if (profileError) {
-        throw profileError;
-      }
-
-      const existingEmails = existingProfiles?.map(p => p.email) || [];
-      const invalidEmails = recipientEmails.filter(email => !existingEmails.includes(email));
+      const invalidEmails = recipientEmails.filter((email, index) => {
+        const result = emailChecks[index];
+        return result.error || !result.data;
+      });
 
       if (invalidEmails.length > 0) {
         toast({

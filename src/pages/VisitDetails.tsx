@@ -244,9 +244,9 @@ const VisitDetails = () => {
         (transcription, isFinal) => {
           // Live transcription callback with new signature
           if (isFinal) {
-            // Final transcription - update both live and full transcription
+            // Final transcription - update full transcription and keep showing it
             setFullTranscription(transcription);
-            setLiveTranscription(''); // Clear interim text
+            setLiveTranscription(transcription); // Keep showing the final text
           } else {
             // Interim transcription - show in live transcription only
             setLiveTranscription(transcription);

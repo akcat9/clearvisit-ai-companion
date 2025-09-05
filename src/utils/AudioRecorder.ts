@@ -30,7 +30,6 @@ export class AudioRecorder {
       this.recognition.lang = 'en-US';
 
       this.recognition.onstart = () => {
-        console.log('Speech recognition started');
         this.isRecording = true;
       };
 

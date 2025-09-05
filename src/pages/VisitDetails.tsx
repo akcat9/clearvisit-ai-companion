@@ -63,7 +63,6 @@ const VisitDetails = () => {
   const fetchAppointment = async () => {
     try {
       if (!id || !user?.id) {
-        console.error('Missing required data for appointment fetch');
         navigate("/dashboard");
         return;
       }
@@ -103,24 +102,12 @@ const VisitDetails = () => {
         return;
       }
 
-      // Fallback to localStorage for migration period
-      const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
-      const foundAppointment = appointments.find((apt: any) => apt.id === id);
-      
-      if (foundAppointment) {
-        setAppointment(foundAppointment);
-        setManualNotes(foundAppointment.manualNotes || "");
-        if (foundAppointment.aiGeneratedData) {
-          setAiGeneratedData(foundAppointment.aiGeneratedData);
-        }
-      } else {
-        toast({
-          title: "Appointment not found",
-          description: "The appointment you're looking for doesn't exist.",
-          variant: "destructive",
-        });
-        navigate("/dashboard");
-      }
+      toast({
+        title: "Appointment not found",
+        description: "The appointment you're looking for doesn't exist.",
+        variant: "destructive",
+      });
+      navigate("/dashboard");
     } catch (error) {
       console.error('Error fetching appointment:', error);
       toast({
@@ -212,17 +199,13 @@ const VisitDetails = () => {
     setIsAnalyzing(true);
     
     try {
-      console.log('Starting AI analysis with content:', contentToAnalyze.substring(0, 100) + '...');
-      
       const { data: summaryData, error: summaryError } = await supabase.functions.invoke('process-visit-summary', {
         body: {
           fullTranscription: contentToAnalyze,
           appointmentReason: appointment?.reason || 'General consultation',
-          medicalHistory: null // Simplified since we removed medical profile
+          medicalHistory: null
         }
       });
-
-      console.log('AI analysis response:', summaryData, 'Error:', summaryError);
 
       if (summaryError) {
         console.error('AI analysis error:', summaryError);
@@ -254,7 +237,6 @@ const VisitDetails = () => {
         keyTermsExplained: summaryData.keyTermsExplained || {}
       };
       
-      console.log('Processed AI data:', aiData);
       setAiGeneratedData(aiData);
       
       // Save to database

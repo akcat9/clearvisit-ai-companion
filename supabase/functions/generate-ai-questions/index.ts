@@ -53,8 +53,7 @@ Return the response as a JSON object with a "questions" array containing exactly
           },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 500,
-        temperature: 0.7,
+        max_completion_tokens: 500,
       }),
     });
 

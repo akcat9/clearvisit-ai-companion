@@ -78,21 +78,22 @@ export class AudioRecorder {
   }
 
   private async transcribeChunk(encodedAudio: string): Promise<string> {
-    const response = await fetch(`https://hjupkurtumzqrwoytjnn.supabase.co/functions/v1/transcribe-audio`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqdXBrdXJ0dW16cXJ3b3l0am5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MjI2MDQsImV4cCI6MjA3MTk5ODYwNH0.d5LNBkCAZY1ceV9LoMuMR5-cx_J9iZ4VwC1hJ9b30bI`
-      },
-      body: JSON.stringify({ audioData: encodedAudio })
+    // Import supabase client dynamically to avoid bundling issues
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hjupkurtumzqrwoytjnn.supabase.co';
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqdXBrdXJ0dW16cXJ3b3l0am5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MjI2MDQsImV4cCI6MjA3MTk5ODYwNH0.d5LNBkCAZY1ceV9LoMuMR5-cx_J9iZ4VwC1hJ9b30bI';
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    const { data, error } = await supabase.functions.invoke('transcribe-audio', {
+      body: { audioData: encodedAudio }
     });
 
-    if (!response.ok) {
-      throw new Error(`Transcription failed: ${response.status}`);
+    if (error) {
+      throw new Error(`Transcription failed: ${error.message}`);
     }
 
-    const data = await response.json();
-    return data.transcription || '';
+    return data?.transcription || '';
   }
 
   private combineChunks(chunks: Float32Array[]): Float32Array {

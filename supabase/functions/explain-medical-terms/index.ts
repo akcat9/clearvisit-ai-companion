@@ -40,7 +40,7 @@ Format as JSON: {"explanations": [{"term": "term name", "definition": "simple ex
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-5-2025-08-07',
         messages: [
           { 
             role: 'system', 
@@ -48,8 +48,7 @@ Format as JSON: {"explanations": [{"term": "term name", "definition": "simple ex
           },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 600,
-        temperature: 0.3,
+        max_completion_tokens: 600,
       }),
     });
 

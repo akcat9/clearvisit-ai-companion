@@ -42,7 +42,7 @@ Use plain text only - NO markdown symbols, asterisks, or special formatting. Use
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-5-2025-08-07',
         messages: [
           { 
             role: 'system', 
@@ -51,7 +51,6 @@ Use plain text only - NO markdown symbols, asterisks, or special formatting. Use
           { role: 'user', content: prompt }
         ],
         max_completion_tokens: 400,
-        
       }),
     });
 

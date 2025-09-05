@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/Header";
-import { Plus, User, Share2, Trash2, HelpCircle } from "lucide-react";
+import { Plus, Share2, Trash2, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppointmentModal } from "@/components/AppointmentModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -172,7 +172,7 @@ const Dashboard = () => {
                   <div>• <strong>Create appointments</strong> - Click "New Appointment" to schedule visits</div>
                   <div>• <strong>Record visits</strong> - Click on any appointment to record audio during your visit</div>
                   <div>• <strong>Share visits</strong> - Share visit recordings with family or other doctors</div>
-                  <div>• <strong>Medical profile</strong> - Keep track of your health information</div>
+                  <div>• <strong>Get AI insights</strong> - Receive personalized medical insights and educational content</div>
                 </div>
               </DialogContent>
             </Dialog>
@@ -197,15 +197,6 @@ const Dashboard = () => {
               {unreadCount > 0 && (
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full"></div>
               )}
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/profile")}
-              className="flex items-center justify-center gap-2 w-full sm:w-auto"
-              size="sm"
-            >
-              <User className="w-4 h-4" />
-              <span className="sm:inline">Medical Profile</span>
             </Button>
           </div>
         </div>

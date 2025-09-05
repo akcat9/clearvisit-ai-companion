@@ -7,7 +7,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import MedicalProfile from "./pages/MedicalProfile";
 import VisitDetails from "./pages/VisitDetails";
 import SharedVisitsPage from "./pages/SharedVisits";
 import NotFound from "./pages/NotFound";
@@ -28,14 +27,6 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Dashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/profile" 
-              element={
-                <ProtectedRoute>
-                  <MedicalProfile />
                 </ProtectedRoute>
               } 
             />

@@ -1,74 +1,137 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Heart, Brain, Stethoscope, Activity } from 'lucide-react';
+import { BookOpen, Heart, AlertCircle, Lightbulb, HelpCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-interface EducationTopic {
-  id: string;
-  title: string;
-  description: string;
-  content: string;
-  icon: React.ReactNode;
-  color: string;
+interface EducationContent {
+  mainCondition: {
+    title: string;
+    description: string;
+    explanation: string;
+  };
+  possibleCauses: string[];
+  commonSymptoms: string[];
+  preparationTips: string[];
+  questionsToAsk: string[];
 }
-
-const educationTopics: EducationTopic[] = [
-  {
-    id: 'stenosis',
-    title: 'Stenosis',
-    description: 'Narrowing of blood vessels or other body passages',
-    content: 'Stenosis occurs when arteries or other passages in your body become narrow. This can restrict blood flow and cause various symptoms. Common types include carotid stenosis (neck arteries) and coronary stenosis (heart arteries). Symptoms may include chest pain, shortness of breath, or dizziness.',
-    icon: <Heart className="w-5 h-5" />,
-    color: 'bg-red-50 border-red-200 text-red-800'
-  },
-  {
-    id: 'hypertension',
-    title: 'High Blood Pressure',
-    description: 'When blood pressure is consistently too high',
-    content: 'High blood pressure (hypertension) means your blood pushes against artery walls with too much force. Normal is less than 120/80. High blood pressure often has no symptoms but can lead to serious problems like heart disease or stroke if untreated.',
-    icon: <Activity className="w-5 h-5" />,
-    color: 'bg-orange-50 border-orange-200 text-orange-800'
-  },
-  {
-    id: 'diabetes',
-    title: 'Diabetes',
-    description: 'When your body cannot properly control blood sugar',
-    content: 'Diabetes occurs when your body cannot make enough insulin or use it properly. This causes high blood sugar levels. Type 1 diabetes usually starts in childhood. Type 2 diabetes is more common and often develops in adults. Symptoms include frequent urination, thirst, and fatigue.',
-    icon: <Stethoscope className="w-5 h-5" />,
-    color: 'bg-blue-50 border-blue-200 text-blue-800'
-  },
-  {
-    id: 'anxiety',
-    title: 'Anxiety',
-    description: 'Excessive worry or fear that affects daily life',
-    content: 'Anxiety is more than normal worry - it is persistent fear that interferes with daily activities. Physical symptoms can include rapid heartbeat, sweating, and difficulty breathing. It is treatable with therapy, medication, or lifestyle changes.',
-    icon: <Brain className="w-5 h-5" />,
-    color: 'bg-purple-50 border-purple-200 text-purple-800'
-  }
-];
 
 interface PreVisitEducationProps {
   appointmentReason?: string;
+  goal?: string;
+  symptoms?: string;
 }
 
-const PreVisitEducation = ({ appointmentReason }: PreVisitEducationProps) => {
-  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+const PreVisitEducation = ({ appointmentReason, goal, symptoms }: PreVisitEducationProps) => {
+  const [educationContent, setEducationContent] = useState<EducationContent | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  // Find relevant topics based on appointment reason
-  const getRelevantTopics = () => {
-    if (!appointmentReason) return educationTopics.slice(0, 2);
-    
-    const reason = appointmentReason.toLowerCase();
-    const relevant = educationTopics.filter(topic => 
-      reason.includes(topic.id) || 
-      reason.includes(topic.title.toLowerCase())
-    );
-    
-    return relevant.length > 0 ? relevant : educationTopics.slice(0, 2);
+  useEffect(() => {
+    if (appointmentReason) {
+      generateEducationContent();
+    }
+  }, [appointmentReason, goal, symptoms]);
+
+  const generateEducationContent = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-previsit-education', {
+        body: {
+          appointmentReason: appointmentReason || '',
+          goal: goal || '',
+          symptoms: symptoms || ''
+        }
+      });
+
+      if (error) {
+        console.error('Error generating education content:', error);
+        toast({
+          title: "Education content unavailable",
+          description: "Unable to load pre-visit information.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setEducationContent(data);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const relevantTopics = getRelevantTopics();
+  if (isLoading) {
+    return (
+      <Card className="w-full">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-primary" />
+            <CardTitle className="text-lg">Pre-Visit Education</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+              <p className="text-sm text-muted-foreground">Generating personalized education content...</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!educationContent) {
+    return null;
+  }
+
+  const sections = [
+    {
+      id: 'condition',
+      title: educationContent.mainCondition.title,
+      description: educationContent.mainCondition.description,
+      content: educationContent.mainCondition.explanation,
+      icon: <Heart className="w-5 h-5" />,
+      color: 'bg-blue-50 border-blue-200 text-blue-800'
+    },
+    {
+      id: 'causes',
+      title: 'Possible Causes',
+      description: 'What might be causing this',
+      content: educationContent.possibleCauses,
+      icon: <AlertCircle className="w-5 h-5" />,
+      color: 'bg-orange-50 border-orange-200 text-orange-800'
+    },
+    {
+      id: 'symptoms',
+      title: 'Common Symptoms',
+      description: 'What to look out for',
+      content: educationContent.commonSymptoms,
+      icon: <BookOpen className="w-5 h-5" />,
+      color: 'bg-purple-50 border-purple-200 text-purple-800'
+    },
+    {
+      id: 'preparation',
+      title: 'Visit Preparation',
+      description: 'How to prepare for your appointment',
+      content: educationContent.preparationTips,
+      icon: <Lightbulb className="w-5 h-5" />,
+      color: 'bg-green-50 border-green-200 text-green-800'
+    },
+    {
+      id: 'questions',
+      title: 'Questions to Ask',
+      description: 'Important questions for your doctor',
+      content: educationContent.questionsToAsk,
+      icon: <HelpCircle className="w-5 h-5" />,
+      color: 'bg-yellow-50 border-yellow-200 text-yellow-800'
+    }
+  ];
 
   return (
     <Card className="w-full">
@@ -82,69 +145,63 @@ const PreVisitEducation = ({ appointmentReason }: PreVisitEducationProps) => {
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Topic Selection */}
+        {/* Section Selection */}
         <div className="grid grid-cols-1 gap-3">
-          {relevantTopics.map((topic) => (
+          {sections.map((section) => (
             <div
-              key={topic.id}
+              key={section.id}
               className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                selectedTopic === topic.id 
-                  ? topic.color + ' shadow-md' 
+                selectedSection === section.id 
+                  ? section.color + ' shadow-md' 
                   : 'bg-gray-50 border-gray-200 hover:border-gray-300'
               }`}
-              onClick={() => setSelectedTopic(selectedTopic === topic.id ? null : topic.id)}
+              onClick={() => setSelectedSection(selectedSection === section.id ? null : section.id)}
             >
               <div className="flex items-start gap-3">
                 <div className={`p-2 rounded-lg ${
-                  selectedTopic === topic.id ? 'bg-white/80' : 'bg-white'
+                  selectedSection === section.id ? 'bg-white/80' : 'bg-white'
                 }`}>
-                  {topic.icon}
+                  {section.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-sm">{topic.title}</h3>
+                  <h3 className="font-semibold text-sm">{section.title}</h3>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {topic.description}
+                    {section.description}
                   </p>
-                  {appointmentReason?.toLowerCase().includes(topic.id) && (
-                    <Badge variant="secondary" className="mt-2 text-xs">
-                      Related to your visit
-                    </Badge>
-                  )}
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Selected Topic Content */}
-        {selectedTopic && (
+        {/* Selected Section Content */}
+        {selectedSection && (
           <div className="mt-4 p-4 bg-white rounded-lg border">
             {(() => {
-              const topic = relevantTopics.find(t => t.id === selectedTopic);
-              return topic ? (
+              const section = sections.find(s => s.id === selectedSection);
+              if (!section) return null;
+
+              return (
                 <div>
-                  <h4 className="font-semibold mb-2 text-sm">About {topic.title}</h4>
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {topic.content}
-                  </p>
+                  <h4 className="font-semibold mb-2 text-sm">{section.title}</h4>
+                  {Array.isArray(section.content) ? (
+                    <div className="space-y-2">
+                      {section.content.map((item, index) => (
+                        <div key={index} className="bg-gray-50 p-2 rounded text-sm">
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-700 leading-relaxed">
+                      {section.content}
+                    </p>
+                  )}
                 </div>
-              ) : null;
+              );
             })()}
           </div>
         )}
-
-        {/* Quick Tips */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="font-semibold text-sm text-blue-800 mb-2">
-            Preparing for Your Visit
-          </h4>
-          <ul className="text-xs text-blue-700 space-y-1">
-            <li>• Write down your main concerns and questions</li>
-            <li>• List all medications you are taking</li>
-            <li>• Note when symptoms started and what triggers them</li>
-            <li>• Bring your insurance card and ID</li>
-          </ul>
-        </div>
       </CardContent>
     </Card>
   );

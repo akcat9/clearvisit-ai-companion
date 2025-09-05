@@ -407,7 +407,11 @@ const VisitDetails = () => {
 
         {/* Pre-Visit Education */}
         <div className="mb-6">
-          <PreVisitEducation appointmentReason={appointment.reason} />
+          <PreVisitEducation 
+            appointmentReason={appointment.reason}
+            goal={appointment.goal}
+            symptoms={appointment.symptoms}
+          />
         </div>
 
         {/* Recording Section */}
@@ -557,7 +561,7 @@ const VisitDetails = () => {
 
               {aiGeneratedData.questionsForDoctor?.length > 0 && (
                 <div className="bg-white rounded-lg p-4 border border-indigo-200">
-                  <h4 className="font-semibold mb-3 text-indigo-800 text-base">Questions for Next Visit</h4>
+                  <h4 className="font-semibold mb-3 text-indigo-800 text-base">Smart Questions</h4>
                   <div className="grid grid-cols-1 gap-2">
                     {aiGeneratedData.questionsForDoctor.map((question, index) => (
                       <div key={index} className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">

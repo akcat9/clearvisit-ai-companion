@@ -449,6 +449,22 @@ const VisitDetails = () => {
         throw visitError;
       }
 
+      // Update AI-generated medical history
+      if (aiGeneratedData) {
+        try {
+          await supabase.functions.invoke('update-medical-history', {
+            body: {
+              visitSummary: aiGeneratedData,
+              userId: user.id
+            }
+          });
+          console.log('Medical history updated successfully');
+        } catch (historyError) {
+          console.error('Error updating medical history:', historyError);
+          // Don't fail the whole process if history update fails
+        }
+      }
+
       // Update appointment status
       const { error: appointmentError } = await supabase
         .from('appointments')

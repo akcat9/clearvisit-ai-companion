@@ -58,6 +58,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_generated_history: Json | null
           created_at: string
           email: string | null
           first_name: string | null
@@ -68,6 +69,7 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          ai_generated_history?: Json | null
           created_at?: string
           email?: string | null
           first_name?: string | null
@@ -78,6 +80,7 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          ai_generated_history?: Json | null
           created_at?: string
           email?: string | null
           first_name?: string | null

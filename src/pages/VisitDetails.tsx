@@ -241,13 +241,16 @@ const VisitDetails = () => {
         (audioData) => {
           // Real-time audio data processing if needed
         },
-        (transcription) => {
-          // Live transcription callback
-          setLiveTranscription(prev => {
-            const newText = prev + ' ' + transcription;
-            setFullTranscription(newText.trim());
-            return newText;
-          });
+        (transcription, isFinal) => {
+          // Live transcription callback with new signature
+          if (isFinal) {
+            // Final transcription - update both live and full transcription
+            setFullTranscription(transcription);
+            setLiveTranscription(''); // Clear interim text
+          } else {
+            // Interim transcription - show in live transcription only
+            setLiveTranscription(transcription);
+          }
         }
       );
       

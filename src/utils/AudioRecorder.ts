@@ -1,19 +1,27 @@
+import { RealTimeSpeechRecognition } from './SpeechRecognition';
+
 export class AudioRecorder {
   private stream: MediaStream | null = null;
   private audioContext: AudioContext | null = null;
   private processor: ScriptProcessorNode | null = null;
   private source: MediaStreamAudioSourceNode | null = null;
   private audioChunks: Float32Array[] = [];
-  private chunkBuffer: Float32Array[] = [];
   private isRecording = false;
-  private readonly CHUNK_DURATION_MS = 3000; // 3 seconds per chunk
   private readonly SAMPLE_RATE = 24000;
-  private chunkTimer: NodeJS.Timeout | null = null;
+  private speechRecognition: RealTimeSpeechRecognition | null = null;
 
   constructor(
     private onAudioData: (audioData: Float32Array) => void,
-    private onLiveTranscription?: (transcription: string) => void
-  ) {}
+    private onLiveTranscription?: (transcription: string, isFinal: boolean) => void
+  ) {
+    // Initialize speech recognition for real-time transcription
+    if (this.onLiveTranscription && RealTimeSpeechRecognition.isSupported()) {
+      this.speechRecognition = new RealTimeSpeechRecognition(
+        this.onLiveTranscription,
+        (error) => console.error('Speech recognition error:', error)
+      );
+    }
+  }
 
   async start() {
     try {
@@ -40,7 +48,6 @@ export class AudioRecorder {
         const inputData = e.inputBuffer.getChannelData(0);
         const chunk = new Float32Array(inputData);
         this.audioChunks.push(chunk);
-        this.chunkBuffer.push(chunk);
         this.onAudioData(chunk);
       };
       
@@ -48,9 +55,9 @@ export class AudioRecorder {
       this.processor.connect(this.audioContext.destination);
       this.isRecording = true;
       
-      // Start live transcription timer if callback provided
-      if (this.onLiveTranscription) {
-        this.startLiveTranscription();
+      // Start real-time speech recognition
+      if (this.speechRecognition) {
+        this.speechRecognition.start();
       }
     } catch (error) {
       console.error('Error accessing microphone:', error);
@@ -58,42 +65,6 @@ export class AudioRecorder {
     }
   }
 
-  private startLiveTranscription() {
-    this.chunkTimer = setInterval(async () => {
-      if (this.chunkBuffer.length > 0 && this.onLiveTranscription) {
-        const chunkData = this.combineChunks(this.chunkBuffer);
-        this.chunkBuffer = []; // Clear buffer after processing
-        
-        try {
-          const encodedAudio = encodeAudioForAPI(chunkData);
-          const transcription = await this.transcribeChunk(encodedAudio);
-          if (transcription) {
-            this.onLiveTranscription(transcription);
-          }
-        } catch (error) {
-          console.error('Live transcription error:', error);
-        }
-      }
-    }, this.CHUNK_DURATION_MS);
-  }
-
-  private async transcribeChunk(encodedAudio: string): Promise<string> {
-    const response = await fetch(`https://hjupkurtumzqrwoytjnn.supabase.co/functions/v1/transcribe-audio`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqdXBrdXJ0dW16cXJ3b3l0am5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MjI2MDQsImV4cCI6MjA3MTk5ODYwNH0.d5LNBkCAZY1ceV9LoMuMR5-cx_J9iZ4VwC1hJ9b30bI`
-      },
-      body: JSON.stringify({ audioData: encodedAudio })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Transcription failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.transcription || '';
-  }
 
   private combineChunks(chunks: Float32Array[]): Float32Array {
     const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
@@ -111,9 +82,9 @@ export class AudioRecorder {
   stop(): Float32Array {
     this.isRecording = false;
     
-    if (this.chunkTimer) {
-      clearInterval(this.chunkTimer);
-      this.chunkTimer = null;
+    // Stop speech recognition
+    if (this.speechRecognition) {
+      this.speechRecognition.stop();
     }
     
     if (this.source) {
@@ -144,7 +115,13 @@ export class AudioRecorder {
 
   clearChunks() {
     this.audioChunks = [];
-    this.chunkBuffer = [];
+    if (this.speechRecognition) {
+      this.speechRecognition.clearTranscript();
+    }
+  }
+
+  getLiveTranscript(): string {
+    return this.speechRecognition?.getTranscript() || '';
   }
 }
 

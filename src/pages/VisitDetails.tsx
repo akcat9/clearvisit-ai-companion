@@ -241,16 +241,13 @@ const VisitDetails = () => {
         (audioData) => {
           // Real-time audio data processing if needed
         },
-        (transcription, isFinal) => {
-          // Live transcription callback with new signature
-          if (isFinal) {
-            // Final transcription - update full transcription and keep showing it
-            setFullTranscription(transcription);
-            setLiveTranscription(transcription); // Keep showing the final text
-          } else {
-            // Interim transcription - show in live transcription only
-            setLiveTranscription(transcription);
-          }
+        (transcription) => {
+          // Live transcription callback
+          setLiveTranscription(prev => {
+            const newText = prev + ' ' + transcription;
+            setFullTranscription(newText.trim());
+            return newText;
+          });
         }
       );
       
@@ -450,22 +447,6 @@ const VisitDetails = () => {
       if (visitError) {
         console.error('Error saving visit record:', visitError);
         throw visitError;
-      }
-
-      // Update AI-generated medical history
-      if (aiGeneratedData) {
-        try {
-          await supabase.functions.invoke('update-medical-history', {
-            body: {
-              visitSummary: aiGeneratedData,
-              userId: user.id
-            }
-          });
-          console.log('Medical history updated successfully');
-        } catch (historyError) {
-          console.error('Error updating medical history:', historyError);
-          // Don't fail the whole process if history update fails
-        }
       }
 
       // Update appointment status

@@ -19,11 +19,8 @@ serve(async (req) => {
       throw new Error('OPENAI_API_KEY is not set');
     }
 
-    const { appointmentReason, medicalHistory, medications, allergies, userId, aiGeneratedHistory } = await req.json();
+    const { appointmentReason, medicalHistory, medications, allergies } = await req.json();
 
-    // Analyze AI-generated history for recent changes
-    const contextFromHistory = analyzeAIHistory(aiGeneratedHistory);
-    
     const prompt = `
 You are a medical AI assistant helping patients prepare for their doctor appointments.
 
@@ -33,16 +30,10 @@ Given the following information:
 - Current medications: ${medications || "None provided"}
 - Known allergies: ${allergies || "None provided"}
 
-Recent Medical Changes (from AI analysis of past visits):
-${contextFromHistory}
-
 Generate exactly 3 specific, personalized questions that this patient should ask their doctor during their appointment. The questions should be:
 1. Relevant to their appointment reason and medical history
-2. If recent medication changes are noted, include relevant medication questions
-3. If new symptoms were recently documented, ask about progression or management
-4. Actionable and specific
-5. Help the patient get the most value from their visit
-6. Focus on recent changes when medically relevant
+2. Actionable and specific
+3. Help the patient get the most value from their visit
 
 Return the response as a JSON object with a "questions" array containing exactly 3 strings.
 `;
@@ -62,7 +53,8 @@ Return the response as a JSON object with a "questions" array containing exactly
           },
           { role: 'user', content: prompt }
         ],
-        max_completion_tokens: 500,
+        max_tokens: 500,
+        temperature: 0.7,
       }),
     });
 
@@ -102,39 +94,3 @@ Return the response as a JSON object with a "questions" array containing exactly
     });
   }
 });
-
-function analyzeAIHistory(aiHistory: any[]): string {
-  if (!aiHistory || aiHistory.length === 0) {
-    return "No recent medical history available.";
-  }
-
-  const recentEntries = aiHistory.slice(-3); // Last 3 entries
-  let context = "";
-  
-  recentEntries.forEach((entry: any, index: number) => {
-    const date = new Date(entry.timestamp).toLocaleDateString();
-    context += `\nVisit ${index + 1} (${date}):\n`;
-    
-    if (entry.medications?.new?.length) {
-      context += `- New medications prescribed: ${entry.medications.new.join(', ')}\n`;
-    }
-    
-    if (entry.medications?.changed?.length) {
-      context += `- Medication changes: ${entry.medications.changed.join(', ')}\n`;
-    }
-    
-    if (entry.symptoms?.length) {
-      context += `- Reported symptoms: ${entry.symptoms.join(', ')}\n`;
-    }
-    
-    if (entry.diagnoses?.length) {
-      context += `- New diagnoses: ${entry.diagnoses.join(', ')}\n`;
-    }
-    
-    if (entry.recommendations?.length) {
-      context += `- Doctor recommendations: ${entry.recommendations.join(', ')}\n`;
-    }
-  });
-  
-  return context || "No specific medical changes noted in recent visits.";
-}

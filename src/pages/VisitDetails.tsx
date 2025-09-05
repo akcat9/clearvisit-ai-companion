@@ -54,7 +54,7 @@ const VisitDetails = () => {
     if (!appointment?.reason) return;
     
     try {
-      console.log('Loading educational content for:', appointment.reason);
+      console.log('Loading AI educational content for:', appointment.reason);
       const { data, error } = await supabase.functions.invoke('generate-educational-content', {
         body: { 
           reason: appointment.reason,
@@ -65,18 +65,34 @@ const VisitDetails = () => {
 
       if (error) {
         console.error('Error generating educational content:', error);
-        setEducationalContent('Unable to load educational content. Please try again.');
+        toast({
+          title: "Educational Content Failed",
+          description: "Could not generate educational content. Please try again.",
+          variant: "destructive",
+        });
         return;
       }
 
+      console.log('Educational content response:', data);
+
       if (data?.content) {
         setEducationalContent(data.content);
+        console.log('Educational content loaded successfully');
       } else {
-        setEducationalContent('Educational content will be available after AI analysis.');
+        console.error('No content in response:', data);
+        toast({
+          title: "Educational Content Failed", 
+          description: "No content received from AI. Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error loading educational content:', error);
-      setEducationalContent('Unable to load educational content. Please try again.');
+      toast({
+        title: "Educational Content Failed",
+        description: "Network error. Please check your connection and try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -232,75 +248,101 @@ const VisitDetails = () => {
     setIsAnalyzing(true);
     
     try {
-      console.log('Starting AI analysis...');
-      const medicalHistory = user ? localStorage.getItem(`clearvisit_profile_${user.id}`) : null;
+      console.log('Starting AI analysis with content:', contentToAnalyze.substring(0, 100) + '...');
       
       const { data: summaryData, error: summaryError } = await supabase.functions.invoke('process-visit-summary', {
         body: {
           fullTranscription: contentToAnalyze,
           appointmentReason: appointment?.reason || 'General consultation',
-          medicalHistory: medicalHistory ? JSON.parse(medicalHistory) : null
+          medicalHistory: null // Simplified since we removed medical profile
         }
       });
 
+      console.log('AI analysis response:', summaryData, 'Error:', summaryError);
+
       if (summaryError) {
         console.error('AI analysis error:', summaryError);
-        throw new Error(`AI analysis failed: ${summaryError.message}`);
+        toast({
+          title: "AI Analysis Failed",
+          description: `Error: ${summaryError.message}`,
+          variant: "destructive",
+        });
+        return;
       }
 
-      if (summaryData) {
-        const aiData = {
-          visitSummary: summaryData.visitSummary || '',
-          prescriptions: summaryData.prescriptions || '',
-          followUpActions: summaryData.followUpActions || '',
-          keySymptoms: summaryData.keySymptoms || [],
-          doctorRecommendations: summaryData.doctorRecommendations || [],
-          questionsForDoctor: summaryData.questionsForDoctor || []
+      if (!summaryData) {
+        console.error('No analysis data received');
+        toast({
+          title: "AI Analysis Failed",
+          description: "No analysis data received. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const aiData = {
+        visitSummary: summaryData.visitSummary || '',
+        prescriptions: summaryData.prescriptions || '',
+        followUpActions: summaryData.followUpActions || '',
+        keySymptoms: summaryData.keySymptoms || [],
+        doctorRecommendations: summaryData.doctorRecommendations || [],
+        questionsForDoctor: summaryData.questionsForDoctor || []
+      };
+      
+      console.log('Processed AI data:', aiData);
+      setAiGeneratedData(aiData);
+      
+      // Save to database
+      try {
+        const visitData = {
+          appointment_id: id,
+          user_id: user?.id,
+          transcription: contentToAnalyze,
+          summary: aiData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         };
-        
-        setAiGeneratedData(aiData);
-        
-        // Save to database
-        try {
-          const visitData = {
-            appointment_id: id,
-            user_id: user?.id,
-            transcription: contentToAnalyze,
-            summary: aiData,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
 
-          await supabase
-            .from('visit_records')
-            .upsert(visitData, { 
-              onConflict: 'appointment_id'
-            });
-
-          // Update appointment status to completed
-          await supabase
-            .from('appointments')
-            .update({ 
-              status: 'completed',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', id);
-
-          toast({
-            title: "AI Analysis Complete",
-            description: "Your visit has been analyzed and saved.",
+        const { error: saveError } = await supabase
+          .from('visit_records')
+          .upsert(visitData, { 
+            onConflict: 'appointment_id'
           });
-        } catch (saveError) {
+
+        if (saveError) {
           console.error('Error saving visit data:', saveError);
         }
-      } else {
-        throw new Error('No analysis data received');
+
+        // Update appointment status to completed
+        const { error: updateError } = await supabase
+          .from('appointments')
+          .update({ 
+            status: 'completed',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id);
+
+        if (updateError) {
+          console.error('Error updating appointment status:', updateError);
+        }
+
+        toast({
+          title: "AI Analysis Complete",
+          description: "Your visit has been analyzed and saved successfully.",
+        });
+      } catch (saveError) {
+        console.error('Error saving visit data:', saveError);
+        toast({
+          title: "Save Warning",
+          description: "Analysis complete but could not save to database.",
+          variant: "default",
+        });
       }
     } catch (error) {
       console.error('AI Analysis failed:', error);
       toast({
         title: "AI Analysis Failed",
-        description: "Please try again or contact support if the problem persists.",
+        description: "Network error or server issue. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -376,18 +418,23 @@ const VisitDetails = () => {
           </CardContent>
         </Card>
 
-        {/* Educational Content */}
-        {educationalContent && (
-          <Card className="mb-6">
-            <CardHeader className="flex flex-row items-center gap-2">
-              <BookOpen className="w-5 h-5" />
-              <CardTitle>About Your Visit</CardTitle>
-            </CardHeader>
-            <CardContent>
+        {/* Educational Content - Available Immediately */}
+        <Card className="mb-6">
+          <CardHeader className="flex flex-row items-center gap-2">
+            <BookOpen className="w-5 h-5" />
+            <CardTitle>About Your Visit</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {educationalContent ? (
               <div className="whitespace-pre-wrap text-gray-700">{educationalContent}</div>
-            </CardContent>
-          </Card>
-        )}
+            ) : (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+                <div className="text-gray-500">Generating personalized educational content...</div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Recording Section */}
         <Card className="mb-6">

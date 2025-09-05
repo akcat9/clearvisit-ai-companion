@@ -60,15 +60,15 @@ Do not include any markdown formatting, code blocks, or extra text. Return only 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-4.1-2025-04-14',
         messages: [
           { 
             role: 'system', 
-            content: 'You are a medical AI assistant that processes doctor visits. ALWAYS respond with ONLY valid JSON in the exact format requested. No markdown, no code blocks, no extra text.' 
+            content: 'You are a medical AI assistant. Analyze the doctor visit transcription and respond with ONLY valid JSON. No markdown, no explanations, just the JSON object.' 
           },
           { role: 'user', content: prompt }
         ],
-        max_completion_tokens: 1200,
+        max_completion_tokens: 800,
       }),
     });
 

@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUnreadSharedVisits } from "@/hooks/useUnreadSharedVisits";
+import { format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -71,12 +72,22 @@ const Dashboard = () => {
     }
   };
 
+  const formatTime = (timeString: string) => {
+    try {
+      // Parse the time string (e.g., "22:35:00" or "14:30:00")
+      const [hours, minutes] = timeString.split(':');
+      const date = new Date();
+      date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      
+      // Format to 12-hour format
+      return format(date, 'h:mm a');
+    } catch (error) {
+      return timeString; // Return original if parsing fails
+    }
+  };
+
   const handleDeleteAppointment = async (appointmentId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent navigation when clicking delete
-    
-    if (!confirm('Are you sure you want to delete this appointment?')) {
-      return;
-    }
 
     try {
       const { error } = await supabase
@@ -172,7 +183,7 @@ const Dashboard = () => {
                   <div>• <strong>Create appointments</strong> - Click "New Appointment" to schedule visits</div>
                   <div>• <strong>Record visits</strong> - Click on any appointment to record audio during your visit</div>
                   <div>• <strong>Share visits</strong> - Share visit recordings with family or other doctors</div>
-                  <div>• <strong>Get AI insights</strong> - Receive personalized medical insights and educational content</div>
+                  <div>• <strong>Get AI insights</strong> - Receive personalized medical insights from your visit recordings</div>
                 </div>
               </DialogContent>
             </Dialog>
@@ -227,7 +238,7 @@ const Dashboard = () => {
                     >
                       <div className="font-medium">{appointment.doctor_name}</div>
                       <div className="text-sm text-muted-foreground">
-                        {appointment.date} at {appointment.time}
+                        {appointment.date} at {formatTime(appointment.time)}
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
                         {appointment.reason}
@@ -267,7 +278,7 @@ const Dashboard = () => {
                     >
                       <div className="font-medium">{appointment.doctor_name}</div>
                       <div className="text-sm text-muted-foreground">
-                        {appointment.date} at {appointment.time}
+                        {appointment.date} at {formatTime(appointment.time)}
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
                         {appointment.reason}

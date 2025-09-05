@@ -7,14 +7,28 @@ import { Header } from '@/components/Header';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Mic, MicOff, FileText, BookOpen } from 'lucide-react';
+import { ArrowLeft, Mic, MicOff, FileText } from 'lucide-react';
 import ShareVisitModal from '@/components/ShareVisitModal';
 import { AudioRecorder } from '@/utils/AudioRecorder';
+import { format } from 'date-fns';
+
+const formatTime = (timeString: string) => {
+  try {
+    // Parse the time string (e.g., "22:35:00" or "14:30:00")
+    const [hours, minutes] = timeString.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    
+    // Format to 12-hour format
+    return format(date, 'h:mm a');
+  } catch (error) {
+    return timeString; // Return original if parsing fails
+  }
+};
 
 const VisitDetails = () => {
   const { user } = useAuth();
   const [appointment, setAppointment] = useState<any>(null);
-  const [educationalContent, setEducationalContent] = useState<string>('');
   const [isRecording, setIsRecording] = useState(false);
   const [manualNotes, setManualNotes] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
@@ -43,58 +57,6 @@ const VisitDetails = () => {
     if (!user) return;
     fetchAppointment();
   }, [id, user, navigate, toast]);
-
-  useEffect(() => {
-    if (appointment?.reason) {
-      loadEducationalContent();
-    }
-  }, [appointment]);
-
-  const loadEducationalContent = async () => {
-    if (!appointment?.reason) return;
-    
-    try {
-      console.log('Loading AI educational content for:', appointment.reason);
-      const { data, error } = await supabase.functions.invoke('generate-educational-content', {
-        body: { 
-          reason: appointment.reason,
-          symptoms: appointment.symptoms,
-          goal: appointment.goal
-        }
-      });
-
-      if (error) {
-        console.error('Error generating educational content:', error);
-        toast({
-          title: "Educational Content Failed",
-          description: "Could not generate educational content. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('Educational content response:', data);
-
-      if (data?.content) {
-        setEducationalContent(data.content);
-        console.log('Educational content loaded successfully');
-      } else {
-        console.error('No content in response:', data);
-        toast({
-          title: "Educational Content Failed", 
-          description: "No content received from AI. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error loading educational content:', error);
-      toast({
-        title: "Educational Content Failed",
-        description: "Network error. Please check your connection and try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const fetchAppointment = async () => {
     try {
@@ -411,28 +373,10 @@ const VisitDetails = () => {
           </CardHeader>
           <CardContent className="grid gap-3">
             <div><strong>Doctor:</strong> {appointment.doctorName}</div>
-            <div><strong>Date & Time:</strong> {appointment.date} at {appointment.time}</div>
+            <div><strong>Date & Time:</strong> {appointment.date} at {formatTime(appointment.time)}</div>
             <div><strong>Reason:</strong> {appointment.reason}</div>
             {appointment.goal && <div><strong>Goal:</strong> {appointment.goal}</div>}
             {appointment.symptoms && <div><strong>Symptoms:</strong> {appointment.symptoms}</div>}
-          </CardContent>
-        </Card>
-
-        {/* Educational Content - Available Immediately */}
-        <Card className="mb-6">
-          <CardHeader className="flex flex-row items-center gap-2">
-            <BookOpen className="w-5 h-5" />
-            <CardTitle>About Your Visit</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {educationalContent ? (
-              <div className="whitespace-pre-wrap text-gray-700">{educationalContent}</div>
-            ) : (
-              <div className="text-center py-4">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
-                <div className="text-gray-500">Generating personalized educational content...</div>
-              </div>
-            )}
           </CardContent>
         </Card>
 

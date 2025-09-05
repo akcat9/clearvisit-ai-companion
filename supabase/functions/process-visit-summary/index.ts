@@ -85,7 +85,7 @@ Do not include any markdown formatting, code blocks, or extra text. Return only 
           followUpActions: "Please review transcription for follow-up instructions",
           keySymptoms: ["Please review transcription"],
           doctorRecommendations: ["Please review transcription for recommendations"],
-          questionsForNextVisit: [
+          questionsForDoctor: [
             "What should I monitor regarding my condition?",
             "When should I schedule my next appointment?",
             "Are there any warning signs I should watch for?"
@@ -104,6 +104,27 @@ Do not include any markdown formatting, code blocks, or extra text. Return only 
 
     let content = data.choices[0].message.content;
     console.log('Raw OpenAI response:', content);
+    
+    // Check if OpenAI returned empty content
+    if (!content || content.trim() === '') {
+      console.error('OpenAI returned empty content');
+      const fallbackResponse = {
+        visitSummary: `Visit completed for ${appointmentReason}. The AI was unable to process the transcription properly. Please review the transcription manually.`,
+        prescriptions: "Please review the visit transcription for prescription details",
+        followUpActions: "Please review the visit transcription for follow-up instructions",
+        keySymptoms: ["Review transcription for symptoms discussed"],
+        doctorRecommendations: ["Review transcription for doctor's recommendations"],
+        questionsForDoctor: [
+          "What are the main takeaways from today's visit?",
+          "What should I monitor before our next appointment?",
+          "When should I schedule my next visit?"
+        ]
+      };
+      
+      return new Response(JSON.stringify(fallbackResponse), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     
     // Clean up the response - remove any markdown formatting
     content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
@@ -125,7 +146,7 @@ Do not include any markdown formatting, code blocks, or extra text. Return only 
         followUpActions: "Please review the visit transcription for follow-up instructions",
         keySymptoms: ["Refer to transcription for symptom details"],
         doctorRecommendations: ["Refer to transcription for doctor's recommendations"],
-        questionsForNextVisit: [
+        questionsForDoctor: [
           "What are the next steps in my treatment plan?",
           "How should I monitor my symptoms?",
           "When should I return for follow-up?"

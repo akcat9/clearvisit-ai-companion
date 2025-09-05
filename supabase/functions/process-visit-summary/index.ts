@@ -46,7 +46,11 @@ IMPORTANT: Respond with ONLY valid JSON in this exact format:
   "followUpActions": "Any recommended next steps, tests, appointments, or lifestyle changes (or 'None specified' if no follow-ups)",
   "keySymptoms": ["List", "the", "main", "symptoms", "or", "concerns", "discussed"],
   "doctorRecommendations": ["Specific", "advice", "or", "recommendations", "given", "by", "the", "doctor"],
-  "questionsForDoctor": ["Question 1 to ask your doctor based on what was discussed", "Question 2 to ask your doctor based on what was discussed", "Question 3 to ask your doctor based on what was discussed"]
+  "questionsForDoctor": ["Question 1 to ask your doctor based on what was discussed", "Question 2 to ask your doctor based on what was discussed", "Question 3 to ask your doctor based on what was discussed"],
+  "keyTermsExplained": {
+    "term1": "Simple explanation of medical term mentioned in visit",
+    "term2": "Simple explanation of another medical term"
+  }
 }
 
 Do not include any markdown formatting, code blocks, or extra text. Return only the JSON object.`;

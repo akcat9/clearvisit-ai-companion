@@ -7,8 +7,9 @@ import { Header } from '@/components/Header';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Mic, MicOff, FileText } from 'lucide-react';
+import { ArrowLeft, Mic, MicOff, FileText, BookOpen, AlertCircle } from 'lucide-react';
 import ShareVisitModal from '@/components/ShareVisitModal';
+import PreVisitEducation from '@/components/PreVisitEducation';
 import { AudioRecorder } from '@/utils/AudioRecorder';
 import { format } from 'date-fns';
 
@@ -46,6 +47,7 @@ const VisitDetails = () => {
     keySymptoms: string[];
     doctorRecommendations: string[];
     questionsForDoctor: string[];
+    keyTermsExplained?: Record<string, string>;
   } | null>(null);
   
   const navigate = useNavigate();
@@ -248,7 +250,8 @@ const VisitDetails = () => {
         followUpActions: summaryData.followUpActions || '',
         keySymptoms: summaryData.keySymptoms || [],
         doctorRecommendations: summaryData.doctorRecommendations || [],
-        questionsForDoctor: summaryData.questionsForDoctor || []
+        questionsForDoctor: summaryData.questionsForDoctor || [],
+        keyTermsExplained: summaryData.keyTermsExplained || {}
       };
       
       console.log('Processed AI data:', aiData);
@@ -350,9 +353,9 @@ const VisitDetails = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Header />
-      <div className="container mx-auto p-6 max-w-4xl">
+      <div className="container mx-auto p-4 sm:p-6 max-w-4xl">
         <div className="flex items-center gap-4 mb-6">
           <Button
             variant="outline"
@@ -367,24 +370,51 @@ const VisitDetails = () => {
         </div>
 
         {/* Appointment Info */}
-        <Card className="mb-6">
+        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
           <CardHeader>
-            <CardTitle>Appointment Information</CardTitle>
+            <CardTitle className="text-blue-900 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5" />
+              Appointment Information
+            </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3">
-            <div><strong>Doctor:</strong> {appointment.doctorName}</div>
-            <div><strong>Date & Time:</strong> {appointment.date} at {formatTime(appointment.time)}</div>
-            <div><strong>Reason:</strong> {appointment.reason}</div>
-            {appointment.goal && <div><strong>Goal:</strong> {appointment.goal}</div>}
-            {appointment.symptoms && <div><strong>Symptoms:</strong> {appointment.symptoms}</div>}
+            <div className="flex flex-wrap gap-2 text-sm">
+              <span className="font-semibold text-blue-800">Doctor:</span> 
+              <span className="text-blue-700">{appointment.doctorName}</span>
+            </div>
+            <div className="flex flex-wrap gap-2 text-sm">
+              <span className="font-semibold text-blue-800">Date & Time:</span> 
+              <span className="text-blue-700">{appointment.date} at {formatTime(appointment.time)}</span>
+            </div>
+            <div className="flex flex-wrap gap-2 text-sm">
+              <span className="font-semibold text-blue-800">Reason:</span> 
+              <span className="text-blue-700">{appointment.reason}</span>
+            </div>
+            {appointment.goal && (
+              <div className="flex flex-wrap gap-2 text-sm">
+                <span className="font-semibold text-blue-800">Goal:</span> 
+                <span className="text-blue-700">{appointment.goal}</span>
+              </div>
+            )}
+            {appointment.symptoms && (
+              <div className="flex flex-wrap gap-2 text-sm">
+                <span className="font-semibold text-blue-800">Symptoms:</span> 
+                <span className="text-blue-700">{appointment.symptoms}</span>
+              </div>
+            )}
           </CardContent>
         </Card>
 
+        {/* Pre-Visit Education */}
+        <div className="mb-6">
+          <PreVisitEducation appointmentReason={appointment.reason} />
+        </div>
+
         {/* Recording Section */}
-        <Card className="mb-6">
+        <Card className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
           <CardHeader className="flex flex-row items-center gap-2">
-            <Mic className="w-5 h-5" />
-            <CardTitle>Record Visit</CardTitle>
+            <Mic className="w-5 h-5 text-green-700" />
+            <CardTitle className="text-green-900">Record Visit</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-4">
@@ -421,9 +451,9 @@ const VisitDetails = () => {
 
             {/* Live Transcription */}
             {liveTranscription && (
-              <div className="bg-gray-100 p-4 rounded-lg">
-                <h4 className="font-medium mb-2">Live Transcription:</h4>
-                <div className="text-sm text-gray-700 max-h-40 overflow-y-auto">
+              <div className="bg-white border-2 border-green-200 p-4 rounded-lg">
+                <h4 className="font-medium mb-2 text-green-800">Live Transcription:</h4>
+                <div className="text-sm text-green-700 max-h-40 overflow-y-auto leading-relaxed">
                   {liveTranscription}
                 </div>
               </div>
@@ -452,62 +482,89 @@ const VisitDetails = () => {
 
         {/* AI Analysis Results */}
         {aiGeneratedData && (
-          <Card className="mb-6">
+          <Card className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
             <CardHeader>
-              <CardTitle>AI Analysis Results</CardTitle>
+              <CardTitle className="text-purple-900 flex items-center gap-2">
+                <BookOpen className="w-5 h-5" />
+                AI Analysis Results
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {aiGeneratedData.visitSummary && (
-                <div>
-                  <h4 className="font-semibold mb-2">Visit Summary</h4>
-                  <p className="text-gray-700">{aiGeneratedData.visitSummary}</p>
+                <div className="bg-white rounded-lg p-4 border border-purple-200">
+                  <h4 className="font-semibold mb-3 text-purple-800 text-base">Visit Summary</h4>
+                  <p className="text-purple-700 leading-relaxed text-sm">{aiGeneratedData.visitSummary}</p>
                 </div>
               )}
 
               {aiGeneratedData.keySymptoms?.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-2">Key Symptoms</h4>
-                  <ul className="list-disc list-inside text-gray-700">
+                <div className="bg-white rounded-lg p-4 border border-red-200">
+                  <h4 className="font-semibold mb-3 text-red-800 text-base">Key Symptoms</h4>
+                  <div className="grid grid-cols-1 gap-2">
                     {aiGeneratedData.keySymptoms.map((symptom, index) => (
-                      <li key={index}>{symptom}</li>
+                      <div key={index} className="bg-red-50 p-3 rounded-lg border border-red-100">
+                        <span className="text-red-700 text-sm">{symptom}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
+                </div>
+              )}
+
+              {aiGeneratedData.keyTermsExplained && Object.keys(aiGeneratedData.keyTermsExplained).length > 0 && (
+                <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <h4 className="font-semibold mb-3 text-blue-800 text-base">Medical Terms Explained</h4>
+                  <div className="space-y-3">
+                    {Object.entries(aiGeneratedData.keyTermsExplained).map(([term, explanation], index) => (
+                      <div key={index} className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                        <span className="font-medium text-blue-800 text-sm">{term}:</span>
+                        <p className="text-blue-700 mt-1 text-sm">{explanation}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
               {aiGeneratedData.prescriptions && (
-                <div>
-                  <h4 className="font-semibold mb-2">Prescriptions & Medications</h4>
-                  <p className="text-gray-700">{aiGeneratedData.prescriptions}</p>
+                <div className="bg-white rounded-lg p-4 border border-orange-200">
+                  <h4 className="font-semibold mb-3 text-orange-800 text-base">Prescriptions & Medications</h4>
+                  <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
+                    <p className="text-orange-700 text-sm">{aiGeneratedData.prescriptions}</p>
+                  </div>
                 </div>
               )}
 
               {aiGeneratedData.doctorRecommendations?.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-2">Doctor's Recommendations</h4>
-                  <ul className="list-disc list-inside text-gray-700">
+                <div className="bg-white rounded-lg p-4 border border-green-200">
+                  <h4 className="font-semibold mb-3 text-green-800 text-base">Doctor's Recommendations</h4>
+                  <div className="grid grid-cols-1 gap-2">
                     {aiGeneratedData.doctorRecommendations.map((rec, index) => (
-                      <li key={index}>{rec}</li>
+                      <div key={index} className="bg-green-50 p-3 rounded-lg border border-green-100">
+                        <span className="text-green-700 text-sm">{rec}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
 
               {aiGeneratedData.followUpActions && (
-                <div>
-                  <h4 className="font-semibold mb-2">Follow-Up Actions</h4>
-                  <p className="text-gray-700">{aiGeneratedData.followUpActions}</p>
+                <div className="bg-white rounded-lg p-4 border border-yellow-200">
+                  <h4 className="font-semibold mb-3 text-yellow-800 text-base">Follow-Up Actions</h4>
+                  <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                    <p className="text-yellow-700 text-sm">{aiGeneratedData.followUpActions}</p>
+                  </div>
                 </div>
               )}
 
               {aiGeneratedData.questionsForDoctor?.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-2">Questions for Next Visit</h4>
-                  <ul className="list-disc list-inside text-gray-700">
+                <div className="bg-white rounded-lg p-4 border border-indigo-200">
+                  <h4 className="font-semibold mb-3 text-indigo-800 text-base">Questions for Next Visit</h4>
+                  <div className="grid grid-cols-1 gap-2">
                     {aiGeneratedData.questionsForDoctor.map((question, index) => (
-                      <li key={index}>{question}</li>
+                      <div key={index} className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                        <span className="text-indigo-700 text-sm">{question}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
             </CardContent>

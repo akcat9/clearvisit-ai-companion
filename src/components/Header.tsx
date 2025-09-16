@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -20,15 +20,26 @@ export const Header = () => {
         {user && (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
             <span className="text-sm truncate">Welcome, {user.email}</span>
-            <Button 
-              variant="secondary" 
-              size="sm" 
-              onClick={handleSignOut}
-              className="flex items-center gap-2 self-start sm:self-auto"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => navigate("/settings")}
+                className="flex items-center gap-2 self-start sm:self-auto"
+              >
+                <Settings className="w-4 h-4" />
+                Settings
+              </Button>
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                onClick={handleSignOut}
+                className="flex items-center gap-2 self-start sm:self-auto"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </Button>
+            </div>
           </div>
         )}
       </div>

@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import VisitDetails from "./pages/VisitDetails";
 import SharedVisitsPage from "./pages/SharedVisits";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <SharedVisitsPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/settings" 
+              element={
+                <ProtectedRoute>
+                  <Settings />
                 </ProtectedRoute>
               } 
             />

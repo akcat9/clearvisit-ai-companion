@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/Header";
-import { Plus, Share2, Trash2, HelpCircle } from "lucide-react";
+import { Plus, Share2, Trash2, HelpCircle, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppointmentModal } from "@/components/AppointmentModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -243,6 +243,18 @@ const Dashboard = () => {
                       <div className="text-sm text-muted-foreground mt-1">
                         {appointment.reason}
                       </div>
+                      <div className="flex items-center justify-between mt-3">
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/visit/${appointment.id}`);
+                          }}
+                        >
+                          Go <ChevronRight className="ml-1 h-4 w-4" />
+                        </Button>
+                      </div>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -282,6 +294,18 @@ const Dashboard = () => {
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
                         {appointment.reason}
+                      </div>
+                      <div className="flex items-center justify-between mt-3">
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/visit/${appointment.id}`);
+                          }}
+                        >
+                          Go <ChevronRight className="ml-1 h-4 w-4" />
+                        </Button>
                       </div>
                       <Button
                         variant="ghost"

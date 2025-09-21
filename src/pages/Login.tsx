@@ -102,7 +102,7 @@ const Login = () => {
     );
   }
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header />
       
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4">

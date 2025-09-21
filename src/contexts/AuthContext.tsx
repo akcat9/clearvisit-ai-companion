@@ -34,14 +34,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     );
 
-    // Check for existing session
+    // Check for existing session with timeout
+    const timeoutId = setTimeout(() => {
+      console.warn('Auth check timeout, setting loading to false');
+      setLoading(false);
+    }, 8000); // 8 second timeout
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(timeoutId);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+    }).catch((error) => {
+      clearTimeout(timeoutId);
+      console.error('Auth session error:', error);
+      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   const signOut = async () => {

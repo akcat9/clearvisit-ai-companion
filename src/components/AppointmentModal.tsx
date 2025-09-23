@@ -32,7 +32,7 @@ export const AppointmentModal = ({ onClose, onSubmit }: AppointmentModalProps) =
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-w-[95vw] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md w-[95vw] max-h-[90vh] overflow-y-auto mx-4">
         <DialogHeader>
           <DialogTitle>Create New Appointment</DialogTitle>
         </DialogHeader>

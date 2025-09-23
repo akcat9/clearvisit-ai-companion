@@ -25,20 +25,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener
+    // Set up auth state listener with connection monitoring
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // Handle session refresh events
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('Session refreshed successfully');
+        }
+        
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
       }
     );
 
+    // Auto-refresh on app focus for mobile apps
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          setSession(session);
+          setUser(session?.user ?? null);
+        }).catch(console.error);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     // Check for existing session with timeout
     const timeoutId = setTimeout(() => {
       console.warn('Auth check timeout, setting loading to false');
       setLoading(false);
-    }, 8000); // 8 second timeout
+    }, 5000); // Reduced to 5 seconds for faster mobile experience
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       clearTimeout(timeoutId);
@@ -53,6 +70,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => {
       subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       clearTimeout(timeoutId);
     };
   }, []);

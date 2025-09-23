@@ -8,21 +8,21 @@ const SharedVisitsPage = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header />
       
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="flex items-center gap-4 mb-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => navigate("/dashboard")}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Button>
-          <h1 className="text-3xl font-bold">Shared Visit Summaries</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">Shared Visit Summaries</h1>
         </div>
 
         <SharedVisits />

@@ -11,15 +11,15 @@ export const Header = () => {
     await signOut();
   };
   return (
-    <header className="bg-primary text-primary-foreground px-6 py-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between max-w-7xl mx-auto">
+    <header className="bg-primary text-primary-foreground px-4 sm:px-6 py-3 sm:py-4">
+      <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-center sm:justify-between max-w-7xl mx-auto">
         <div className="flex items-center gap-3">
-          <span className="text-xl font-semibold">Clearvisit AI</span>
+          <span className="text-lg sm:text-xl font-semibold">Clearvisit AI</span>
         </div>
         
         {user && (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-            <span className="text-sm truncate">Welcome, {user.email}</span>
+            <span className="text-xs sm:text-sm truncate max-w-[200px] sm:max-w-none">Welcome, {user.email}</span>
             <div className="flex gap-2">
               <Button 
                 variant="ghost" 

@@ -105,11 +105,11 @@ const Login = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4">
-        <div className="w-full max-w-md space-y-6">
+      <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4 py-4">
+        <div className="w-full max-w-md space-y-4 sm:space-y-6">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900">Welcome to Clearvisit</h1>
-            <p className="mt-2 text-gray-600">Record, analyze, and remember your doctor visits</p>
+            <h1 className="text-2xl sm:text-3xl font-bold">Welcome to Clearvisit</h1>
+            <p className="mt-2 text-muted-foreground text-sm sm:text-base">Record, analyze, and remember your doctor visits</p>
           </div>
 
           <Card>

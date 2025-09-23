@@ -144,7 +144,7 @@ const ConversationList: React.FC<ConversationListProps> = ({ onSelectConversatio
         <div
           key={conversation.senderId}
           onClick={() => onSelectConversation(conversation.senderId, conversation.senderProfile)}
-          className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer rounded-lg transition-colors"
+          className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer rounded-lg transition-colors"
         >
           <div className="relative">
             <Avatar className="h-12 w-12">

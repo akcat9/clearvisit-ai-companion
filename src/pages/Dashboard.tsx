@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/Header";
@@ -42,12 +42,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { unreadCount } = useUnreadSharedVisits();
 
-  useEffect(() => {
-    if (!user) return;
-    fetchAppointments();
-  }, [user]);
-
-  const fetchAppointments = async () => {
+  const fetchAppointments = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('appointments')
@@ -70,7 +65,12 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchAppointments();
+  }, [user, fetchAppointments]);
 
   const formatTime = (timeString: string) => {
     try {
@@ -155,15 +155,19 @@ const Dashboard = () => {
     }
   };
 
-  const upcomingAppointments = appointments.filter(apt => apt.status === 'upcoming');
-  const previousAppointments = appointments.filter(apt => apt.status === 'completed');
+  const upcomingAppointments = useMemo(() => 
+    appointments.filter(apt => apt.status === 'upcoming'), [appointments]
+  );
+  const previousAppointments = useMemo(() => 
+    appointments.filter(apt => apt.status === 'completed'), [appointments]
+  );
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl sm:text-3xl font-bold">My Appointments</h1>
             <Dialog>
@@ -212,7 +216,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid sm:grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Upcoming Appointments</CardTitle>
@@ -233,7 +237,7 @@ const Dashboard = () => {
                   {upcomingAppointments.map((appointment) => (
                     <div 
                       key={appointment.id} 
-                      className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer group relative"
+                       className="p-3 sm:p-4 border rounded-lg hover:bg-muted/50 cursor-pointer group relative transition-colors"
                       onClick={() => navigate(`/visit/${appointment.id}`)}
                     >
                       <div className="font-medium">{appointment.doctor_name}</div>
@@ -285,7 +289,7 @@ const Dashboard = () => {
                   {previousAppointments.map((appointment) => (
                     <div 
                       key={appointment.id} 
-                      className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer group relative"
+                      className="p-3 sm:p-4 border rounded-lg hover:bg-muted/50 cursor-pointer group relative transition-colors"
                       onClick={() => navigate(`/visit/${appointment.id}`)}
                     >
                       <div className="font-medium">{appointment.doctor_name}</div>

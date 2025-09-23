@@ -1,18 +1,33 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export const useAppRefresh = () => {
   const { toast } = useToast();
+  const [isRecovering, setIsRecovering] = useState(false);
 
-  const refreshApp = useCallback(() => {
-    // Force refresh session and reload if needed
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error || !session) {
-        console.log('Session invalid, reloading app');
-        window.location.reload();
+  const refreshApp = useCallback(async () => {
+    // Graceful session recovery without hard reload
+    setIsRecovering(true);
+    
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.log('Session error, attempting silent refresh');
+        // Try to refresh the session instead of immediate reload
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError) {
+          console.log('Session refresh failed, clearing auth state');
+          await supabase.auth.signOut({ scope: 'local' });
+        }
       }
-    });
+    } catch (error) {
+      console.error('Session recovery error:', error);
+    } finally {
+      setIsRecovering(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -62,5 +77,5 @@ export const useAppRefresh = () => {
     };
   }, [refreshApp]);
 
-  return { refreshApp };
+  return { refreshApp, isRecovering };
 };

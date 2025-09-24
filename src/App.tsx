@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { useAppRefresh } from "@/hooks/useAppRefresh";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import VisitDetails from "./pages/VisitDetails";
@@ -23,8 +22,6 @@ const queryClient = new QueryClient({
 });
 
 const AppContent = () => {
-  useAppRefresh();
-  
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>

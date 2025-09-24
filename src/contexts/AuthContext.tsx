@@ -28,36 +28,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (event === 'TOKEN_REFRESHED') {
-          console.log('Session refreshed successfully');
-        }
-        
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
       }
     );
 
-    // Check for existing session with timeout
-    const timeoutId = setTimeout(() => {
-      console.warn('Auth check timeout, setting loading to false');
-      setLoading(false);
-    }, 5000);
-
+    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      clearTimeout(timeoutId);
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
-    }).catch((error) => {
-      clearTimeout(timeoutId);
-      console.error('Auth session error:', error);
       setLoading(false);
     });
 
     return () => {
       subscription.unsubscribe();
-      clearTimeout(timeoutId);
     };
   }, []);
 

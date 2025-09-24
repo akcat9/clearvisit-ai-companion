@@ -1,6 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { useAppRefresh } from '@/hooks/useAppRefresh';
+import { Button } from '@/components/ui/button';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -18,6 +19,18 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
           <p className="mt-2 text-muted-foreground">
             {isRecovering ? 'Reconnecting...' : 'Loading...'}
           </p>
+          {isRecovering && (
+            <div className="mt-4 space-y-2">
+              <p className="text-xs text-muted-foreground">Taking longer than expected?</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => window.location.reload()}
+              >
+                Refresh Page
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     );

@@ -7,25 +7,32 @@ export const useAppRefresh = () => {
   const [isRecovering, setIsRecovering] = useState(false);
 
   const refreshApp = useCallback(async () => {
-    // Graceful session recovery without hard reload
     setIsRecovering(true);
+    
+    // Add timeout to prevent infinite recovery
+    const timeoutId = setTimeout(() => {
+      console.log('Recovery timeout, clearing state');
+      setIsRecovering(false);
+    }, 10000); // 10 second timeout
     
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
-        console.log('Session error, attempting silent refresh');
-        // Try to refresh the session instead of immediate reload
+        console.log('Session error, attempting refresh');
         const { error: refreshError } = await supabase.auth.refreshSession();
         
         if (refreshError) {
-          console.log('Session refresh failed, clearing auth state');
+          console.log('Session refresh failed, signing out');
           await supabase.auth.signOut({ scope: 'local' });
         }
       }
     } catch (error) {
       console.error('Session recovery error:', error);
+      // Clear auth state on error
+      await supabase.auth.signOut({ scope: 'local' });
     } finally {
+      clearTimeout(timeoutId);
       setIsRecovering(false);
     }
   }, []);
@@ -37,12 +44,11 @@ export const useAppRefresh = () => {
       refreshApp();
     };
 
-    // Listen for app becoming visible (mobile app focus)
+    // Listen for app becoming visible after long absence  
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // Only refresh if app was hidden for more than 30 seconds
         const hiddenTime = Date.now() - (window as any).appHiddenTime;
-        if (hiddenTime > 30000) {
+        if (hiddenTime > 30000) { // 30 seconds
           console.log('App focused after long absence, refreshing');
           refreshApp();
         }
@@ -51,7 +57,7 @@ export const useAppRefresh = () => {
       }
     };
 
-    // Listen for page focus (browser tab switching)
+    // Listen for page focus after long absence
     const handleFocus = () => {
       const focusTime = Date.now() - (window as any).appBlurTime;
       if (focusTime > 60000) { // 1 minute

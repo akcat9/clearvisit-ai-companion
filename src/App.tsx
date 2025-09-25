@@ -5,6 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { DOMErrorBoundary } from "@/components/DOMErrorBoundary";
+import { useDOMWatchdog } from "@/hooks/useDOMWatchdog";
+import { useState } from "react";
+import { DOMErrorScreen } from "@/components/DOMErrorScreen";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import VisitDetails from "./pages/VisitDetails";
@@ -22,6 +26,18 @@ const queryClient = new QueryClient({
 });
 
 const AppContent = () => {
+  const [showDOMError, setShowDOMError] = useState(false);
+
+  // Monitor DOM health and show error screen if corruption detected
+  useDOMWatchdog(() => {
+    setShowDOMError(true);
+  });
+
+  // Show DOM error screen if corruption detected
+  if (showDOMError) {
+    return <DOMErrorScreen />;
+  }
+
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
@@ -66,15 +82,17 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AppContent />
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <DOMErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AppContent />
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </DOMErrorBoundary>
 );
 
 export default App;

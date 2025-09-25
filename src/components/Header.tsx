@@ -2,14 +2,10 @@ import { LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { AnnouncementsButton } from "./AnnouncementsButton";
-import { AnnouncementsModal } from "./AnnouncementsModal";
 
 export const Header = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [showAnnouncements, setShowAnnouncements] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -24,8 +20,7 @@ export const Header = () => {
         {user && (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
             <span className="text-xs sm:text-sm truncate max-w-[200px] sm:max-w-none">Welcome, {user.email}</span>
-            <div className="flex gap-1 sm:gap-2">
-              <AnnouncementsButton onClick={() => setShowAnnouncements(true)} />
+            <div className="flex gap-2">
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -48,11 +43,6 @@ export const Header = () => {
           </div>
         )}
       </div>
-      
-      <AnnouncementsModal 
-        open={showAnnouncements} 
-        onOpenChange={setShowAnnouncements} 
-      />
     </header>
   );
 };

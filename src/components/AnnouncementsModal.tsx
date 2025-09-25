@@ -9,6 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Announcement {
   id: string;
@@ -23,14 +24,16 @@ interface AnnouncementsModalProps {
 }
 
 export const AnnouncementsModal = ({ open, onOpenChange }: AnnouncementsModalProps) => {
+  const { user } = useAuth();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (open) {
+    if (open && user) {
       fetchAnnouncements();
+      markAsViewed();
     }
-  }, [open]);
+  }, [open, user]);
 
   const fetchAnnouncements = async () => {
     setLoading(true);
@@ -44,6 +47,24 @@ export const AnnouncementsModal = ({ open, onOpenChange }: AnnouncementsModalPro
       setAnnouncements(data || []);
     }
     setLoading(false);
+  };
+
+  const markAsViewed = async () => {
+    if (!user) return;
+
+    // Update or insert the user's last viewed timestamp
+    const { error } = await supabase
+      .from('user_announcement_views')
+      .upsert({
+        user_id: user.id,
+        last_viewed_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (error) {
+      console.error('Error marking announcements as viewed:', error);
+    }
   };
 
   return (

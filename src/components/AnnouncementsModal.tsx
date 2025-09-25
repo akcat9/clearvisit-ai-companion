@@ -10,29 +10,29 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 
-interface Notification {
+interface Announcement {
   id: string;
   title: string;
   message: string;
   created_at: string;
 }
 
-interface NotificationsModalProps {
+interface AnnouncementsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export const NotificationsModal = ({ open, onOpenChange }: NotificationsModalProps) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+export const AnnouncementsModal = ({ open, onOpenChange }: AnnouncementsModalProps) => {
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (open) {
-      fetchNotifications();
+      fetchAnnouncements();
     }
   }, [open]);
 
-  const fetchNotifications = async () => {
+  const fetchAnnouncements = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('app_notifications')
@@ -41,7 +41,7 @@ export const NotificationsModal = ({ open, onOpenChange }: NotificationsModalPro
       .order('created_at', { ascending: false });
 
     if (!error) {
-      setNotifications(data || []);
+      setAnnouncements(data || []);
     }
     setLoading(false);
   };
@@ -51,9 +51,9 @@ export const NotificationsModal = ({ open, onOpenChange }: NotificationsModalPro
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            Notifications
-            {notifications.length > 0 && (
-              <Badge variant="secondary">{notifications.length}</Badge>
+            Announcements
+            {announcements.length > 0 && (
+              <Badge variant="secondary">{announcements.length}</Badge>
             )}
           </DialogTitle>
         </DialogHeader>
@@ -61,24 +61,24 @@ export const NotificationsModal = ({ open, onOpenChange }: NotificationsModalPro
         <ScrollArea className="max-h-96">
           {loading ? (
             <div className="p-4 text-center text-muted-foreground">
-              Loading notifications...
+              Loading announcements...
             </div>
-          ) : notifications.length === 0 ? (
+          ) : announcements.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">
-              No notifications yet
+              No announcements yet
             </div>
           ) : (
             <div className="space-y-4">
-              {notifications.map((notification) => (
-                <div key={notification.id} className="p-3 border rounded-lg">
+              {announcements.map((announcement) => (
+                <div key={announcement.id} className="p-3 border rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-sm">{notification.title}</h4>
+                    <h4 className="font-medium text-sm">{announcement.title}</h4>
                     <span className="text-xs text-muted-foreground">
-                      {format(new Date(notification.created_at), 'MMM d, yyyy')}
+                      {format(new Date(announcement.created_at), 'MMM d, yyyy')}
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    {notification.message}
+                    {announcement.message}
                   </p>
                 </div>
               ))}

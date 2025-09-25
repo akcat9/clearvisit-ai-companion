@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { AlertTriangle, Trash2, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { AdminNotifications } from "@/components/AdminNotifications";
+import { AdminAnnouncements } from "@/components/AdminAnnouncements";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -119,7 +119,7 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          <AdminNotifications />
+          <AdminAnnouncements />
 
           <Card className="border-destructive">
             <CardHeader>

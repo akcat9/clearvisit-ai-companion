@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 
-interface Notification {
+interface Announcement {
   id: string;
   title: string;
   message: string;
@@ -19,27 +19,27 @@ interface Notification {
   created_at: string;
 }
 
-export const AdminNotifications = () => {
+export const AdminAnnouncements = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    fetchNotifications();
+    fetchAnnouncements();
   }, []);
 
-  const fetchNotifications = async () => {
+  const fetchAnnouncements = async () => {
     const { data } = await supabase
       .from('app_notifications')
       .select('*')
       .eq('created_by', user?.id)
       .order('created_at', { ascending: false });
     
-    setNotifications(data || []);
+    setAnnouncements(data || []);
   };
 
   const handleCreate = async () => {
@@ -64,18 +64,18 @@ export const AdminNotifications = () => {
     if (error) {
       toast({
         title: "Error",
-        description: "Failed to create notification",
+        description: "Failed to create announcement",
         variant: "destructive",
       });
     } else {
       toast({
         title: "Success",
-        description: "Notification created successfully",
+        description: "Announcement created successfully",
       });
       setTitle("");
       setMessage("");
       setShowCreateForm(false);
-      fetchNotifications();
+      fetchAnnouncements();
     }
     setCreating(false);
   };
@@ -89,15 +89,15 @@ export const AdminNotifications = () => {
     if (error) {
       toast({
         title: "Error",
-        description: "Failed to update notification",
+        description: "Failed to update announcement",
         variant: "destructive",
       });
     } else {
       toast({
         title: "Success",
-        description: `Notification ${!currentState ? 'activated' : 'deactivated'}`,
+        description: `Announcement ${!currentState ? 'activated' : 'deactivated'}`,
       });
-      fetchNotifications();
+      fetchAnnouncements();
     }
   };
 
@@ -110,31 +110,31 @@ export const AdminNotifications = () => {
     if (error) {
       toast({
         title: "Error",
-        description: "Failed to delete notification",
+        description: "Failed to delete announcement",
         variant: "destructive",
       });
     } else {
       toast({
         title: "Success",
-        description: "Notification deleted successfully",
+        description: "Announcement deleted successfully",
       });
-      fetchNotifications();
+      fetchAnnouncements();
     }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>App Notifications</CardTitle>
+        <CardTitle>App Announcements</CardTitle>
         <CardDescription>
-          Send announcements to all users. Only active notifications are visible to users.
+          Send announcements to all users. Only active announcements are visible to users.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {!showCreateForm ? (
           <Button onClick={() => setShowCreateForm(true)} className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
-            Create Notification
+            Create Announcement
           </Button>
         ) : (
           <div className="space-y-4 p-4 border rounded-lg">
@@ -144,7 +144,7 @@ export const AdminNotifications = () => {
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter notification title"
+                placeholder="Enter announcement title"
               />
             </div>
             <div>
@@ -153,7 +153,7 @@ export const AdminNotifications = () => {
                 id="message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Enter notification message"
+                placeholder="Enter announcement message"
                 rows={3}
               />
             </div>
@@ -168,39 +168,39 @@ export const AdminNotifications = () => {
           </div>
         )}
 
-        {notifications.length > 0 && (
+        {announcements.length > 0 && (
           <div className="space-y-3">
-            <h4 className="font-medium">Your Notifications</h4>
-            {notifications.map((notification) => (
-              <div key={notification.id} className="p-3 border rounded-lg">
+            <h4 className="font-medium">Your Announcements</h4>
+            {announcements.map((announcement) => (
+              <div key={announcement.id} className="p-3 border rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">{notification.title}</span>
-                    {notification.is_active ? (
+                    <span className="font-medium text-sm">{announcement.title}</span>
+                    {announcement.is_active ? (
                       <Eye className="w-4 h-4 text-green-600" />
                     ) : (
                       <EyeOff className="w-4 h-4 text-gray-400" />
                     )}
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {format(new Date(notification.created_at), 'MMM d, yyyy')}
+                    {format(new Date(announcement.created_at), 'MMM d, yyyy')}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground mb-3">{notification.message}</p>
+                <p className="text-sm text-muted-foreground mb-3">{announcement.message}</p>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Switch
-                      checked={notification.is_active}
-                      onCheckedChange={() => handleToggleActive(notification.id, notification.is_active)}
+                      checked={announcement.is_active}
+                      onCheckedChange={() => handleToggleActive(announcement.id, announcement.is_active)}
                     />
                     <span className="text-xs text-muted-foreground">
-                      {notification.is_active ? 'Active' : 'Inactive'}
+                      {announcement.is_active ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleDelete(notification.id)}
+                    onClick={() => handleDelete(announcement.id)}
                     className="text-destructive hover:text-destructive"
                   >
                     <Trash2 className="w-4 h-4" />

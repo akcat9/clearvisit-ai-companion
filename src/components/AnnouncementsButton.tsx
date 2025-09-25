@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 
-interface NotificationsButtonProps {
+interface AnnouncementsButtonProps {
   onClick: () => void;
 }
 
-export const NotificationsButton = ({ onClick }: NotificationsButtonProps) => {
+export const AnnouncementsButton = ({ onClick }: AnnouncementsButtonProps) => {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -23,9 +23,9 @@ export const NotificationsButton = ({ onClick }: NotificationsButtonProps) => {
 
     fetchNotifications();
 
-    // Set up real-time subscription for new notifications
+    // Set up real-time subscription for new announcements
     const channel = supabase
-      .channel('notifications')
+      .channel('announcements')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'app_notifications' }, 
         () => {
@@ -45,10 +45,10 @@ export const NotificationsButton = ({ onClick }: NotificationsButtonProps) => {
         variant="ghost" 
         size="sm" 
         onClick={onClick}
-        className="flex items-center gap-2 self-start sm:self-auto"
+        className="flex items-center gap-1 self-start sm:self-auto text-xs sm:text-sm px-2 sm:px-3"
       >
-        <Bell className="w-4 h-4" />
-        <span className="hidden sm:inline">Notifications</span>
+        <Bell className="w-4 h-4 flex-shrink-0" />
+        <span className="hidden xs:inline sm:inline truncate">Announcements</span>
       </Button>
       {unreadCount > 0 && (
         <Badge 

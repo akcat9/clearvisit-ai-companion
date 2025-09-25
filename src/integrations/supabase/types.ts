@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_notifications: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          message: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          message: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          message?: string
+          title?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           created_at: string
@@ -58,6 +85,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_generated_history: Json | null
           created_at: string
           email: string | null
           first_name: string | null
@@ -68,6 +96,7 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          ai_generated_history?: Json | null
           created_at?: string
           email?: string | null
           first_name?: string | null
@@ -78,6 +107,7 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          ai_generated_history?: Json | null
           created_at?: string
           email?: string | null
           first_name?: string | null

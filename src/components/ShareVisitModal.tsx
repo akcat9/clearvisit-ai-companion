@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Share2 } from "lucide-react";
 import MultiEmailInput from "./MultiEmailInput";
+import { shareVisitSchema, type ShareVisitFormData } from "@/lib/validation";
 
 interface ShareVisitModalProps {
   visitSummary: any;
@@ -22,43 +23,40 @@ interface ShareVisitModalProps {
 }
 
 const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitModalProps) => {
-  const [recipientEmails, setRecipientEmails] = useState<string[]>([]);
-  const [message, setMessage] = useState("");
+  const [formData, setFormData] = useState<ShareVisitFormData>({
+    recipientEmails: [],
+    message: "",
+  });
   const [isSharing, setIsSharing] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const { user } = useAuth();
 
   const handleShare = async () => {
-    if (recipientEmails.length === 0) {
-      toast({
-        title: "Email required",
-        description: "Please enter at least one recipient email address",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to share visits",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSharing(true);
-
     try {
+      const validatedData = shareVisitSchema.parse(formData);
+      setErrors({});
+      
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to share visits",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsSharing(true);
+
       // Validate recipient emails exist using secure database function
       const emailChecks = await Promise.all(
-        recipientEmails.map(email => 
+        validatedData.recipientEmails.map(email => 
           supabase.rpc('check_email_exists', { email_address: email })
         )
       );
 
-      const invalidEmails = recipientEmails.filter((email, index) => {
+      const invalidEmails = validatedData.recipientEmails.filter((email, index) => {
         const result = emailChecks[index];
         return result.error || !result.data;
       });
@@ -81,7 +79,7 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
         .single();
 
       // Create share records for each recipient
-      const sharePromises = recipientEmails.map(email => 
+      const sharePromises = validatedData.recipientEmails.map(email => 
         supabase
           .from('shared_visits')
           .insert({
@@ -90,7 +88,7 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
             visit_summary: visitSummary,
             appointment_data: appointmentData || null,
             sender_profile: senderProfile || null,
-            message: message.trim() || null,
+            message: validatedData.message?.trim() || null,
           })
       );
 
@@ -100,26 +98,41 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
       if (errors.length > 0) {
         toast({
           title: "Partial success",
-          description: `Shared with ${recipientEmails.length - errors.length} of ${recipientEmails.length} recipients`,
+          description: `Shared with ${validatedData.recipientEmails.length - errors.length} of ${validatedData.recipientEmails.length} recipients`,
           variant: "destructive",
         });
       } else {
         toast({
           title: "Visit shared successfully",
-          description: `Visit summary has been shared with ${recipientEmails.length} recipient${recipientEmails.length > 1 ? 's' : ''}`,
+          description: `Visit summary has been shared with ${validatedData.recipientEmails.length} recipient${validatedData.recipientEmails.length > 1 ? 's' : ''}`,
         });
       }
 
       // Reset form and close modal
-      setRecipientEmails([]);
-      setMessage("");
+      setFormData({ recipientEmails: [], message: "" });
       setIsOpen(false);
-    } catch (error) {
-      toast({
-        title: "Failed to share visit",
-        description: "Please try again later",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      if (error.errors) {
+        const newErrors: Record<string, string> = {};
+        error.errors.forEach((err: any) => {
+          if (err.path) {
+            newErrors[err.path[0]] = err.message;
+          }
+        });
+        setErrors(newErrors);
+        
+        toast({
+          title: "Validation Error",
+          description: "Please check the form for errors",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Failed to share visit",
+          description: "Please try again later",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSharing(false);
     }
@@ -143,10 +156,13 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
           <div className="space-y-2">
             <Label htmlFor="emails">Recipient Emails</Label>
             <MultiEmailInput
-              emails={recipientEmails}
-              onEmailsChange={setRecipientEmails}
+              emails={formData.recipientEmails}
+              onEmailsChange={(emails) => setFormData(prev => ({ ...prev, recipientEmails: emails }))}
               placeholder="Enter email addresses..."
             />
+            {errors.recipientEmails && (
+              <p className="text-sm text-destructive">{errors.recipientEmails}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="message">Message (Optional)</Label>
@@ -154,9 +170,13 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
               id="message"
               placeholder="Add a personal message..."
               rows={3}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              value={formData.message}
+              onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+              className={errors.message ? "border-destructive" : ""}
             />
+            {errors.message && (
+              <p className="text-sm text-destructive">{errors.message}</p>
+            )}
           </div>
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => setIsOpen(false)}>

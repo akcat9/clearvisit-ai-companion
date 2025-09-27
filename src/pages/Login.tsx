@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Header } from "@/components/Header";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -111,6 +112,12 @@ const Login = () => {
             <h1 className="text-2xl sm:text-3xl font-bold">Welcome to Clearvisit</h1>
             <p className="mt-2 text-muted-foreground text-sm sm:text-base">Record, analyze, and remember your doctor visits</p>
           </div>
+
+          <Alert className="bg-muted/50">
+            <AlertDescription className="text-center text-sm">
+              For the best experience, please keep your device software up to date
+            </AlertDescription>
+          </Alert>
 
           <Card>
             <CardHeader>

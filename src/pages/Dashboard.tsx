@@ -10,8 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUnreadSharedVisits } from "@/hooks/useUnreadSharedVisits";
 import { formatTime } from "@/utils/timeUtils";
-import { usePullToRefresh } from "@/hooks/usePullToRefresh";
-import { PullToRefresh } from "@/components/PullToRefresh";
 import {
   Dialog,
   DialogContent,
@@ -52,7 +50,7 @@ const Dashboard = () => {
         .order('date', { ascending: true });
 
       if (error) {
-        console.error('Error fetching appointments:', error);
+        // Error handled by toast notification
         toast({
           title: "Error",
           description: "Failed to load appointments",
@@ -63,7 +61,7 @@ const Dashboard = () => {
 
       setAppointments((data || []) as Appointment[]);
     } catch (error) {
-      console.error('Error fetching appointments:', error);
+      // Error handled by toast notification
     } finally {
       setLoading(false);
     }
@@ -74,15 +72,6 @@ const Dashboard = () => {
     fetchAppointments();
   }, [user, fetchAppointments]);
 
-  const { 
-    containerRef, 
-    pullDistance, 
-    isRefreshing, 
-    shouldShowIndicator 
-  } = usePullToRefresh({
-    onRefresh: fetchAppointments,
-    threshold: 80
-  });
 
 
   const handleDeleteAppointment = async (appointmentId: string, e: React.MouseEvent) => {
@@ -95,7 +84,7 @@ const Dashboard = () => {
         .eq('id', appointmentId);
 
       if (error) {
-        console.error('Error deleting appointment:', error);
+        // Error handled by toast notification
         toast({
           title: "Error",
           description: "Failed to delete appointment",
@@ -110,7 +99,7 @@ const Dashboard = () => {
         description: "Appointment deleted successfully"
       });
     } catch (error) {
-      console.error('Error deleting appointment:', error);
+      // Error handled by toast notification
     }
   };
 
@@ -134,7 +123,7 @@ const Dashboard = () => {
         .single();
 
       if (error) {
-        console.error('Error creating appointment:', error);
+        // Error handled by toast notification
         toast({
           title: "Error",
           description: "Failed to create appointment",
@@ -150,28 +139,24 @@ const Dashboard = () => {
         description: "Appointment created successfully"
       });
     } catch (error) {
-      console.error('Error creating appointment:', error);
+      // Error handled by toast notification
     }
   };
 
   const upcomingAppointments = useMemo(() => 
-    appointments.filter(apt => apt.status === 'upcoming'), [appointments]
+    appointments.filter(apt => apt.status === 'upcoming'), 
+    [appointments]
   );
   const previousAppointments = useMemo(() => 
-    appointments.filter(apt => apt.status === 'completed'), [appointments]
+    appointments.filter(apt => apt.status === 'completed'), 
+    [appointments]
   );
 
   return (
-    <div className="min-h-screen bg-background" ref={containerRef}>
-      <PullToRefresh 
-        pullDistance={pullDistance}
-        isRefreshing={isRefreshing}
-        threshold={80}
-        shouldShow={shouldShowIndicator}
-      />
+    <div className="min-h-screen bg-background">
       <Header />
       
-        <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4 lg:py-8">
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4 lg:py-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
           <div className="flex items-center gap-2 sm:gap-3">
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">My Appointments</h1>
@@ -189,10 +174,18 @@ const Dashboard = () => {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
-                  <div>• <strong>Create appointments</strong> - Click "New Appointment" to schedule visits</div>
-                  <div>• <strong>Record visits</strong> - Click on any appointment to record audio during your visit</div>
-                  <div>• <strong>Share visits</strong> - Share visit recordings with family or other doctors</div>
-                  <div>• <strong>Get AI insights</strong> - Receive personalized medical insights from your visit recordings</div>
+                  <div>
+                    • <strong>Create appointments</strong> - Click "New Appointment" to schedule visits
+                  </div>
+                  <div>
+                    • <strong>Record visits</strong> - Click on any appointment to record audio during your visit
+                  </div>
+                  <div>
+                    • <strong>Share visits</strong> - Share visit recordings with family or other doctors
+                  </div>
+                  <div>
+                    • <strong>Get AI insights</strong> - Receive personalized medical insights from your visit recordings
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
@@ -215,7 +208,7 @@ const Dashboard = () => {
               <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>Shared Visits</span>
               {unreadCount > 0 && (
-                <div className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-destructive rounded-full"></div>
+                <div className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-destructive rounded-full" />
               )}
             </Button>
           </div>
@@ -235,7 +228,9 @@ const Dashboard = () => {
               ) : upcomingAppointments.length === 0 ? (
                 <div className="text-center py-6 sm:py-8">
                   <p className="text-muted-foreground text-sm">No upcoming appointments</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">Click "New Appointment" to schedule your first visit</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                    Click "New Appointment" to schedule your first visit
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3 sm:space-y-4">
@@ -287,7 +282,9 @@ const Dashboard = () => {
               {previousAppointments.length === 0 ? (
                 <div className="text-center py-6 sm:py-8">
                   <p className="text-muted-foreground text-sm">No previous appointments</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">Completed appointments will appear here</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                    Completed appointments will appear here
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3 sm:space-y-4">

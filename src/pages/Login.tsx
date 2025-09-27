@@ -116,12 +116,16 @@ const Login = () => {
         <div className="w-full max-w-sm sm:max-w-md space-y-3 sm:space-y-4">
           <div className="text-center px-2">
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Welcome to Clearvisit</h1>
-            <p className="mt-1 sm:mt-2 text-muted-foreground text-xs sm:text-sm lg:text-base">Record, analyze, and remember your doctor visits</p>
+            <p className="mt-1 sm:mt-2 text-muted-foreground text-xs sm:text-sm lg:text-base">
+              Record, analyze, and remember your doctor visits
+            </p>
           </div>
 
           <Alert className="bg-muted/50 mx-2 sm:mx-0">
             <AlertDescription className="text-center text-xs sm:text-sm">
-              Update: In rare cases, the screen may load as blank (black or white). If this happens, simply close the app and reopen it. Your login and progress will be saved, so you can continue where you left off.
+              Update: In rare cases, the screen may load as blank (black or white). 
+              If this happens, simply close the app and reopen it. Your login and progress 
+              will be saved, so you can continue where you left off.
             </AlertDescription>
           </Alert>
 

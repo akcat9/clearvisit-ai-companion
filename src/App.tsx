@@ -54,7 +54,8 @@ const AppContent = () => {
     const performanceCheck = setInterval(() => {
       // Type assertion for performance.memory (Chrome-specific)
       const memory = (performance as any).memory;
-      if (memory && memory.usedJSHeapSize > 50 * 1024 * 1024) { // 50MB
+      // Memory monitoring (development only)
+      if (process.env.NODE_ENV === 'development' && memory && memory.usedJSHeapSize > 50 * 1024 * 1024) {
         console.log('Memory usage high, refreshing...');
         window.location.reload();
       }

@@ -115,7 +115,7 @@ const Login = () => {
 
           <Alert className="bg-muted/50">
             <AlertDescription className="text-center text-sm">
-              For the best experience, please keep your device software up to date
+              Update: In rare cases, the screen may load as blank (black or white). If this happens, simply close the app and reopen it. Your login and progress will be saved, so you can continue where you left off.
             </AlertDescription>
           </Alert>
 

@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUnreadSharedVisits } from "@/hooks/useUnreadSharedVisits";
 import { formatTime } from "@/utils/timeUtils";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import {
   Dialog,
   DialogContent,
@@ -71,6 +73,16 @@ const Dashboard = () => {
     if (!user) return;
     fetchAppointments();
   }, [user, fetchAppointments]);
+
+  const { 
+    containerRef, 
+    pullDistance, 
+    isRefreshing, 
+    shouldShowIndicator 
+  } = usePullToRefresh({
+    onRefresh: fetchAppointments,
+    threshold: 80
+  });
 
 
   const handleDeleteAppointment = async (appointmentId: string, e: React.MouseEvent) => {
@@ -150,7 +162,13 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" ref={containerRef}>
+      <PullToRefresh 
+        pullDistance={pullDistance}
+        isRefreshing={isRefreshing}
+        threshold={80}
+        shouldShow={shouldShowIndicator}
+      />
       <Header />
       
         <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4 lg:py-8">

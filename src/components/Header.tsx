@@ -20,7 +20,7 @@ export const Header = () => {
         </div>
         {user && (
           <div className="flex items-center gap-1 sm:gap-2 lg:gap-3">
-            <span className="text-xs sm:text-sm truncate max-w-[120px] sm:max-w-[200px] lg:max-w-none">Welcome, {user.email}</span>
+            <span className="text-xs sm:text-sm truncate max-w-[180px] sm:max-w-[200px] lg:max-w-none">Welcome, {user.email}</span>
             <Button
               variant="ghost"
               size="sm"

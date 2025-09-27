@@ -153,24 +153,24 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-bold">My Appointments</h1>
+        <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4 lg:py-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">My Appointments</h1>
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <HelpCircle className="h-4 w-4" />
+                <Button variant="ghost" size="sm" className="h-6 w-6 sm:h-8 sm:w-8 p-0">
+                  <HelpCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
+              <DialogContent className="mx-2 sm:mx-auto sm:max-w-md max-w-[calc(100vw-1rem)]">
                 <DialogHeader>
-                  <DialogTitle>How to Use Clearvisit</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-sm sm:text-base">How to Use Clearvisit</DialogTitle>
+                  <DialogDescription className="text-xs sm:text-sm">
                     Simple steps to get started:
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-3 text-sm">
+                <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
                   <div>• <strong>Create appointments</strong> - Click "New Appointment" to schedule visits</div>
                   <div>• <strong>Record visits</strong> - Click on any appointment to record audio during your visit</div>
                   <div>• <strong>Share visits</strong> - Share visit recordings with family or other doctors</div>
@@ -179,80 +179,80 @@ const Dashboard = () => {
               </DialogContent>
             </Dialog>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <div className="flex flex-col xs:flex-row gap-2 sm:gap-3">
             <Button 
               onClick={() => setShowAppointmentModal(true)}
-              className="flex items-center justify-center gap-2 w-full sm:w-auto"
+              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 px-3"
               size="sm"
             >
-              <Plus className="w-4 h-4" />
-              <span className="sm:inline">New Appointment</span>
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span>New Appointment</span>
             </Button>
             <Button 
               variant="outline" 
               onClick={() => navigate("/shared-visits")}
-              className="flex items-center justify-center gap-2 relative w-full sm:w-auto"
+              className="flex items-center justify-center gap-1 sm:gap-2 relative text-xs sm:text-sm py-2 px-3"
               size="sm"
             >
-              <Share2 className="w-4 h-4" />
-              <span className="sm:inline">Shared Visits</span>
+              <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span>Shared Visits</span>
               {unreadCount > 0 && (
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full"></div>
+                <div className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-destructive rounded-full"></div>
               )}
             </Button>
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Upcoming Appointments</CardTitle>
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="text-base sm:text-lg">Upcoming Appointments</CardTitle>
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-2 text-muted-foreground">Loading appointments...</p>
+                <div className="text-center py-6 sm:py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary mx-auto"></div>
+                  <p className="mt-2 text-muted-foreground text-xs sm:text-sm">Loading appointments...</p>
                 </div>
               ) : upcomingAppointments.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No upcoming appointments</p>
-                  <p className="text-sm text-muted-foreground mt-1">Click "New Appointment" to schedule your first visit</p>
+                <div className="text-center py-6 sm:py-8">
+                  <p className="text-muted-foreground text-sm">No upcoming appointments</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">Click "New Appointment" to schedule your first visit</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {upcomingAppointments.map((appointment) => (
                     <div 
                       key={appointment.id} 
-                       className="p-3 sm:p-4 border rounded-lg hover:bg-muted/50 cursor-pointer group relative transition-colors"
+                       className="p-2 sm:p-3 lg:p-4 border rounded-lg hover:bg-muted/50 cursor-pointer group relative transition-colors"
                       onClick={() => navigate(`/visit/${appointment.id}`)}
                     >
-                      <div className="font-medium">{appointment.doctor_name}</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="font-medium text-sm sm:text-base pr-8">{appointment.doctor_name}</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">
                         {appointment.date} at {formatTime(appointment.time)}
                       </div>
-                      <div className="text-sm text-muted-foreground mt-1">
+                      <div className="text-xs sm:text-sm text-muted-foreground mt-1 pr-8 line-clamp-2">
                         {appointment.reason}
                       </div>
-                      <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center justify-between mt-2 sm:mt-3">
                         <Button
                           size="sm"
-                          className="bg-success hover:bg-success/90 text-success-foreground"
+                          className="bg-success hover:bg-success/90 text-success-foreground text-xs sm:text-sm py-1 px-2 sm:py-2 sm:px-3"
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/visit/${appointment.id}`);
                           }}
                         >
-                          Go <ChevronRight className="ml-1 h-4 w-4" />
+                          Go <ChevronRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+                        className="absolute top-1 right-1 sm:top-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 sm:h-8 sm:w-8 p-0 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                         onClick={(e) => handleDeleteAppointment(appointment.id, e)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
                     </div>
                   ))}
@@ -262,49 +262,49 @@ const Dashboard = () => {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Previous Appointments</CardTitle>
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="text-base sm:text-lg">Previous Appointments</CardTitle>
             </CardHeader>
             <CardContent>
               {previousAppointments.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No previous appointments</p>
-                  <p className="text-sm text-muted-foreground mt-1">Completed appointments will appear here</p>
+                <div className="text-center py-6 sm:py-8">
+                  <p className="text-muted-foreground text-sm">No previous appointments</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">Completed appointments will appear here</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {previousAppointments.map((appointment) => (
                     <div 
                       key={appointment.id} 
-                      className="p-3 sm:p-4 border rounded-lg hover:bg-muted/50 cursor-pointer group relative transition-colors"
+                      className="p-2 sm:p-3 lg:p-4 border rounded-lg hover:bg-muted/50 cursor-pointer group relative transition-colors"
                       onClick={() => navigate(`/visit/${appointment.id}`)}
                     >
-                      <div className="font-medium">{appointment.doctor_name}</div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="font-medium text-sm sm:text-base pr-8">{appointment.doctor_name}</div>
+                      <div className="text-xs sm:text-sm text-muted-foreground">
                         {appointment.date} at {formatTime(appointment.time)}
                       </div>
-                      <div className="text-sm text-muted-foreground mt-1">
+                      <div className="text-xs sm:text-sm text-muted-foreground mt-1 pr-8 line-clamp-2">
                         {appointment.reason}
                       </div>
-                      <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center justify-between mt-2 sm:mt-3">
                         <Button
                           size="sm"
-                          className="bg-success hover:bg-success/90 text-success-foreground"
+                          className="bg-success hover:bg-success/90 text-success-foreground text-xs sm:text-sm py-1 px-2 sm:py-2 sm:px-3"
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/visit/${appointment.id}`);
                           }}
                         >
-                          Go <ChevronRight className="ml-1 h-4 w-4" />
+                          Go <ChevronRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+                        className="absolute top-1 right-1 sm:top-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 sm:h-8 sm:w-8 p-0 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                         onClick={(e) => handleDeleteAppointment(appointment.id, e)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
                     </div>
                   ))}
@@ -314,7 +314,7 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        <div className="text-center text-sm text-muted-foreground mt-12">
+        <div className="text-center text-xs sm:text-sm text-muted-foreground mt-8 sm:mt-12">
           © 2025 Clearvisit. All rights reserved.
         </div>
       </div>

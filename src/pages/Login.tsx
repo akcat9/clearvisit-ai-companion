@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+
 import { Header } from "@/components/Header";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -121,13 +121,6 @@ const Login = () => {
             </p>
           </div>
 
-          <Alert className="bg-muted/50 mx-2 sm:mx-0">
-            <AlertDescription className="text-center text-xs sm:text-sm">
-              Update: In rare cases, the screen may load as blank (black or white). 
-              If this happens, simply close the app and reopen it. Your login and progress 
-              will be saved, so you can continue where you left off.
-            </AlertDescription>
-          </Alert>
 
           <Card className="mx-2 sm:mx-0">
             <CardHeader className="pb-3 sm:pb-6">

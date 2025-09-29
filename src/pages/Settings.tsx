@@ -118,6 +118,28 @@ export default function Settings() {
             </CardContent>
           </Card>
 
+          <Card>
+            <CardHeader>
+              <CardTitle>Support</CardTitle>
+              <CardDescription>
+                Need help? Get in touch with our support team.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-2">
+                For technical support, questions, or feedback, please contact us at:
+              </p>
+              <p className="text-sm font-medium">
+                <a 
+                  href="mailto:aktennis9@gmail.com" 
+                  className="text-primary hover:underline"
+                >
+                  aktennis9@gmail.com
+                </a>
+              </p>
+            </CardContent>
+          </Card>
+
           <Card className="border-destructive">
             <CardHeader>
               <CardTitle className="text-destructive flex items-center gap-2">

@@ -28,45 +28,14 @@ const PageLoader = () => (
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 2 * 60 * 1000, // 2 minutes (reduced from 5)
-      gcTime: 5 * 60 * 1000, // 5 minutes (reduced from 10)
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+      refetchOnWindowFocus: false,
     },
   },
 });
 
 const AppContent = () => {
-  useEffect(() => {
-    let lastActiveTime = Date.now();
-    
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        const timeSinceLastActive = Date.now() - lastActiveTime;
-        // Reduced from 30 to 5 minutes for better WebView stability
-        if (timeSinceLastActive > 5 * 60 * 1000) {
-          window.location.reload();
-        }
-      } else {
-        lastActiveTime = Date.now();
-      }
-    };
-
-    // Also check every 10 minutes and reload if performance is degraded
-    const performanceCheck = setInterval(() => {
-      // Type assertion for performance.memory (Chrome-specific)
-      const memory = (performance as any).memory;
-      // Memory monitoring (development only)
-      if (process.env.NODE_ENV === 'development' && memory && memory.usedJSHeapSize > 50 * 1024 * 1024) {
-        console.log('Memory usage high, refreshing...');
-        window.location.reload();
-      }
-    }, 10 * 60 * 1000);
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      clearInterval(performanceCheck);
-    };
-  }, []);
 
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>

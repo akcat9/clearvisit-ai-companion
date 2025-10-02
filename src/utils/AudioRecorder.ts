@@ -57,12 +57,7 @@ export class AudioRecorder {
       };
 
       this.recognition.onerror = (event) => {
-        // Only log errors in development
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Speech recognition error:', event.error);
-        }
         if (event.error === 'no-speech') {
-          // Continue listening even if no speech detected
           return;
         }
       };
@@ -76,10 +71,6 @@ export class AudioRecorder {
 
       this.recognition.start();
     } catch (error) {
-      // Only log errors in development
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error starting speech recognition:', error);
-      }
       throw error;
     }
   }

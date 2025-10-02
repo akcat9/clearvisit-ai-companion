@@ -55,7 +55,7 @@ export const useUnreadSharedVisits = () => {
 
       setUnreadCount(count || 0);
     } catch (error) {
-      console.error('Error fetching unread count:', error);
+      // Silently fail - non-critical feature
     }
   };
 

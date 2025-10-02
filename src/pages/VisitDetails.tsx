@@ -96,7 +96,6 @@ const VisitDetails = () => {
       });
       navigate("/dashboard");
     } catch (error) {
-      console.error('Error fetching appointment:', error);
       toast({
         title: "Error loading appointment",
         description: "Please try again later.",
@@ -139,10 +138,9 @@ const VisitDetails = () => {
         description: "Speak clearly - transcription appears in real-time.",
       });
     } catch (error) {
-      console.error('Error starting recording:', error);
       toast({
         title: "Recording Failed",
-        description: "Speech recognition not available in this browser or microphone permission denied.",
+        description: "Microphone access denied or not available.",
         variant: "destructive",
       });
     }
@@ -194,21 +192,10 @@ const VisitDetails = () => {
         }
       });
 
-      if (summaryError) {
-        console.error('AI analysis error:', summaryError);
+      if (summaryError || !summaryData) {
         toast({
           title: "AI Analysis Failed",
-          description: `Error: ${summaryError.message}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!summaryData) {
-        console.error('No analysis data received');
-        toast({
-          title: "AI Analysis Failed",
-          description: "No analysis data received. Please try again.",
+          description: "Unable to analyze visit. Please try again.",
           variant: "destructive",
         });
         return;
@@ -244,11 +231,16 @@ const VisitDetails = () => {
           });
 
         if (saveError) {
-          console.error('Error saving visit data:', saveError);
+          toast({
+            title: "Warning",
+            description: "Analysis complete but save failed.",
+            variant: "default",
+          });
+          return;
         }
 
-        // Update appointment status to completed
-        const { error: updateError } = await supabase
+        // Update appointment status
+        await supabase
           .from('appointments')
           .update({ 
             status: 'completed',
@@ -256,27 +248,21 @@ const VisitDetails = () => {
           })
           .eq('id', id);
 
-        if (updateError) {
-          console.error('Error updating appointment status:', updateError);
-        }
-
         toast({
           title: "AI Analysis Complete",
-          description: "Your visit has been analyzed and saved successfully.",
+          description: "Your visit has been analyzed and saved.",
         });
       } catch (saveError) {
-        console.error('Error saving visit data:', saveError);
         toast({
           title: "Save Warning",
-          description: "Analysis complete but could not save to database.",
+          description: "Analysis complete but save failed.",
           variant: "default",
         });
       }
     } catch (error) {
-      console.error('AI Analysis failed:', error);
       toast({
         title: "AI Analysis Failed",
-        description: "Network error or server issue. Please try again.",
+        description: "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -303,13 +289,12 @@ const VisitDetails = () => {
 
       toast({
         title: "Notes Saved",
-        description: "Your notes have been saved successfully.",
+        description: "Your notes have been saved.",
       });
     } catch (error) {
-      console.error('Error saving notes:', error);
       toast({
         title: "Save Failed",
-        description: "Could not save notes. Please try again.",
+        description: "Please try again.",
         variant: "destructive",
       });
     } finally {

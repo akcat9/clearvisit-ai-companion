@@ -47,10 +47,10 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from('appointments')
         .select('*')
-        .order('date', { ascending: true });
+        .order('date', { ascending: true })
+        .limit(100);
 
       if (error) {
-        // Error handled by toast notification
         toast({
           title: "Error",
           description: "Failed to load appointments",
@@ -60,8 +60,6 @@ const Dashboard = () => {
       }
 
       setAppointments((data || []) as Appointment[]);
-    } catch (error) {
-      // Error handled by toast notification
     } finally {
       setLoading(false);
     }
@@ -75,7 +73,7 @@ const Dashboard = () => {
 
 
   const handleDeleteAppointment = async (appointmentId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent navigation when clicking delete
+    e.stopPropagation();
 
     try {
       const { error } = await supabase
@@ -84,7 +82,6 @@ const Dashboard = () => {
         .eq('id', appointmentId);
 
       if (error) {
-        // Error handled by toast notification
         toast({
           title: "Error",
           description: "Failed to delete appointment",
@@ -99,7 +96,11 @@ const Dashboard = () => {
         description: "Appointment deleted successfully"
       });
     } catch (error) {
-      // Error handled by toast notification
+      toast({
+        title: "Error",
+        description: "Something went wrong",
+        variant: "destructive"
+      });
     }
   };
 
@@ -123,7 +124,6 @@ const Dashboard = () => {
         .single();
 
       if (error) {
-        // Error handled by toast notification
         toast({
           title: "Error",
           description: "Failed to create appointment",
@@ -139,7 +139,11 @@ const Dashboard = () => {
         description: "Appointment created successfully"
       });
     } catch (error) {
-      // Error handled by toast notification
+      toast({
+        title: "Error",
+        description: "Something went wrong",
+        variant: "destructive"
+      });
     }
   };
 

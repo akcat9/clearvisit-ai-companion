@@ -45,7 +45,14 @@ const VisitDetails = () => {
   useEffect(() => {
     if (!user) return;
     fetchAppointment();
-  }, [id, user, navigate, toast]);
+    
+    // Cleanup interval on unmount
+    return () => {
+      if (durationIntervalRef.current) {
+        clearInterval(durationIntervalRef.current);
+      }
+    };
+  }, [id, user]);
 
   const fetchAppointment = async () => {
     try {

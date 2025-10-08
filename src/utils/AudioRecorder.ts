@@ -63,10 +63,8 @@ export class AudioRecorder {
       };
 
       this.recognition.onend = () => {
-        // Auto-restart if still recording (unless manually stopped)
-        if (this.isRecording && this.recognition) {
-          this.recognition.start();
-        }
+        // Don't auto-restart - causes memory leaks and glitches on mobile
+        this.isRecording = false;
       };
 
       this.recognition.start();

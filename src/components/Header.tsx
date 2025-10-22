@@ -16,7 +16,7 @@ export const Header = () => {
     <header className="bg-primary text-primary-foreground shadow-md mobile-safe">
       <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-3 flex items-center justify-between">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <h1 className="text-base sm:text-lg lg:text-xl font-semibold truncate">Clearvisit AI</h1>
+          <h1 className="text-base sm:text-lg lg:text-xl font-semibold truncate">tadoc</h1>
         </div>
         {user && (
           <div className="flex items-center gap-1 sm:gap-2 lg:gap-3">

@@ -172,7 +172,7 @@ const Dashboard = () => {
               </DialogTrigger>
               <DialogContent className="mx-2 sm:mx-auto sm:max-w-md max-w-[calc(100vw-1rem)]">
                 <DialogHeader>
-                  <DialogTitle className="text-sm sm:text-base">How to Use Clearvisit</DialogTitle>
+                  <DialogTitle className="text-sm sm:text-base">How to Use tadoc</DialogTitle>
                   <DialogDescription className="text-xs sm:text-sm">
                     Simple steps to get started:
                   </DialogDescription>
@@ -334,7 +334,7 @@ const Dashboard = () => {
         </div>
 
         <div className="text-center text-xs sm:text-sm text-muted-foreground mt-8 sm:mt-12">
-          © 2025 Clearvisit. All rights reserved.
+          © 2025 tadoc. All rights reserved.
         </div>
       </div>
 

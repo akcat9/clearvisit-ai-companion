@@ -21,11 +21,10 @@ export const VoiceAssistant = () => {
 
   const conversation = useConversation({
     onConnect: () => {
-      console.log("Connected to ElevenLabs");
       setIsConnecting(false);
     },
     onDisconnect: () => {
-      console.log("Disconnected from ElevenLabs");
+      // Connection closed
     },
     onError: (error) => {
       console.error("ElevenLabs error:", error);
@@ -36,8 +35,8 @@ export const VoiceAssistant = () => {
       });
       setIsConnecting(false);
     },
-    onMessage: (message) => {
-      console.log("Message:", message);
+    onMessage: () => {
+      // Message received
     }
   });
 

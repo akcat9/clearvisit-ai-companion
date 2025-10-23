@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useConversation } from "@elevenlabs/react";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Loader2, X } from "lucide-react";
+import { Mic, MicOff, Loader2, X, Bot } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -94,7 +94,7 @@ export const VoiceAssistant = () => {
           className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg z-50 hover:scale-110 transition-transform"
           size="icon"
         >
-          <Mic className="h-6 w-6" />
+          <Bot className="h-6 w-6" />
         </Button>
       )}
 

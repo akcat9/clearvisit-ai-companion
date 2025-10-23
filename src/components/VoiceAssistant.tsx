@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useConversation } from "@11labs/react";
+import { useState } from "react";
+import { useConversation } from "@elevenlabs/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mic, MicOff, Loader2 } from "lucide-react";
@@ -62,7 +62,7 @@ export const VoiceAssistant = () => {
         throw new Error("No signed URL received");
       }
 
-      await conversation.startSession({ url: data.signedUrl });
+      await conversation.startSession({ signedUrl: data.signedUrl });
       
       toast({
         title: "Connected",

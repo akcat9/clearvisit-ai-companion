@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUnreadSharedVisits } from "@/hooks/useUnreadSharedVisits";
 import { formatTime } from "@/utils/timeUtils";
+import { VoiceAssistant } from "@/components/VoiceAssistant";
 import {
   Dialog,
   DialogContent,
@@ -216,6 +217,10 @@ const Dashboard = () => {
               )}
             </Button>
           </div>
+        </div>
+
+        <div className="mb-6">
+          <VoiceAssistant />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">

@@ -28,7 +28,6 @@ export const VoiceAssistant = () => {
   // Quick Lookup state
   const [doctorName, setDoctorName] = useState("");
   const [appointmentDate, setAppointmentDate] = useState("");
-  const [appointmentTime, setAppointmentTime] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
@@ -255,10 +254,10 @@ export const VoiceAssistant = () => {
   };
 
   const searchAndSpeak = async () => {
-    if (!doctorName && !appointmentDate && !appointmentTime) {
+    if (!doctorName && !appointmentDate) {
       toast({
         title: "Please enter search criteria",
-        description: "Enter at least doctor name or date/time",
+        description: "Enter doctor name or date",
         variant: "destructive"
       });
       return;
@@ -270,7 +269,6 @@ export const VoiceAssistant = () => {
       let query = [];
       if (doctorName) query.push(doctorName);
       if (appointmentDate) query.push(appointmentDate);
-      if (appointmentTime) query.push(appointmentTime);
       
       const queryStr = query.join(' ');
       console.log('[Quick Lookup] Searching for:', queryStr);
@@ -313,10 +311,6 @@ export const VoiceAssistant = () => {
         
         if (appointmentDate && apt.date === appointmentDate) {
           score += 8;
-        }
-        
-        if (appointmentTime && apt.time?.includes(appointmentTime.replace(':', ''))) {
-          score += 6;
         }
         
         if (score > bestScore) {
@@ -544,16 +538,6 @@ export const VoiceAssistant = () => {
                     />
                   </div>
 
-                  <div>
-                    <Label htmlFor="time">Appointment Time</Label>
-                    <Input
-                      id="time"
-                      type="time"
-                      value={appointmentTime}
-                      onChange={(e) => setAppointmentTime(e.target.value)}
-                    />
-                  </div>
-
                   <Button
                     onClick={searchAndSpeak}
                     disabled={isSearching || isSpeaking}
@@ -578,7 +562,7 @@ export const VoiceAssistant = () => {
                 <div className="text-sm text-muted-foreground bg-muted p-4 rounded-lg">
                   <p className="font-medium mb-2">How to use:</p>
                   <ul className="space-y-1 ml-4 list-disc">
-                    <li>Enter doctor name, date, or time (at least one)</li>
+                    <li>Enter doctor name or date (at least one)</li>
                     <li>Click "Find & Speak Details" to search</li>
                     <li>The assistant will speak the appointment information</li>
                   </ul>

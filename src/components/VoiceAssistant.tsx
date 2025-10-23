@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Loader2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
 import {
   Drawer,
   DrawerContent,
@@ -17,7 +16,6 @@ const AGENT_ID = "agent_8701k88xxkgmfx98fy3n1c8f24ng";
 
 export const VoiceAssistant = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -50,58 +48,6 @@ export const VoiceAssistant = () => {
       // Request microphone permission
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // Fetch all appointment data
-      const { data: appointments, error: aptError } = await supabase
-        .from('appointments')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('date', { ascending: true });
-
-      if (aptError) throw aptError;
-
-      // Fetch all visit records
-      const { data: visitRecords, error: visitError } = await supabase
-        .from('visit_records')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: true });
-
-      if (visitError) throw visitError;
-
-      // Format appointment data into conversational summary
-      let appointmentSummary = '';
-      
-      if (appointments && appointments.length > 0) {
-        const now = new Date();
-        const pastAppointments = appointments.filter(apt => new Date(apt.date) < now);
-        const upcomingAppointments = appointments.filter(apt => new Date(apt.date) >= now);
-
-        if (pastAppointments.length > 0) {
-          appointmentSummary += 'Past Appointments:\n';
-          pastAppointments.forEach(apt => {
-            const visitRecord = visitRecords?.find(vr => vr.appointment_id === apt.id);
-            appointmentSummary += `- ${apt.date} at ${apt.time} with Dr. ${apt.doctor_name} for ${apt.reason}`;
-            if (apt.goal) appointmentSummary += ` (Goal: ${apt.goal})`;
-            if (visitRecord?.summary) {
-              appointmentSummary += `\n  Visit Summary: ${JSON.stringify(visitRecord.summary)}`;
-            }
-            appointmentSummary += '\n';
-          });
-        }
-
-        if (upcomingAppointments.length > 0) {
-          appointmentSummary += '\nUpcoming Appointments:\n';
-          upcomingAppointments.forEach(apt => {
-            appointmentSummary += `- ${apt.date} at ${apt.time} with Dr. ${apt.doctor_name} for ${apt.reason}`;
-            if (apt.goal) appointmentSummary += ` (Goal: ${apt.goal})`;
-            if (apt.symptoms) appointmentSummary += ` (Symptoms: ${apt.symptoms})`;
-            appointmentSummary += '\n';
-          });
-        }
-      } else {
-        appointmentSummary = 'The user has no appointments scheduled.';
-      }
-
       // Get signed URL from edge function
       const { data, error } = await supabase.functions.invoke('elevenlabs-signed-url', {
         body: { agentId: AGENT_ID }
@@ -115,17 +61,7 @@ export const VoiceAssistant = () => {
         throw new Error("No signed URL received");
       }
 
-      // Start session with appointment data in context
-      await conversation.startSession({ 
-        signedUrl: data.signedUrl,
-        overrides: {
-          agent: {
-            prompt: {
-              prompt: `You are a helpful medical assistant for a patient. Here is their complete appointment history and upcoming appointments:\n\n${appointmentSummary}\n\nAnswer any questions about their appointments, doctors, visit summaries, symptoms, goals, or medical history based on this information. Be conversational, helpful, and clear.`
-            }
-          }
-        }
-      });
+      await conversation.startSession({ signedUrl: data.signedUrl });
       
       toast({
         title: "Connected",

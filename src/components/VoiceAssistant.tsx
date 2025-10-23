@@ -1,15 +1,23 @@
 import { useState } from "react";
 import { useConversation } from "@elevenlabs/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic, MicOff, Loader2 } from "lucide-react";
+import { Mic, MicOff, Loader2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
+
+const AGENT_ID = "agent_8701k88xxkgmfx98fy3n1c8f24ng";
 
 export const VoiceAssistant = () => {
   const { toast } = useToast();
+  const [isOpen, setIsOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [agentId, setAgentId] = useState("");
 
   const conversation = useConversation({
     onConnect: () => {
@@ -34,15 +42,6 @@ export const VoiceAssistant = () => {
   });
 
   const startConversation = async () => {
-    if (!agentId.trim()) {
-      toast({
-        title: "Agent ID Required",
-        description: "Please enter an ElevenLabs Agent ID first",
-        variant: "destructive"
-      });
-      return;
-    }
-
     try {
       setIsConnecting(true);
       
@@ -51,7 +50,7 @@ export const VoiceAssistant = () => {
 
       // Get signed URL from edge function
       const { data, error } = await supabase.functions.invoke('elevenlabs-signed-url', {
-        body: { agentId: agentId.trim() }
+        body: { agentId: AGENT_ID }
       });
 
       if (error) {
@@ -88,74 +87,110 @@ export const VoiceAssistant = () => {
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-lg">AI Voice Assistant</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">ElevenLabs Agent ID</label>
-          <input
-            type="text"
-            value={agentId}
-            onChange={(e) => setAgentId(e.target.value)}
-            placeholder="Enter your agent ID"
-            className="w-full px-3 py-2 border rounded-md text-sm"
-            disabled={conversation.status === "connected"}
-          />
-          <p className="text-xs text-muted-foreground">
-            Get your Agent ID from the ElevenLabs dashboard
-          </p>
-        </div>
+    <>
+      {/* Floating Bubble Button */}
+      {!isOpen && (
+        <Button
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg z-50 hover:scale-110 transition-transform"
+          size="icon"
+        >
+          <Mic className="h-6 w-6" />
+        </Button>
+      )}
 
-        <div className="flex items-center gap-3">
-          {conversation.status === "connected" ? (
-            <>
+      {/* Drawer for Expanded State */}
+      <Drawer open={isOpen} onOpenChange={setIsOpen}>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader className="border-b">
+            <div className="flex items-center justify-between">
+              <div>
+                <DrawerTitle>AI Voice Assistant</DrawerTitle>
+                <DrawerDescription>
+                  {conversation.status === "connected" 
+                    ? "Voice assistant is active" 
+                    : "Start a voice conversation"}
+                </DrawerDescription>
+              </div>
               <Button
-                onClick={endConversation}
-                variant="destructive"
-                className="flex items-center gap-2"
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsOpen(false)}
+                className="h-8 w-8"
               >
-                <MicOff className="w-4 h-4" />
-                End Session
+                <X className="h-4 w-4" />
               </Button>
-              {conversation.isSpeaking && (
-                <span className="text-sm text-muted-foreground animate-pulse">
-                  Assistant is speaking...
-                </span>
-              )}
-            </>
-          ) : (
-            <Button
-              onClick={startConversation}
-              disabled={isConnecting || !agentId.trim()}
-              className="flex items-center gap-2"
-            >
-              {isConnecting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Connecting...
-                </>
-              ) : (
-                <>
-                  <Mic className="w-4 h-4" />
-                  Start Voice Chat
-                </>
-              )}
-            </Button>
-          )}
-        </div>
+            </div>
+          </DrawerHeader>
 
-        <div className="text-xs text-muted-foreground bg-muted p-3 rounded-md">
-          <p className="font-medium mb-1">How to use:</p>
-          <ul className="space-y-1 ml-4 list-disc">
-            <li>Enter your ElevenLabs Agent ID above</li>
-            <li>Click "Start Voice Chat" to begin</li>
-            <li>Speak naturally - the assistant will respond with voice</li>
-            <li>Click "End Session" when done</li>
-          </ul>
-        </div>
-      </CardContent>
-    </Card>
+          <div className="p-6 space-y-6">
+            {/* Status Indicator */}
+            {conversation.status === "connected" && (
+              <div className="flex items-center gap-2 p-3 bg-success/10 border border-success/20 rounded-lg">
+                <div className="h-2 w-2 bg-success rounded-full animate-pulse" />
+                <span className="text-sm font-medium text-success">Connected</span>
+              </div>
+            )}
+
+            {/* Speaking Indicator */}
+            {conversation.isSpeaking && (
+              <div className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                <div className="flex gap-1">
+                  <div className="h-3 w-1 bg-primary rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
+                  <div className="h-3 w-1 bg-primary rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
+                  <div className="h-3 w-1 bg-primary rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+                </div>
+                <span className="text-sm font-medium text-primary">Assistant is speaking...</span>
+              </div>
+            )}
+
+            {/* Controls */}
+            <div className="flex flex-col gap-3">
+              {conversation.status === "connected" ? (
+                <Button
+                  onClick={endConversation}
+                  variant="destructive"
+                  size="lg"
+                  className="w-full"
+                >
+                  <MicOff className="w-5 h-5 mr-2" />
+                  End Session
+                </Button>
+              ) : (
+                <Button
+                  onClick={startConversation}
+                  disabled={isConnecting}
+                  size="lg"
+                  className="w-full"
+                >
+                  {isConnecting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-5 h-5 mr-2" />
+                      Start Voice Chat
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+
+            {/* Instructions */}
+            <div className="text-sm text-muted-foreground bg-muted p-4 rounded-lg">
+              <p className="font-medium mb-2">How to use:</p>
+              <ul className="space-y-1 ml-4 list-disc">
+                <li>Click "Start Voice Chat" to begin</li>
+                <li>Speak naturally - the assistant will respond with voice</li>
+                <li>Click "End Session" when done</li>
+                <li>You can minimize this window anytime</li>
+              </ul>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </>
   );
 };

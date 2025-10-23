@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useEffect, lazy, Suspense } from "react";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { VoiceAssistant } from "@/components/VoiceAssistant";
 
 // Lazy load pages for better performance
 const Login = lazy(() => import("./pages/Login"));
@@ -88,6 +89,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <VoiceAssistant />
         <AppContent />
       </TooltipProvider>
     </AuthProvider>

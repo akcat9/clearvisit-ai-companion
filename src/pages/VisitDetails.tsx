@@ -30,7 +30,12 @@ const VisitDetails = () => {
   const [aiGeneratedData, setAiGeneratedData] = useState<{
     visitSummary: string;
     prescriptions: string;
-    followUpActions: string;
+    followUpTimeline?: {
+      immediate?: string[];
+      nextWeek?: string[];
+      nextMonth?: string[];
+      ongoing?: string[];
+    };
     keySymptoms: string[];
     doctorRecommendations: string[];
     questionsForDoctor: string[];
@@ -211,7 +216,7 @@ const VisitDetails = () => {
       const aiData = {
         visitSummary: summaryData.visitSummary || '',
         prescriptions: summaryData.prescriptions || '',
-        followUpActions: summaryData.followUpActions || '',
+        followUpTimeline: summaryData.followUpTimeline || {},
         keySymptoms: summaryData.keySymptoms || [],
         doctorRecommendations: summaryData.doctorRecommendations || [],
         questionsForDoctor: summaryData.questionsForDoctor || [],
@@ -511,11 +516,58 @@ const VisitDetails = () => {
                 </div>
               )}
 
-              {aiGeneratedData.followUpActions && (
+              {aiGeneratedData.followUpTimeline && Object.keys(aiGeneratedData.followUpTimeline).length > 0 && (
                 <div className="bg-white rounded-lg p-4 border border-yellow-200">
-                  <h4 className="font-semibold mb-3 text-yellow-800 text-base">Follow-Up Actions</h4>
-                  <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
-                    <p className="text-yellow-700 text-sm">{aiGeneratedData.followUpActions}</p>
+                  <h4 className="font-semibold mb-3 text-yellow-800 text-base">Follow-Up Timeline</h4>
+                  <div className="space-y-4">
+                    {aiGeneratedData.followUpTimeline.immediate && aiGeneratedData.followUpTimeline.immediate.length > 0 && (
+                      <div>
+                        <h5 className="font-medium text-yellow-800 text-sm mb-2">Immediate (Next 1-2 days)</h5>
+                        <div className="space-y-2">
+                          {aiGeneratedData.followUpTimeline.immediate.map((action, idx) => (
+                            <div key={idx} className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                              <p className="text-yellow-700 text-sm">{action}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {aiGeneratedData.followUpTimeline.nextWeek && aiGeneratedData.followUpTimeline.nextWeek.length > 0 && (
+                      <div>
+                        <h5 className="font-medium text-yellow-800 text-sm mb-2">Next Week</h5>
+                        <div className="space-y-2">
+                          {aiGeneratedData.followUpTimeline.nextWeek.map((action, idx) => (
+                            <div key={idx} className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                              <p className="text-yellow-700 text-sm">{action}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {aiGeneratedData.followUpTimeline.nextMonth && aiGeneratedData.followUpTimeline.nextMonth.length > 0 && (
+                      <div>
+                        <h5 className="font-medium text-yellow-800 text-sm mb-2">Next Month</h5>
+                        <div className="space-y-2">
+                          {aiGeneratedData.followUpTimeline.nextMonth.map((action, idx) => (
+                            <div key={idx} className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                              <p className="text-yellow-700 text-sm">{action}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {aiGeneratedData.followUpTimeline.ongoing && aiGeneratedData.followUpTimeline.ongoing.length > 0 && (
+                      <div>
+                        <h5 className="font-medium text-yellow-800 text-sm mb-2">Ongoing Care</h5>
+                        <div className="space-y-2">
+                          {aiGeneratedData.followUpTimeline.ongoing.map((action, idx) => (
+                            <div key={idx} className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                              <p className="text-yellow-700 text-sm">{action}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

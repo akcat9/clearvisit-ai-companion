@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Loader2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Drawer,
   DrawerContent,
@@ -16,10 +17,54 @@ const AGENT_ID = "agent_8701k88xxkgmfx98fy3n1c8f24ng";
 
 export const VoiceAssistant = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
   const conversation = useConversation({
+    clientTools: {
+      get_appointments: async () => {
+        try {
+          const { data, error } = await supabase
+            .from('appointments')
+            .select('*')
+            .eq('user_id', user?.id)
+            .order('date', { ascending: true });
+
+          if (error) throw error;
+          return JSON.stringify(data || []);
+        } catch (error) {
+          console.error('Error fetching appointments:', error);
+          return JSON.stringify({ error: 'Failed to fetch appointments' });
+        }
+      },
+      get_appointment_details: async ({ appointment_id }: { appointment_id: string }) => {
+        try {
+          const { data: appointment, error: aptError } = await supabase
+            .from('appointments')
+            .select('*')
+            .eq('id', appointment_id)
+            .eq('user_id', user?.id)
+            .single();
+
+          if (aptError) throw aptError;
+
+          const { data: visitRecord, error: visitError } = await supabase
+            .from('visit_records')
+            .select('*')
+            .eq('appointment_id', appointment_id)
+            .maybeSingle();
+
+          return JSON.stringify({
+            appointment,
+            visit_record: visitRecord || null
+          });
+        } catch (error) {
+          console.error('Error fetching appointment details:', error);
+          return JSON.stringify({ error: 'Failed to fetch appointment details' });
+        }
+      }
+    },
     onConnect: () => {
       console.log("Connected to ElevenLabs");
       setIsConnecting(false);

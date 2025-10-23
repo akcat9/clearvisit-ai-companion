@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.elevenlabs-tts]
 verify_jwt = true
+
+[functions.openai-tts]
+verify_jwt = true

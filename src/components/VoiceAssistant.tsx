@@ -344,7 +344,11 @@ export const VoiceAssistant = () => {
           speechText += `Visit summary: ${summary.visitSummary}. `;
         }
         if (summary.doctorRecommendations) {
-          speechText += `Doctor recommendations: ${summary.doctorRecommendations}. `;
+          // Handle doctor recommendations properly - it might be an object or string
+          const recommendations = typeof summary.doctorRecommendations === 'string' 
+            ? summary.doctorRecommendations 
+            : JSON.stringify(summary.doctorRecommendations);
+          speechText += `Doctor recommendations: ${recommendations}. `;
         }
         if (summary.prescriptions && summary.prescriptions.length > 0) {
           speechText += `Prescriptions: ${summary.prescriptions.join(', ')}. `;
@@ -355,12 +359,12 @@ export const VoiceAssistant = () => {
 
       console.log('[Quick Lookup] Speaking:', speechText);
 
-      // Use ElevenLabs TTS
+      // Use OpenAI TTS
       setIsSpeaking(true);
-      const { data: ttsData, error: ttsError } = await supabase.functions.invoke('elevenlabs-tts', {
+      const { data: ttsData, error: ttsError } = await supabase.functions.invoke('openai-tts', {
         body: { 
           text: speechText,
-          voiceId: 'EXAVITQu4vr4xnSDxMaL' // Sarah voice
+          voice: 'nova' // Nova voice
         }
       });
 

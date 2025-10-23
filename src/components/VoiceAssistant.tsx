@@ -22,161 +22,6 @@ export const VoiceAssistant = () => {
   const [isConnecting, setIsConnecting] = useState(false);
 
   const conversation = useConversation({
-    clientTools: {
-      get_appointments: async () => {
-        try {
-          console.log('[get_appointments] Fetching appointments for user:', user?.id);
-          const { data, error } = await supabase
-            .from('appointments')
-            .select('*')
-            .eq('user_id', user?.id)
-            .order('date', { ascending: true });
-
-          if (error) throw error;
-          console.log('[get_appointments] Found', data?.length || 0, 'appointments');
-          return JSON.stringify(data || []);
-        } catch (error) {
-          console.error('[get_appointments] Error:', error);
-          return JSON.stringify({ error: 'Failed to fetch appointments' });
-        }
-      },
-      get_appointment_details: async ({ appointment_id }: { appointment_id: string }) => {
-        try {
-          console.log('[get_appointment_details] Received query:', appointment_id);
-          
-          // Check if it's a UUID
-          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-          const isUUID = uuidRegex.test(appointment_id);
-          
-          if (isUUID) {
-            // Direct UUID lookup
-            console.log('[get_appointment_details] Treating as UUID');
-            const { data: appointment, error: aptError } = await supabase
-              .from('appointments')
-              .select('*')
-              .eq('id', appointment_id)
-              .eq('user_id', user?.id)
-              .single();
-
-            if (aptError) throw aptError;
-
-            const { data: visitRecord, error: visitError } = await supabase
-              .from('visit_records')
-              .select('*')
-              .eq('appointment_id', appointment_id)
-              .maybeSingle();
-
-            return JSON.stringify({
-              appointment,
-              visit_record: visitRecord || null
-            });
-          }
-          
-          // Natural language query - fetch recent and upcoming appointments
-          console.log('[get_appointment_details] Treating as natural language query');
-          const sixMonthsAgo = new Date();
-          sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-          const sixMonthsFromNow = new Date();
-          sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
-          
-          const { data: appointments, error } = await supabase
-            .from('appointments')
-            .select('*')
-            .eq('user_id', user?.id)
-            .gte('date', sixMonthsAgo.toISOString().split('T')[0])
-            .lte('date', sixMonthsFromNow.toISOString().split('T')[0])
-            .order('date', { ascending: true });
-            
-          if (error) throw error;
-          console.log('[get_appointment_details] Found', appointments?.length || 0, 'appointments to search');
-          
-          if (!appointments || appointments.length === 0) {
-            return JSON.stringify({ 
-              error: 'No appointments found in the last 6 months or upcoming 6 months' 
-            });
-          }
-          
-          const query = appointment_id.toLowerCase();
-          const now = new Date();
-          
-          // Intent detection
-          const isLastVisit = query.includes('last') || query.includes('most recent') || query.includes('previous');
-          const isNextVisit = query.includes('next') || query.includes('upcoming');
-          
-          let bestMatch = null;
-          
-          if (isLastVisit) {
-            // Find most recent past appointment
-            const pastAppointments = appointments.filter(apt => new Date(apt.date) < now);
-            if (pastAppointments.length > 0) {
-              bestMatch = pastAppointments[pastAppointments.length - 1];
-              console.log('[get_appointment_details] Matched "last visit":', bestMatch.id);
-            }
-          } else if (isNextVisit) {
-            // Find next upcoming appointment
-            const futureAppointments = appointments.filter(apt => new Date(apt.date) >= now);
-            if (futureAppointments.length > 0) {
-              bestMatch = futureAppointments[0];
-              console.log('[get_appointment_details] Matched "next appointment":', bestMatch.id);
-            }
-          } else {
-            // Fuzzy match by doctor name, date, or time
-            for (const apt of appointments) {
-              let score = 0;
-              
-              // Doctor name match
-              if (apt.doctor_name && query.includes(apt.doctor_name.toLowerCase())) {
-                score += 10;
-              }
-              
-              // Date matching (simple keyword check)
-              const dateStr = apt.date.toLowerCase();
-              if (query.includes(dateStr)) {
-                score += 5;
-              }
-              
-              // Time matching
-              if (apt.time && query.includes(apt.time.toLowerCase().replace(':00', ''))) {
-                score += 3;
-              }
-              
-              if (score > 0 && (!bestMatch || score > (bestMatch as any).__score)) {
-                (apt as any).__score = score;
-                bestMatch = apt;
-              }
-            }
-            
-            if (bestMatch) {
-              console.log('[get_appointment_details] Matched by fuzzy search:', bestMatch.id, 'with score:', (bestMatch as any).__score);
-            }
-          }
-          
-          if (!bestMatch) {
-            console.log('[get_appointment_details] No match found for query');
-            return JSON.stringify({ 
-              error: `Could not find an appointment matching "${appointment_id}". Try asking for "last visit", "next appointment", or mention a doctor's name.` 
-            });
-          }
-          
-          // Fetch visit record for the matched appointment
-          const { data: visitRecord } = await supabase
-            .from('visit_records')
-            .select('*')
-            .eq('appointment_id', bestMatch.id)
-            .maybeSingle();
-            
-          console.log('[get_appointment_details] Returning appointment:', bestMatch.id);
-          return JSON.stringify({
-            appointment: bestMatch,
-            visit_record: visitRecord || null
-          });
-          
-        } catch (error) {
-          console.error('[get_appointment_details] Error:', error);
-          return JSON.stringify({ error: 'Failed to fetch appointment details' });
-        }
-      }
-    },
     onConnect: () => {
       console.log("Connected to ElevenLabs");
       setIsConnecting(false);
@@ -205,6 +50,58 @@ export const VoiceAssistant = () => {
       // Request microphone permission
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
+      // Fetch all appointment data
+      const { data: appointments, error: aptError } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('date', { ascending: true });
+
+      if (aptError) throw aptError;
+
+      // Fetch all visit records
+      const { data: visitRecords, error: visitError } = await supabase
+        .from('visit_records')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: true });
+
+      if (visitError) throw visitError;
+
+      // Format appointment data into conversational summary
+      let appointmentSummary = '';
+      
+      if (appointments && appointments.length > 0) {
+        const now = new Date();
+        const pastAppointments = appointments.filter(apt => new Date(apt.date) < now);
+        const upcomingAppointments = appointments.filter(apt => new Date(apt.date) >= now);
+
+        if (pastAppointments.length > 0) {
+          appointmentSummary += 'Past Appointments:\n';
+          pastAppointments.forEach(apt => {
+            const visitRecord = visitRecords?.find(vr => vr.appointment_id === apt.id);
+            appointmentSummary += `- ${apt.date} at ${apt.time} with Dr. ${apt.doctor_name} for ${apt.reason}`;
+            if (apt.goal) appointmentSummary += ` (Goal: ${apt.goal})`;
+            if (visitRecord?.summary) {
+              appointmentSummary += `\n  Visit Summary: ${JSON.stringify(visitRecord.summary)}`;
+            }
+            appointmentSummary += '\n';
+          });
+        }
+
+        if (upcomingAppointments.length > 0) {
+          appointmentSummary += '\nUpcoming Appointments:\n';
+          upcomingAppointments.forEach(apt => {
+            appointmentSummary += `- ${apt.date} at ${apt.time} with Dr. ${apt.doctor_name} for ${apt.reason}`;
+            if (apt.goal) appointmentSummary += ` (Goal: ${apt.goal})`;
+            if (apt.symptoms) appointmentSummary += ` (Symptoms: ${apt.symptoms})`;
+            appointmentSummary += '\n';
+          });
+        }
+      } else {
+        appointmentSummary = 'The user has no appointments scheduled.';
+      }
+
       // Get signed URL from edge function
       const { data, error } = await supabase.functions.invoke('elevenlabs-signed-url', {
         body: { agentId: AGENT_ID }
@@ -218,7 +115,17 @@ export const VoiceAssistant = () => {
         throw new Error("No signed URL received");
       }
 
-      await conversation.startSession({ signedUrl: data.signedUrl });
+      // Start session with appointment data in context
+      await conversation.startSession({ 
+        signedUrl: data.signedUrl,
+        overrides: {
+          agent: {
+            prompt: {
+              prompt: `You are a helpful medical assistant for a patient. Here is their complete appointment history and upcoming appointments:\n\n${appointmentSummary}\n\nAnswer any questions about their appointments, doctors, visit summaries, symptoms, goals, or medical history based on this information. Be conversational, helpful, and clear.`
+            }
+          }
+        }
+      });
       
       toast({
         title: "Connected",

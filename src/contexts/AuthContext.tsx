@@ -46,9 +46,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) {
         console.error('Error checking subscription:', error);
-        // Fail open - if check fails, assume subscribed to not block user
+        // Fail closed - if check fails, assume NOT subscribed for security
         setSubscriptionStatus({
-          subscribed: true,
+          subscribed: false,
           checking: false,
           planId: null,
           expiresAt: null,
@@ -64,9 +64,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
     } catch (error) {
       console.error('Error checking subscription:', error);
-      // Fail open - if check fails, assume subscribed to not block user
+      // Fail closed - if check fails, assume NOT subscribed for security
       setSubscriptionStatus({
-        subscribed: true,
+        subscribed: false,
         checking: false,
         planId: null,
         expiresAt: null,

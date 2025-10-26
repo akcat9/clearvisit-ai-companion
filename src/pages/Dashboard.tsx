@@ -76,17 +76,12 @@ const Dashboard = () => {
     fetchAppointments();
   }, [user, fetchAppointments]);
 
-  // Auto-send subscription email for new unsubscribed users
+  // Show subscription modal every time for unsubscribed users
   useEffect(() => {
     if (!user || !subscriptionStatus || subscriptionStatus.checking) return;
     
     if (!subscriptionStatus.subscribed) {
-      const hasSeenModal = localStorage.getItem(`subscription-modal-shown-${user.id}`);
-      
-      if (!hasSeenModal) {
-        setShowSubscriptionModal(true);
-        localStorage.setItem(`subscription-modal-shown-${user.id}`, 'true');
-      }
+      setShowSubscriptionModal(true);
     }
   }, [user, subscriptionStatus]);
 

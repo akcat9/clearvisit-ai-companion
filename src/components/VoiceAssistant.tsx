@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useConversation } from "@elevenlabs/react";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Loader2, X, Bot } from "lucide-react";
+import { Mic, MicOff, Loader2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Drawer,
   DrawerContent,
@@ -16,15 +17,172 @@ const AGENT_ID = "agent_8701k88xxkgmfx98fy3n1c8f24ng";
 
 export const VoiceAssistant = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
   const conversation = useConversation({
+    clientTools: {
+      get_appointments: async () => {
+        try {
+          console.log('[get_appointments] Fetching appointments for user:', user?.id);
+          const { data, error } = await supabase
+            .from('appointments')
+            .select('*')
+            .eq('user_id', user?.id)
+            .order('date', { ascending: true });
+
+          if (error) throw error;
+          console.log('[get_appointments] Found', data?.length || 0, 'appointments');
+          return JSON.stringify(data || []);
+        } catch (error) {
+          console.error('[get_appointments] Error:', error);
+          return JSON.stringify({ error: 'Failed to fetch appointments' });
+        }
+      },
+      get_appointment_details: async ({ appointment_id }: { appointment_id: string }) => {
+        try {
+          console.log('[get_appointment_details] Received query:', appointment_id);
+          
+          // Check if it's a UUID
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          const isUUID = uuidRegex.test(appointment_id);
+          
+          if (isUUID) {
+            // Direct UUID lookup
+            console.log('[get_appointment_details] Treating as UUID');
+            const { data: appointment, error: aptError } = await supabase
+              .from('appointments')
+              .select('*')
+              .eq('id', appointment_id)
+              .eq('user_id', user?.id)
+              .single();
+
+            if (aptError) throw aptError;
+
+            const { data: visitRecord, error: visitError } = await supabase
+              .from('visit_records')
+              .select('*')
+              .eq('appointment_id', appointment_id)
+              .maybeSingle();
+
+            return JSON.stringify({
+              appointment,
+              visit_record: visitRecord || null
+            });
+          }
+          
+          // Natural language query - fetch recent and upcoming appointments
+          console.log('[get_appointment_details] Treating as natural language query');
+          const sixMonthsAgo = new Date();
+          sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+          const sixMonthsFromNow = new Date();
+          sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
+          
+          const { data: appointments, error } = await supabase
+            .from('appointments')
+            .select('*')
+            .eq('user_id', user?.id)
+            .gte('date', sixMonthsAgo.toISOString().split('T')[0])
+            .lte('date', sixMonthsFromNow.toISOString().split('T')[0])
+            .order('date', { ascending: true });
+            
+          if (error) throw error;
+          console.log('[get_appointment_details] Found', appointments?.length || 0, 'appointments to search');
+          
+          if (!appointments || appointments.length === 0) {
+            return JSON.stringify({ 
+              error: 'No appointments found in the last 6 months or upcoming 6 months' 
+            });
+          }
+          
+          const query = appointment_id.toLowerCase();
+          const now = new Date();
+          
+          // Intent detection
+          const isLastVisit = query.includes('last') || query.includes('most recent') || query.includes('previous');
+          const isNextVisit = query.includes('next') || query.includes('upcoming');
+          
+          let bestMatch = null;
+          
+          if (isLastVisit) {
+            // Find most recent past appointment
+            const pastAppointments = appointments.filter(apt => new Date(apt.date) < now);
+            if (pastAppointments.length > 0) {
+              bestMatch = pastAppointments[pastAppointments.length - 1];
+              console.log('[get_appointment_details] Matched "last visit":', bestMatch.id);
+            }
+          } else if (isNextVisit) {
+            // Find next upcoming appointment
+            const futureAppointments = appointments.filter(apt => new Date(apt.date) >= now);
+            if (futureAppointments.length > 0) {
+              bestMatch = futureAppointments[0];
+              console.log('[get_appointment_details] Matched "next appointment":', bestMatch.id);
+            }
+          } else {
+            // Fuzzy match by doctor name, date, or time
+            for (const apt of appointments) {
+              let score = 0;
+              
+              // Doctor name match
+              if (apt.doctor_name && query.includes(apt.doctor_name.toLowerCase())) {
+                score += 10;
+              }
+              
+              // Date matching (simple keyword check)
+              const dateStr = apt.date.toLowerCase();
+              if (query.includes(dateStr)) {
+                score += 5;
+              }
+              
+              // Time matching
+              if (apt.time && query.includes(apt.time.toLowerCase().replace(':00', ''))) {
+                score += 3;
+              }
+              
+              if (score > 0 && (!bestMatch || score > (bestMatch as any).__score)) {
+                (apt as any).__score = score;
+                bestMatch = apt;
+              }
+            }
+            
+            if (bestMatch) {
+              console.log('[get_appointment_details] Matched by fuzzy search:', bestMatch.id, 'with score:', (bestMatch as any).__score);
+            }
+          }
+          
+          if (!bestMatch) {
+            console.log('[get_appointment_details] No match found for query');
+            return JSON.stringify({ 
+              error: `Could not find an appointment matching "${appointment_id}". Try asking for "last visit", "next appointment", or mention a doctor's name.` 
+            });
+          }
+          
+          // Fetch visit record for the matched appointment
+          const { data: visitRecord } = await supabase
+            .from('visit_records')
+            .select('*')
+            .eq('appointment_id', bestMatch.id)
+            .maybeSingle();
+            
+          console.log('[get_appointment_details] Returning appointment:', bestMatch.id);
+          return JSON.stringify({
+            appointment: bestMatch,
+            visit_record: visitRecord || null
+          });
+          
+        } catch (error) {
+          console.error('[get_appointment_details] Error:', error);
+          return JSON.stringify({ error: 'Failed to fetch appointment details' });
+        }
+      }
+    },
     onConnect: () => {
+      console.log("Connected to ElevenLabs");
       setIsConnecting(false);
     },
     onDisconnect: () => {
-      // Connection closed
+      console.log("Disconnected from ElevenLabs");
     },
     onError: (error) => {
       console.error("ElevenLabs error:", error);
@@ -35,8 +193,8 @@ export const VoiceAssistant = () => {
       });
       setIsConnecting(false);
     },
-    onMessage: () => {
-      // Message received
+    onMessage: (message) => {
+      console.log("Message:", message);
     }
   });
 
@@ -94,7 +252,7 @@ export const VoiceAssistant = () => {
           className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg z-50 hover:scale-110 transition-transform"
           size="icon"
         >
-          <Bot className="h-6 w-6" />
+          <Mic className="h-6 w-6" />
         </Button>
       )}
 

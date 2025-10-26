@@ -17,33 +17,34 @@ serve(async (req) => {
   try {
     console.log("[SEND-SUBSCRIPTION-EMAIL] Function started");
 
+    // Create client with anon key for auth verification
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        global: {
+          headers: { Authorization: req.headers.get("Authorization")! }
+        }
+      }
     );
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("No authorization header provided");
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    // Get authenticated user
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     
-    if (userError) {
-      throw new Error(`Authentication error: ${userError.message}`);
-    }
-    
-    const user = userData.user;
-    if (!user?.email) {
-      throw new Error("User email not found");
+    if (userError || !user?.email) {
+      throw new Error(`Authentication error: ${userError?.message || 'User not found'}`);
     }
 
     console.log("[SEND-SUBSCRIPTION-EMAIL] Sending to:", user.email);
 
+    // Create service role client for profile query
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
     // Get user's first name from profiles
-    const { data: profile } = await supabaseClient
+    const { data: profile } = await serviceClient
       .from('profiles')
       .select('first_name')
       .eq('user_id', user.id)

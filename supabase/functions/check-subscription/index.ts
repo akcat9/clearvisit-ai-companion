@@ -14,33 +14,32 @@ serve(async (req) => {
   try {
     console.log("[CHECK-SUBSCRIPTION] Function started");
 
-    const supabaseClient = createClient(
+    // Use anon key with Authorization header to authenticate user
+    const authClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        global: {
+          headers: { Authorization: req.headers.get("Authorization") || "" }
+        }
+      }
     );
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("No authorization header provided");
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    
-    if (userError) {
-      throw new Error(`Authentication error: ${userError.message}`);
-    }
-    
-    const user = userData.user;
-    if (!user?.id) {
-      throw new Error("User not authenticated");
+    const { data: { user }, error: userError } = await authClient.auth.getUser();
+    if (userError || !user?.id) {
+      throw new Error(`Authentication error: ${userError?.message || 'Auth session missing!'}`);
     }
 
     console.log("[CHECK-SUBSCRIPTION] Checking for user:", user.id);
 
+    // Use service role for DB query to bypass RLS safely in function
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
     // Query subscriptions table for active subscription
-    const { data: subscriptions, error: subError } = await supabaseClient
+    const { data: subscriptions, error: subError } = await serviceClient
       .from('subscriptions')
       .select('*')
       .eq('user_id', user.id)

@@ -54,7 +54,7 @@ serve(async (req) => {
 
     // Send email via Resend
     const emailResponse = await resend.emails.send({
-      from: "tadoc <onboarding@resend.dev>",
+      from: "tadoc <noreply@tadoc.app>",
       to: [user.email],
       subject: "Activate Your tadoc Account",
       html: `

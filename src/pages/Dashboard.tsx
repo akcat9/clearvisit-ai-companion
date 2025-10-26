@@ -430,7 +430,7 @@ const Dashboard = () => {
       <SubscriptionPromptModal
         open={showSubscriptionModal}
         onOpenChange={setShowSubscriptionModal}
-        autoSendEmail={true}
+        autoSendEmail={!subscriptionStatus.subscribed}
       />
     </div>
   );

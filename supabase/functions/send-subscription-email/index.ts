@@ -70,7 +70,7 @@ serve(async (req) => {
           </p>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://tadoc-engage-connect.lovable.app/" 
+            <a href="https://tadoc.app" 
                style="background-color: #4CAF50; color: white; padding: 14px 28px; text-decoration: none; border-radius: 4px; font-size: 16px; display: inline-block;">
               Activate tadoc Account →
             </a>

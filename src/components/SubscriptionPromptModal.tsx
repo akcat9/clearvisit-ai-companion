@@ -25,7 +25,8 @@ export const SubscriptionPromptModal = ({
 
   // Auto-send email once when modal opens for the first time
   useEffect(() => {
-    if (!open || !autoSendEmail || !user) return;
+    // Do not send if user is already subscribed
+    if (!open || !autoSendEmail || !user || subscriptionStatus.subscribed) return;
     
     const lastSent = localStorage.getItem(`last-subscription-email-${user.id}`);
     const now = Date.now();
@@ -34,7 +35,7 @@ export const SubscriptionPromptModal = ({
     if (!lastSent || now - parseInt(lastSent) > 5 * 60 * 1000) {
       sendEmail();
     }
-  }, [open, autoSendEmail, user]);
+  }, [open, autoSendEmail, user, subscriptionStatus.subscribed]);
 
   const sendEmail = async () => {
     if (!user) return;

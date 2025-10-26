@@ -23,20 +23,18 @@ export const SubscriptionPromptModal = ({
   const [emailSent, setEmailSent] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
 
-  // Auto-send email on first open
+  // Auto-send email once when modal opens for the first time
   useEffect(() => {
-    if (open && autoSendEmail && !emailSent && user) {
-      const lastSent = localStorage.getItem(`last-subscription-email-${user.id}`);
-      const now = Date.now();
-      
-      // Rate limit: only send if more than 5 minutes since last email
-      if (!lastSent || now - parseInt(lastSent) > 5 * 60 * 1000) {
-        sendEmail();
-      } else {
-        setEmailSent(true);
-      }
+    if (!open || !autoSendEmail || !user) return;
+    
+    const lastSent = localStorage.getItem(`last-subscription-email-${user.id}`);
+    const now = Date.now();
+    
+    // Rate limit: only send if more than 5 minutes since last email
+    if (!lastSent || now - parseInt(lastSent) > 5 * 60 * 1000) {
+      sendEmail();
     }
-  }, [open, autoSendEmail, user, emailSent]);
+  }, [open, autoSendEmail, user]);
 
   const sendEmail = async () => {
     if (!user) return;
@@ -45,16 +43,14 @@ export const SubscriptionPromptModal = ({
     try {
       const { error } = await supabase.functions.invoke('send-subscription-email');
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       setEmailSent(true);
       localStorage.setItem(`last-subscription-email-${user.id}`, Date.now().toString());
       
       toast({
         title: "✅ Email Sent",
-        description: `Check ${user.email} for subscription instructions`,
+        description: `Check ${user.email} for activation instructions`,
       });
     } catch (error) {
       console.error('Error sending email:', error);

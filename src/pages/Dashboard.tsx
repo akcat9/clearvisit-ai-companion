@@ -76,14 +76,19 @@ const Dashboard = () => {
     fetchAppointments();
   }, [user, fetchAppointments]);
 
-  // Show subscription modal every time for unsubscribed users
+  // Show subscription modal only for unsubscribed users
   useEffect(() => {
-    if (!user || !subscriptionStatus || subscriptionStatus.checking) return;
+    // Wait for subscription check to complete
+    if (!user || subscriptionStatus.checking) return;
     
+    // Only show modal if user is NOT subscribed
     if (!subscriptionStatus.subscribed) {
       setShowSubscriptionModal(true);
+    } else {
+      // User IS subscribed, make sure modal is closed
+      setShowSubscriptionModal(false);
     }
-  }, [user, subscriptionStatus]);
+  }, [user, subscriptionStatus.subscribed, subscriptionStatus.checking]);
 
   // Handle return from payment page
   useEffect(() => {

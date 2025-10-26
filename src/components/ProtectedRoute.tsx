@@ -1,13 +1,12 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { SubscriptionPromptModal } from '@/components/SubscriptionPromptModal';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, loading, subscriptionStatus } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -24,15 +23,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/" replace />;
   }
 
-  return (
-    <>
-      {children}
-      {/* Ensure the activation modal shows on all protected routes for unsubscribed users */}
-      {subscriptionStatus && !subscriptionStatus.checking && !subscriptionStatus.subscribed && (
-        <SubscriptionPromptModal open={true} onOpenChange={() => {}} autoSendEmail={false} />
-      )}
-    </>
-  );
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

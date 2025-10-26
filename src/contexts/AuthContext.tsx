@@ -2,20 +2,11 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-interface SubscriptionStatus {
-  subscribed: boolean;
-  checking: boolean;
-  planId: string | null;
-  expiresAt: string | null;
-}
-
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   signOut: () => Promise<void>;
-  subscriptionStatus: SubscriptionStatus;
-  checkSubscription: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,47 +23,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>({
-    subscribed: false,
-    checking: false,
-    planId: null,
-    expiresAt: null,
-  });
-
-  const checkSubscription = async () => {
-    setSubscriptionStatus(prev => ({ ...prev, checking: true }));
-    try {
-      const { data, error } = await supabase.functions.invoke('check-subscription');
-      
-      if (error) {
-        console.error('Error checking subscription:', error);
-        // Fail closed - if check fails, assume NOT subscribed for security
-        setSubscriptionStatus({
-          subscribed: false,
-          checking: false,
-          planId: null,
-          expiresAt: null,
-        });
-        return;
-      }
-
-      setSubscriptionStatus({
-        subscribed: data.subscribed || false,
-        checking: false,
-        planId: data.plan_id || null,
-        expiresAt: data.expires_at || null,
-      });
-    } catch (error) {
-      console.error('Error checking subscription:', error);
-      // Fail closed - if check fails, assume NOT subscribed for security
-      setSubscriptionStatus({
-        subscribed: false,
-        checking: false,
-        planId: null,
-        expiresAt: null,
-      });
-    }
-  };
 
   useEffect(() => {
     // Set up auth state listener
@@ -81,13 +31,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-        
-        // Check subscription when user logs in
-        if (session?.user) {
-          setTimeout(() => {
-            checkSubscription();
-          }, 0);
-        }
       }
     );
 
@@ -96,13 +39,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      
-      // Check subscription if user exists
-      if (session?.user) {
-        setTimeout(() => {
-          checkSubscription();
-        }, 0);
-      }
     });
 
     return () => {
@@ -129,8 +65,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     session,
     loading,
     signOut,
-    subscriptionStatus,
-    checkSubscription,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

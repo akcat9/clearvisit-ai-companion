@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/Header";
-import { Plus, Share2, Trash2, HelpCircle, ChevronRight, Lock } from "lucide-react";
+import { Plus, Share2, Trash2, HelpCircle, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppointmentModal } from "@/components/AppointmentModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUnreadSharedVisits } from "@/hooks/useUnreadSharedVisits";
 import { format } from 'date-fns';
-import { SubscriptionPromptModal } from "@/components/SubscriptionPromptModal";
 import {
   Dialog,
   DialogContent,
@@ -35,16 +34,13 @@ interface Appointment {
 }
 
 const Dashboard = () => {
-  const { user, subscriptionStatus, checkSubscription } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { unreadCount } = useUnreadSharedVisits();
-
-  const isLocked = !subscriptionStatus.subscribed;
 
   const fetchAppointments = useCallback(async () => {
     try {
@@ -76,33 +72,6 @@ const Dashboard = () => {
     fetchAppointments();
   }, [user, fetchAppointments]);
 
-  // Show subscription modal only for unsubscribed users
-  useEffect(() => {
-    // Wait for subscription check to complete
-    if (!user || subscriptionStatus.checking) return;
-    
-    // Only show modal if user is NOT subscribed
-    if (!subscriptionStatus.subscribed) {
-      setShowSubscriptionModal(true);
-    } else {
-      // User IS subscribed, make sure modal is closed
-      setShowSubscriptionModal(false);
-    }
-  }, [user, subscriptionStatus.subscribed, subscriptionStatus.checking]);
-
-  // Handle return from payment page
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('subscribed') === 'true') {
-      checkSubscription();
-      toast({
-        title: "✨ Account Active!",
-        description: "All features are now unlocked. Welcome to tadoc!",
-      });
-      window.history.replaceState({}, '', '/dashboard');
-    }
-  }, [checkSubscription, toast]);
-
   const formatTime = (timeString: string) => {
     try {
       // Parse the time string (e.g., "22:35:00" or "14:30:00")
@@ -117,21 +86,8 @@ const Dashboard = () => {
     }
   };
 
-  const handleLockedClick = (e: React.MouseEvent) => {
-    if (isLocked) {
-      e.preventDefault();
-      e.stopPropagation();
-      setShowSubscriptionModal(true);
-    }
-  };
-
   const handleDeleteAppointment = async (appointmentId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent navigation when clicking delete
-
-    if (isLocked) {
-      handleLockedClick(e);
-      return;
-    }
 
     try {
       const { error } = await supabase
@@ -237,45 +193,23 @@ const Dashboard = () => {
             </Dialog>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            {isLocked && (
-              <div className="text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md flex items-center gap-2">
-                <Lock className="w-4 h-4" />
-                Account Activation Required
-              </div>
-            )}
             <Button 
-              onClick={(e) => {
-                if (isLocked) {
-                  handleLockedClick(e);
-                } else {
-                  setShowAppointmentModal(true);
-                }
-              }}
-              disabled={isLocked}
+              onClick={() => setShowAppointmentModal(true)}
               className="flex items-center justify-center gap-2 w-full sm:w-auto"
               size="sm"
             >
-              {isLocked && <Lock className="w-4 h-4" />}
               <Plus className="w-4 h-4" />
               <span className="sm:inline">New Appointment</span>
             </Button>
             <Button 
               variant="outline" 
-              onClick={(e) => {
-                if (isLocked) {
-                  handleLockedClick(e);
-                } else {
-                  navigate("/shared-visits");
-                }
-              }}
-              disabled={isLocked}
+              onClick={() => navigate("/shared-visits")}
               className="flex items-center justify-center gap-2 relative w-full sm:w-auto"
               size="sm"
             >
-              {isLocked && <Lock className="w-4 h-4" />}
               <Share2 className="w-4 h-4" />
               <span className="sm:inline">Shared Visits</span>
-              {unreadCount > 0 && !isLocked && (
+              {unreadCount > 0 && (
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full"></div>
               )}
             </Button>
@@ -303,16 +237,8 @@ const Dashboard = () => {
                   {upcomingAppointments.map((appointment) => (
                     <div 
                       key={appointment.id} 
-                      className={`p-3 sm:p-4 border rounded-lg group relative transition-colors ${
-                        isLocked ? 'opacity-60' : 'hover:bg-muted/50 cursor-pointer'
-                      }`}
-                      onClick={(e) => {
-                        if (isLocked) {
-                          handleLockedClick(e);
-                        } else {
-                          navigate(`/visit/${appointment.id}`);
-                        }
-                      }}
+                      className="p-3 sm:p-4 border rounded-lg group relative transition-colors hover:bg-muted/50 cursor-pointer"
+                      onClick={() => navigate(`/visit/${appointment.id}`)}
                     >
                       <div className="font-medium">{appointment.doctor_name}</div>
                       <div className="text-sm text-muted-foreground">
@@ -324,31 +250,23 @@ const Dashboard = () => {
                       <div className="flex items-center justify-between mt-3">
                         <Button
                           size="sm"
-                          disabled={isLocked}
                           className="bg-green-600 hover:bg-green-700 text-white"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (isLocked) {
-                              handleLockedClick(e);
-                            } else {
-                              navigate(`/visit/${appointment.id}`);
-                            }
+                            navigate(`/visit/${appointment.id}`);
                           }}
                         >
-                          {isLocked && <Lock className="mr-1 h-4 w-4" />}
                           Go <ChevronRight className="ml-1 h-4 w-4" />
                         </Button>
                       </div>
-                      {!isLocked && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
-                          onClick={(e) => handleDeleteAppointment(appointment.id, e)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+                        onClick={(e) => handleDeleteAppointment(appointment.id, e)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -372,13 +290,7 @@ const Dashboard = () => {
                     <div 
                       key={appointment.id} 
                       className="p-3 sm:p-4 border rounded-lg hover:bg-muted/50 cursor-pointer group relative transition-colors"
-                      onClick={(e) => {
-                        if (isLocked) {
-                          handleLockedClick(e);
-                        } else {
-                          navigate(`/visit/${appointment.id}`);
-                        }
-                      }}
+                      onClick={() => navigate(`/visit/${appointment.id}`)}
                     >
                       <div className="font-medium">{appointment.doctor_name}</div>
                       <div className="text-sm text-muted-foreground">
@@ -426,12 +338,6 @@ const Dashboard = () => {
           onSubmit={handleCreateAppointment}
         />
       )}
-
-      <SubscriptionPromptModal
-        open={showSubscriptionModal}
-        onOpenChange={setShowSubscriptionModal}
-        autoSendEmail={!subscriptionStatus.subscribed}
-      />
     </div>
   );
 };

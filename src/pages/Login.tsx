@@ -40,7 +40,7 @@ const Login = () => {
       
       toast({
         title: "Signed in successfully",
-        description: "Welcome back to Clearvisit",
+        description: "Welcome back to tadoc",
       });
     } catch (error: any) {
       toast({
@@ -108,7 +108,7 @@ const Login = () => {
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4 py-4">
         <div className="w-full max-w-md space-y-4 sm:space-y-6">
           <div className="text-center">
-            <h1 className="text-2xl sm:text-3xl font-bold">Welcome to Clearvisit</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Welcome to tadoc</h1>
             <p className="mt-2 text-muted-foreground text-sm sm:text-base">Record, analyze, and remember your doctor visits</p>
           </div>
 
@@ -158,7 +158,7 @@ const Login = () => {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="you@clearvisit.com"
+                    placeholder="you@tadoc.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required

@@ -225,10 +225,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      check_email_exists: {
-        Args: { email_address: string }
-        Returns: boolean
-      }
+      check_email_exists: { Args: { email_address: string }; Returns: boolean }
       get_user_by_username: {
         Args: { username_input: string }
         Returns: string

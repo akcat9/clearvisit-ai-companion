@@ -11,8 +11,21 @@ import { ArrowLeft, Mic, MicOff, FileText, BookOpen, AlertCircle } from 'lucide-
 import ShareVisitModal from '@/components/ShareVisitModal';
 import PreVisitEducation from '@/components/PreVisitEducation';
 import { AudioRecorder } from '@/utils/AudioRecorder';
-import { formatTime } from "@/utils/timeUtils";
+import { format } from 'date-fns';
 
+const formatTime = (timeString: string) => {
+  try {
+    // Parse the time string (e.g., "22:35:00" or "14:30:00")
+    const [hours, minutes] = timeString.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    
+    // Format to 12-hour format
+    return format(date, 'h:mm a');
+  } catch (error) {
+    return timeString; // Return original if parsing fails
+  }
+};
 
 const VisitDetails = () => {
   const { user } = useAuth();
@@ -30,12 +43,7 @@ const VisitDetails = () => {
   const [aiGeneratedData, setAiGeneratedData] = useState<{
     visitSummary: string;
     prescriptions: string;
-    followUpTimeline?: {
-      immediate?: string[];
-      nextWeek?: string[];
-      nextMonth?: string[];
-      ongoing?: string[];
-    };
+    followUpActions: string;
     keySymptoms: string[];
     doctorRecommendations: string[];
     questionsForDoctor: string[];
@@ -50,14 +58,7 @@ const VisitDetails = () => {
   useEffect(() => {
     if (!user) return;
     fetchAppointment();
-    
-    // Cleanup interval on unmount
-    return () => {
-      if (durationIntervalRef.current) {
-        clearInterval(durationIntervalRef.current);
-      }
-    };
-  }, [id, user]);
+  }, [id, user, navigate, toast]);
 
   const fetchAppointment = async () => {
     try {
@@ -108,6 +109,7 @@ const VisitDetails = () => {
       });
       navigate("/dashboard");
     } catch (error) {
+      console.error('Error fetching appointment:', error);
       toast({
         title: "Error loading appointment",
         description: "Please try again later.",
@@ -150,9 +152,10 @@ const VisitDetails = () => {
         description: "Speak clearly - transcription appears in real-time.",
       });
     } catch (error) {
+      console.error('Error starting recording:', error);
       toast({
         title: "Recording Failed",
-        description: "Microphone access denied or not available.",
+        description: "Speech recognition not available in this browser or microphone permission denied.",
         variant: "destructive",
       });
     }
@@ -204,10 +207,21 @@ const VisitDetails = () => {
         }
       });
 
-      if (summaryError || !summaryData) {
+      if (summaryError) {
+        console.error('AI analysis error:', summaryError);
         toast({
           title: "AI Analysis Failed",
-          description: "Unable to analyze visit. Please try again.",
+          description: `Error: ${summaryError.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!summaryData) {
+        console.error('No analysis data received');
+        toast({
+          title: "AI Analysis Failed",
+          description: "No analysis data received. Please try again.",
           variant: "destructive",
         });
         return;
@@ -216,7 +230,7 @@ const VisitDetails = () => {
       const aiData = {
         visitSummary: summaryData.visitSummary || '',
         prescriptions: summaryData.prescriptions || '',
-        followUpTimeline: summaryData.followUpTimeline || {},
+        followUpActions: summaryData.followUpActions || '',
         keySymptoms: summaryData.keySymptoms || [],
         doctorRecommendations: summaryData.doctorRecommendations || [],
         questionsForDoctor: summaryData.questionsForDoctor || [],
@@ -243,16 +257,11 @@ const VisitDetails = () => {
           });
 
         if (saveError) {
-          toast({
-            title: "Warning",
-            description: "Analysis complete but save failed.",
-            variant: "default",
-          });
-          return;
+          console.error('Error saving visit data:', saveError);
         }
 
-        // Update appointment status
-        await supabase
+        // Update appointment status to completed
+        const { error: updateError } = await supabase
           .from('appointments')
           .update({ 
             status: 'completed',
@@ -260,21 +269,27 @@ const VisitDetails = () => {
           })
           .eq('id', id);
 
+        if (updateError) {
+          console.error('Error updating appointment status:', updateError);
+        }
+
         toast({
           title: "AI Analysis Complete",
-          description: "Your visit has been analyzed and saved.",
+          description: "Your visit has been analyzed and saved successfully.",
         });
       } catch (saveError) {
+        console.error('Error saving visit data:', saveError);
         toast({
           title: "Save Warning",
-          description: "Analysis complete but save failed.",
+          description: "Analysis complete but could not save to database.",
           variant: "default",
         });
       }
     } catch (error) {
+      console.error('AI Analysis failed:', error);
       toast({
         title: "AI Analysis Failed",
-        description: "Please try again.",
+        description: "Network error or server issue. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -301,12 +316,13 @@ const VisitDetails = () => {
 
       toast({
         title: "Notes Saved",
-        description: "Your notes have been saved.",
+        description: "Your notes have been saved successfully.",
       });
     } catch (error) {
+      console.error('Error saving notes:', error);
       toast({
         title: "Save Failed",
-        description: "Please try again.",
+        description: "Could not save notes. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -516,58 +532,11 @@ const VisitDetails = () => {
                 </div>
               )}
 
-              {aiGeneratedData.followUpTimeline && Object.keys(aiGeneratedData.followUpTimeline).length > 0 && (
+              {aiGeneratedData.followUpActions && (
                 <div className="bg-white rounded-lg p-4 border border-yellow-200">
-                  <h4 className="font-semibold mb-3 text-yellow-800 text-base">Follow-Up Timeline</h4>
-                  <div className="space-y-4">
-                    {aiGeneratedData.followUpTimeline.immediate && aiGeneratedData.followUpTimeline.immediate.length > 0 && (
-                      <div>
-                        <h5 className="font-medium text-yellow-800 text-sm mb-2">Immediate (Next 1-2 days)</h5>
-                        <div className="space-y-2">
-                          {aiGeneratedData.followUpTimeline.immediate.map((action, idx) => (
-                            <div key={idx} className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
-                              <p className="text-yellow-700 text-sm">{action}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {aiGeneratedData.followUpTimeline.nextWeek && aiGeneratedData.followUpTimeline.nextWeek.length > 0 && (
-                      <div>
-                        <h5 className="font-medium text-yellow-800 text-sm mb-2">Next Week</h5>
-                        <div className="space-y-2">
-                          {aiGeneratedData.followUpTimeline.nextWeek.map((action, idx) => (
-                            <div key={idx} className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
-                              <p className="text-yellow-700 text-sm">{action}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {aiGeneratedData.followUpTimeline.nextMonth && aiGeneratedData.followUpTimeline.nextMonth.length > 0 && (
-                      <div>
-                        <h5 className="font-medium text-yellow-800 text-sm mb-2">Next Month</h5>
-                        <div className="space-y-2">
-                          {aiGeneratedData.followUpTimeline.nextMonth.map((action, idx) => (
-                            <div key={idx} className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
-                              <p className="text-yellow-700 text-sm">{action}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {aiGeneratedData.followUpTimeline.ongoing && aiGeneratedData.followUpTimeline.ongoing.length > 0 && (
-                      <div>
-                        <h5 className="font-medium text-yellow-800 text-sm mb-2">Ongoing Care</h5>
-                        <div className="space-y-2">
-                          {aiGeneratedData.followUpTimeline.ongoing.map((action, idx) => (
-                            <div key={idx} className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
-                              <p className="text-yellow-700 text-sm">{action}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                  <h4 className="font-semibold mb-3 text-yellow-800 text-base">Follow-Up Actions</h4>
+                  <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                    <p className="text-yellow-700 text-sm">{aiGeneratedData.followUpActions}</p>
                   </div>
                 </div>
               )}

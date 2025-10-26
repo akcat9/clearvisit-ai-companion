@@ -23,14 +23,14 @@ serve(async (req) => {
     console.log('Generating pre-visit education for:', appointmentReason);
 
     const prompt = `
-You are a medical educator with expertise in pharmaceuticals, diagnostics, and comprehensive patient care. Create detailed pre-visit education content.
+You are a medical educator creating pre-visit patient education content.
 
 APPOINTMENT DETAILS:
 - Reason: "${appointmentReason}"
 - Goal: "${goal || 'Not specified'}"
 - Symptoms: "${symptoms || 'Not specified'}"
 
-Create comprehensive educational content to help the patient understand their condition BEFORE their visit. Include specific medical information while keeping language accessible.
+Create educational content to help the patient understand their condition BEFORE their visit. Focus on what they might have based on their appointment details.
 
 Respond with ONLY valid JSON in this exact format:
 
@@ -40,68 +40,21 @@ Respond with ONLY valid JSON in this exact format:
     "description": "Brief 1-line description",
     "explanation": "2-3 sentences explaining what this condition is in simple terms"
   },
-  "possibleCauses": ["Specific cause 1", "Specific cause 2", "Specific cause 3"],
-  "commonSymptoms": ["Specific symptom 1", "Specific symptom 2", "Specific symptom 3"],
+  "possibleCauses": ["Cause 1", "Cause 2", "Cause 3"],
+  "commonSymptoms": ["Symptom 1", "Symptom 2", "Symptom 3"],
   "preparationTips": [
-    "Specific preparation tip for this condition",
+    "Specific tip for this condition",
     "Another preparation tip", 
     "Third tip for the visit"
   ],
   "questionsToAsk": [
-    "Important question about diagnosis",
-    "Question about treatment options",
-    "Question about prognosis and management"
-  ],
-  "pharmaceuticals": {
-    "title": "Common Medications for This Condition",
-    "medications": [
-      {
-        "name": "Medication name (generic/brand)",
-        "purpose": "What it treats",
-        "commonSideEffects": ["Side effect 1", "Side effect 2"],
-        "interactions": "Important drug interactions to discuss"
-      }
-    ]
-  },
-  "diagnosticTests": {
-    "title": "Tests Your Doctor May Order",
-    "tests": [
-      {
-        "name": "Test name",
-        "purpose": "What it checks for",
-        "procedure": "How it's done",
-        "preparation": "How to prepare"
-      }
-    ]
-  },
-  "treatmentTimeline": {
-    "title": "What to Expect",
-    "phases": [
-      {
-        "phase": "Initial treatment",
-        "duration": "Time frame",
-        "expectations": "What to expect during this phase"
-      }
-    ]
-  },
-  "lifestyleFactors": {
-    "title": "Lifestyle Considerations",
-    "diet": ["Dietary recommendation 1", "Dietary recommendation 2"],
-    "exercise": ["Exercise guideline 1", "Exercise guideline 2"],
-    "lifestyle": ["Lifestyle modification 1", "Lifestyle modification 2"]
-  },
-  "costInsurance": {
-    "title": "Cost and Insurance Information",
-    "questions": [
-      "What will this treatment cost?",
-      "Is this covered by my insurance?",
-      "Are there generic alternatives?"
-    ],
-    "tips": ["Cost-saving tip 1", "Insurance tip 2"]
-  }
+    "Important question about this condition",
+    "Another relevant question",
+    "Third question to discuss"
+  ]
 }
 
-Include specific drug names, test procedures, and measurable recommendations where appropriate. Keep explanations simple but comprehensive.`;
+Keep language simple and patient-friendly. No medical jargon.`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -118,7 +71,7 @@ Include specific drug names, test procedures, and measurable recommendations whe
           },
           { role: 'user', content: prompt }
         ],
-        max_completion_tokens: 1200,
+        max_completion_tokens: 600,
       }),
     });
 
@@ -152,30 +105,7 @@ Include specific drug names, test procedures, and measurable recommendations whe
           "What is causing my symptoms?",
           "What treatment options are available?", 
           "How can I manage this condition?"
-        ],
-        pharmaceuticals: {
-          title: "Medications Discussion",
-          medications: []
-        },
-        diagnosticTests: {
-          title: "Potential Tests",
-          tests: []
-        },
-        treatmentTimeline: {
-          title: "Treatment Expectations",
-          phases: []
-        },
-        lifestyleFactors: {
-          title: "Lifestyle Considerations",
-          diet: ["Discuss dietary needs with your doctor"],
-          exercise: ["Get exercise recommendations from your doctor"],
-          lifestyle: ["Review lifestyle factors during your visit"]
-        },
-        costInsurance: {
-          title: "Financial Planning",
-          questions: ["What will treatment cost?", "Is this covered by insurance?"],
-          tips: ["Ask about payment options", "Inquire about generic medications"]
-        }
+        ]
       };
       
       return new Response(JSON.stringify(fallbackContent), {
@@ -207,30 +137,7 @@ Include specific drug names, test procedures, and measurable recommendations whe
           "What should I know about my condition?",
           "What are my treatment options?",
           "How can I best manage this?"
-        ],
-        pharmaceuticals: {
-          title: "Medications Discussion",
-          medications: []
-        },
-        diagnosticTests: {
-          title: "Potential Tests",
-          tests: []
-        },
-        treatmentTimeline: {
-          title: "Treatment Expectations",
-          phases: []
-        },
-        lifestyleFactors: {
-          title: "Lifestyle Considerations",
-          diet: ["Discuss with your doctor"],
-          exercise: ["Get recommendations during visit"],
-          lifestyle: ["Review during appointment"]
-        },
-        costInsurance: {
-          title: "Financial Planning",
-          questions: ["Ask about costs", "Check insurance coverage"],
-          tips: ["Inquire about options", "Ask about alternatives"]
-        }
+        ]
       };
       
       return new Response(JSON.stringify(fallbackContent), {
@@ -257,30 +164,7 @@ Include specific drug names, test procedures, and measurable recommendations whe
         possibleCauses: ["Will be determined during evaluation"],
         commonSymptoms: ["Will be discussed with your doctor"],
         preparationTips: ["Prepare your questions", "List your symptoms", "Bring medical history"],
-        questionsToAsk: ["What is my diagnosis?", "What are treatment options?", "What should I expect?"],
-        pharmaceuticals: {
-          title: "Medications Discussion",
-          medications: []
-        },
-        diagnosticTests: {
-          title: "Potential Tests",
-          tests: []
-        },
-        treatmentTimeline: {
-          title: "Treatment Expectations",
-          phases: []
-        },
-        lifestyleFactors: {
-          title: "Lifestyle Considerations",
-          diet: ["Discuss with doctor"],
-          exercise: ["Get recommendations"],
-          lifestyle: ["Review during visit"]
-        },
-        costInsurance: {
-          title: "Financial Planning",
-          questions: ["Ask about costs"],
-          tips: ["Inquire about options"]
-        }
+        questionsToAsk: ["What is my diagnosis?", "What are treatment options?", "What should I expect?"]
       };
       
       return new Response(JSON.stringify(fallbackContent), {
@@ -289,7 +173,8 @@ Include specific drug names, test procedures, and measurable recommendations whe
     }
   } catch (error) {
     console.error('Error in generate-previsit-education:', error);
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

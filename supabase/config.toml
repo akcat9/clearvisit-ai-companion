@@ -1,16 +1,1 @@
 project_id = "hjupkurtumzqrwoytjnn"
-
-[functions.delete-user-account]
-verify_jwt = true
-
-[functions.generate-previsit-education]
-verify_jwt = true
-
-[functions.process-visit-recording]
-verify_jwt = true
-
-[functions.process-visit-summary]
-verify_jwt = true
-
-[functions.elevenlabs-signed-url]
-verify_jwt = true

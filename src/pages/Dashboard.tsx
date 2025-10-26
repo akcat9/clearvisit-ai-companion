@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUnreadSharedVisits } from "@/hooks/useUnreadSharedVisits";
-import { formatTime } from "@/utils/timeUtils";
+import { format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -47,10 +47,10 @@ const Dashboard = () => {
       const { data, error } = await supabase
         .from('appointments')
         .select('*')
-        .order('date', { ascending: true })
-        .limit(100);
+        .order('date', { ascending: true });
 
       if (error) {
+        console.error('Error fetching appointments:', error);
         toast({
           title: "Error",
           description: "Failed to load appointments",
@@ -60,6 +60,8 @@ const Dashboard = () => {
       }
 
       setAppointments((data || []) as Appointment[]);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
     } finally {
       setLoading(false);
     }
@@ -70,10 +72,22 @@ const Dashboard = () => {
     fetchAppointments();
   }, [user, fetchAppointments]);
 
-
+  const formatTime = (timeString: string) => {
+    try {
+      // Parse the time string (e.g., "22:35:00" or "14:30:00")
+      const [hours, minutes] = timeString.split(':');
+      const date = new Date();
+      date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      
+      // Format to 12-hour format
+      return format(date, 'h:mm a');
+    } catch (error) {
+      return timeString; // Return original if parsing fails
+    }
+  };
 
   const handleDeleteAppointment = async (appointmentId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent navigation when clicking delete
 
     try {
       const { error } = await supabase
@@ -82,6 +96,7 @@ const Dashboard = () => {
         .eq('id', appointmentId);
 
       if (error) {
+        console.error('Error deleting appointment:', error);
         toast({
           title: "Error",
           description: "Failed to delete appointment",
@@ -96,11 +111,7 @@ const Dashboard = () => {
         description: "Appointment deleted successfully"
       });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Something went wrong",
-        variant: "destructive"
-      });
+      console.error('Error deleting appointment:', error);
     }
   };
 
@@ -124,6 +135,7 @@ const Dashboard = () => {
         .single();
 
       if (error) {
+        console.error('Error creating appointment:', error);
         toast({
           title: "Error",
           description: "Failed to create appointment",
@@ -139,137 +151,121 @@ const Dashboard = () => {
         description: "Appointment created successfully"
       });
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Something went wrong",
-        variant: "destructive"
-      });
+      console.error('Error creating appointment:', error);
     }
   };
 
   const upcomingAppointments = useMemo(() => 
-    appointments.filter(apt => apt.status === 'upcoming'), 
-    [appointments]
+    appointments.filter(apt => apt.status === 'upcoming'), [appointments]
   );
   const previousAppointments = useMemo(() => 
-    appointments.filter(apt => apt.status === 'completed'), 
-    [appointments]
+    appointments.filter(apt => apt.status === 'completed'), [appointments]
   );
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
-      <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4 lg:py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">My Appointments</h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold">My Appointments</h1>
             <Dialog>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-6 w-6 sm:h-8 sm:w-8 p-0">
-                  <HelpCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <HelpCircle className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="mx-2 sm:mx-auto sm:max-w-md max-w-[calc(100vw-1rem)]">
+              <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle className="text-sm sm:text-base">How to Use tadoc</DialogTitle>
-                  <DialogDescription className="text-xs sm:text-sm">
+                  <DialogTitle>How to Use Clearvisit</DialogTitle>
+                  <DialogDescription>
                     Simple steps to get started:
                   </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
-                  <div>
-                    • <strong>Create appointments</strong> - Click "New Appointment" to schedule visits
-                  </div>
-                  <div>
-                    • <strong>Record visits</strong> - Click on any appointment to record audio during your visit
-                  </div>
-                  <div>
-                    • <strong>Share visits</strong> - Share visit recordings with family or other doctors
-                  </div>
-                  <div>
-                    • <strong>Get AI insights</strong> - Receive personalized medical insights from your visit recordings
-                  </div>
+                <div className="space-y-3 text-sm">
+                  <div>• <strong>Create appointments</strong> - Click "New Appointment" to schedule visits</div>
+                  <div>• <strong>Record visits</strong> - Click on any appointment to record audio during your visit</div>
+                  <div>• <strong>Share visits</strong> - Share visit recordings with family or other doctors</div>
+                  <div>• <strong>Get AI insights</strong> - Receive personalized medical insights from your visit recordings</div>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
-          <div className="flex flex-col xs:flex-row gap-2 sm:gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <Button 
               onClick={() => setShowAppointmentModal(true)}
-              className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 px-3"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto"
               size="sm"
             >
-              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span>New Appointment</span>
+              <Plus className="w-4 h-4" />
+              <span className="sm:inline">New Appointment</span>
             </Button>
             <Button 
               variant="outline" 
               onClick={() => navigate("/shared-visits")}
-              className="flex items-center justify-center gap-1 sm:gap-2 relative text-xs sm:text-sm py-2 px-3"
+              className="flex items-center justify-center gap-2 relative w-full sm:w-auto"
               size="sm"
             >
-              <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span>Shared Visits</span>
+              <Share2 className="w-4 h-4" />
+              <span className="sm:inline">Shared Visits</span>
               {unreadCount > 0 && (
-                <div className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-destructive rounded-full" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full"></div>
               )}
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
+        <div className="grid sm:grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Card>
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-base sm:text-lg">Upcoming Appointments</CardTitle>
+            <CardHeader>
+              <CardTitle>Upcoming Appointments</CardTitle>
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="text-center py-6 sm:py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-2 text-muted-foreground text-xs sm:text-sm">Loading appointments...</p>
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <p className="mt-2 text-muted-foreground">Loading appointments...</p>
                 </div>
               ) : upcomingAppointments.length === 0 ? (
-                <div className="text-center py-6 sm:py-8">
-                  <p className="text-muted-foreground text-sm">No upcoming appointments</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                    Click "New Appointment" to schedule your first visit
-                  </p>
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No upcoming appointments</p>
+                  <p className="text-sm text-muted-foreground mt-1">Click "New Appointment" to schedule your first visit</p>
                 </div>
               ) : (
-                <div className="space-y-3 sm:space-y-4">
+                <div className="space-y-4">
                   {upcomingAppointments.map((appointment) => (
                     <div 
                       key={appointment.id} 
-                       className="p-2 sm:p-3 lg:p-4 border rounded-lg hover:bg-muted/50 cursor-pointer group relative transition-colors"
+                       className="p-3 sm:p-4 border rounded-lg hover:bg-muted/50 cursor-pointer group relative transition-colors"
                       onClick={() => navigate(`/visit/${appointment.id}`)}
                     >
-                      <div className="font-medium text-sm sm:text-base pr-8">{appointment.doctor_name}</div>
-                      <div className="text-xs sm:text-sm text-muted-foreground">
+                      <div className="font-medium">{appointment.doctor_name}</div>
+                      <div className="text-sm text-muted-foreground">
                         {appointment.date} at {formatTime(appointment.time)}
                       </div>
-                      <div className="text-xs sm:text-sm text-muted-foreground mt-1 pr-8 line-clamp-2">
+                      <div className="text-sm text-muted-foreground mt-1">
                         {appointment.reason}
                       </div>
-                      <div className="flex items-center justify-between mt-2 sm:mt-3">
+                      <div className="flex items-center justify-between mt-3">
                         <Button
                           size="sm"
-                          className="bg-success hover:bg-success/90 text-success-foreground text-xs sm:text-sm py-1 px-2 sm:py-2 sm:px-3"
+                          className="bg-green-600 hover:bg-green-700 text-white"
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/visit/${appointment.id}`);
                           }}
                         >
-                          Go <ChevronRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
+                          Go <ChevronRight className="ml-1 h-4 w-4" />
                         </Button>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="absolute top-1 right-1 sm:top-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 sm:h-8 sm:w-8 p-0 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                         onClick={(e) => handleDeleteAppointment(appointment.id, e)}
                       >
-                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   ))}
@@ -279,51 +275,49 @@ const Dashboard = () => {
           </Card>
 
           <Card>
-            <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-base sm:text-lg">Previous Appointments</CardTitle>
+            <CardHeader>
+              <CardTitle>Previous Appointments</CardTitle>
             </CardHeader>
             <CardContent>
               {previousAppointments.length === 0 ? (
-                <div className="text-center py-6 sm:py-8">
-                  <p className="text-muted-foreground text-sm">No previous appointments</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                    Completed appointments will appear here
-                  </p>
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No previous appointments</p>
+                  <p className="text-sm text-muted-foreground mt-1">Completed appointments will appear here</p>
                 </div>
               ) : (
-                <div className="space-y-3 sm:space-y-4">
+                <div className="space-y-4">
                   {previousAppointments.map((appointment) => (
                     <div 
                       key={appointment.id} 
-                      className="p-2 sm:p-3 lg:p-4 border rounded-lg hover:bg-muted/50 cursor-pointer group relative transition-colors"
+                      className="p-3 sm:p-4 border rounded-lg hover:bg-muted/50 cursor-pointer group relative transition-colors"
                       onClick={() => navigate(`/visit/${appointment.id}`)}
                     >
-                      <div className="font-medium text-sm sm:text-base pr-8">{appointment.doctor_name}</div>
-                      <div className="text-xs sm:text-sm text-muted-foreground">
+                      <div className="font-medium">{appointment.doctor_name}</div>
+                      <div className="text-sm text-muted-foreground">
                         {appointment.date} at {formatTime(appointment.time)}
                       </div>
-                      <div className="text-xs sm:text-sm text-muted-foreground mt-1 pr-8 line-clamp-2">
+                      <div className="text-sm text-muted-foreground mt-1">
                         {appointment.reason}
                       </div>
-                      <div className="flex items-center justify-between mt-2 sm:mt-3">
+                      <div className="flex items-center justify-between mt-3">
                         <Button
                           size="sm"
-                          className="bg-success hover:bg-success/90 text-success-foreground text-xs sm:text-sm py-1 px-2 sm:py-2 sm:px-3"
+                          className="bg-green-600 hover:bg-green-700 text-white"
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/visit/${appointment.id}`);
                           }}
                         >
-                          Go <ChevronRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
+                          Go <ChevronRight className="ml-1 h-4 w-4" />
                         </Button>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="absolute top-1 right-1 sm:top-2 sm:right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 sm:h-8 sm:w-8 p-0 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                         onClick={(e) => handleDeleteAppointment(appointment.id, e)}
                       >
-                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   ))}
@@ -333,8 +327,8 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        <div className="text-center text-xs sm:text-sm text-muted-foreground mt-8 sm:mt-12">
-          © 2025 tadoc. All rights reserved.
+        <div className="text-center text-sm text-muted-foreground mt-12">
+          © 2025 Clearvisit. All rights reserved.
         </div>
       </div>
 

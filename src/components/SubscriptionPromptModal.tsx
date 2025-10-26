@@ -75,14 +75,14 @@ export const SubscriptionPromptModal = ({
       
       if (subscriptionStatus.subscribed) {
         toast({
-          title: "✨ Subscription Active!",
+          title: "✨ Account Active!",
           description: "All features are now unlocked. Welcome to tadoc!",
         });
         onOpenChange(false);
       } else {
         toast({
-          title: "No Active Subscription",
-          description: "Please complete your subscription to unlock features.",
+          title: "Account Not Active",
+          description: "Please complete activation to unlock features.",
           variant: "destructive",
         });
       }
@@ -107,14 +107,14 @@ export const SubscriptionPromptModal = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
-            {hasExpired ? "Subscription Expired" : "Check Your Email to Continue"}
+            {hasExpired ? "Account Expired" : "Check Your Email"}
           </DialogTitle>
           <DialogDescription asChild>
             <div className="space-y-3 pt-2">
               {hasExpired ? (
                 <p className="text-sm">
-                  Your subscription expired on {new Date(subscriptionStatus.expiresAt!).toLocaleDateString()}. 
-                  Resubscribe to continue using tadoc.
+                  Your account access expired on {new Date(subscriptionStatus.expiresAt!).toLocaleDateString()}. 
+                  Please activate to continue using tadoc.
                 </p>
               ) : (
                 <>
@@ -126,7 +126,7 @@ export const SubscriptionPromptModal = ({
                     <p className="text-sm text-muted-foreground">{user?.email}</p>
                   </div>
                   <p className="text-sm">
-                    Click the link in the email to subscribe and unlock all tadoc features.
+                    Click the link in the email to activate your account and unlock all tadoc features.
                   </p>
                 </>
               )}
@@ -149,7 +149,7 @@ export const SubscriptionPromptModal = ({
             disabled={isCheckingStatus}
           >
             {isCheckingStatus && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            I've Subscribed - Check Status
+            Check Account Status
           </Button>
           
           <Button

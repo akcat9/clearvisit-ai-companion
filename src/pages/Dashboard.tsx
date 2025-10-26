@@ -96,7 +96,7 @@ const Dashboard = () => {
     if (urlParams.get('subscribed') === 'true') {
       checkSubscription();
       toast({
-        title: "✨ Subscription Active!",
+        title: "✨ Account Active!",
         description: "All features are now unlocked. Welcome to tadoc!",
       });
       window.history.replaceState({}, '', '/dashboard');
@@ -240,7 +240,7 @@ const Dashboard = () => {
             {isLocked && (
               <div className="text-sm text-muted-foreground bg-muted px-3 py-2 rounded-md flex items-center gap-2">
                 <Lock className="w-4 h-4" />
-                Subscription Required
+                Account Activation Required
               </div>
             )}
             <Button 

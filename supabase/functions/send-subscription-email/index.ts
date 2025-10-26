@@ -55,7 +55,7 @@ serve(async (req) => {
     const emailResponse = await resend.emails.send({
       from: "tadoc <onboarding@resend.dev>",
       to: [user.email],
-      subject: "Purchase subscription for tadoc for full access",
+      subject: "Activate Your tadoc Account",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #333;">Hi ${firstName},</h1>
@@ -65,22 +65,22 @@ serve(async (req) => {
           </p>
           
           <p style="font-size: 16px; line-height: 1.6; color: #555;">
-            To unlock full access to all features, please subscribe to tadoc by clicking the link below:
+            To unlock full access to all features, please activate your tadoc account by clicking the link below:
           </p>
           
           <div style="text-align: center; margin: 30px 0;">
             <a href="https://tadoc-engage-connect.lovable.app/" 
                style="background-color: #4CAF50; color: white; padding: 14px 28px; text-decoration: none; border-radius: 4px; font-size: 16px; display: inline-block;">
-              Subscribe to tadoc →
+              Activate tadoc Account →
             </a>
           </div>
           
           <p style="font-size: 14px; line-height: 1.6; color: #666;">
-            Click on the website link to subscribe to tadoc for full access. Instructions are on the website.
+            Click on the link above to activate your tadoc account for full access. Instructions are on the website.
           </p>
           
           <p style="font-size: 14px; line-height: 1.6; color: #666;">
-            Once you've subscribed, return to the tadoc app and all features will be unlocked automatically.
+            Once you've completed activation, return to the tadoc app and all features will be unlocked automatically.
           </p>
           
           <p style="font-size: 14px; line-height: 1.6; color: #666; margin-top: 30px;">

@@ -22,12 +22,35 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Settings() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, subscriptionStatus, checkSubscription } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefreshSubscription = async () => {
+    setIsRefreshing(true);
+    try {
+      await checkSubscription();
+      toast({
+        title: "Status Updated",
+        description: subscriptionStatus.subscribed 
+          ? "Your subscription is active!" 
+          : "No active subscription found.",
+      });
+    } catch (error) {
+      console.error('Error refreshing subscription:', error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh subscription status.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleDeleteAccount = async () => {
     if (confirmText !== "DELETE") {
@@ -120,6 +143,40 @@ export default function Settings() {
           </Card>
 
           <AdminAnnouncements />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Subscription Status</CardTitle>
+              <CardDescription>
+                Manage your tadoc subscription.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label className="text-sm text-muted-foreground">Status</Label>
+                <p className="font-medium text-lg">
+                  {subscriptionStatus.subscribed ? '✅ Active' : '❌ Inactive'}
+                </p>
+              </div>
+              
+              {subscriptionStatus.expiresAt && (
+                <div>
+                  <Label className="text-sm text-muted-foreground">Expires</Label>
+                  <p className="font-medium">
+                    {new Date(subscriptionStatus.expiresAt).toLocaleDateString()}
+                  </p>
+                </div>
+              )}
+              
+              <Button 
+                onClick={handleRefreshSubscription}
+                disabled={isRefreshing || subscriptionStatus.checking}
+                variant="outline"
+              >
+                {isRefreshing || subscriptionStatus.checking ? 'Checking...' : 'Refresh Status'}
+              </Button>
+            </CardContent>
+          </Card>
 
           <Card className="border-destructive">
             <CardHeader>

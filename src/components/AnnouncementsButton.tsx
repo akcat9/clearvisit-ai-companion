@@ -65,14 +65,14 @@ export const AnnouncementsButton = ({ onClick }: AnnouncementsButtonProps) => {
     <div className="relative">
       <Button 
         variant="ghost" 
-        size="sm" 
+        size="icon"
         onClick={onClick}
-        className="flex items-center gap-1 self-start sm:self-auto text-xs sm:text-sm px-2 sm:px-3"
+        className="text-primary-foreground hover:bg-primary-foreground/20 h-9 w-9 sm:h-10 sm:w-10"
       >
-        <Bell className="w-4 h-4 flex-shrink-0" />
+        <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
       </Button>
       {hasUnread && (
-        <div className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full" />
+        <div className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full border border-primary" />
       )}
     </div>
   );

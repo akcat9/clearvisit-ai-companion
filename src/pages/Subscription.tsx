@@ -55,7 +55,7 @@ const Subscription = () => {
       price: "$2",
       period: "/month",
       description: "Perfect for trying out tadoc",
-      priceId: "price_monthly_2",
+      priceId: "price_1SMZCwKIRLDgKEuIe3DWMOHs",
       features: [
         "Full access to all features",
         "Record unlimited appointments",
@@ -69,7 +69,7 @@ const Subscription = () => {
       price: "$15",
       period: "/year",
       description: "Best value for committed users",
-      priceId: "price_annual_15",
+      priceId: "price_1SMZCwKIRLDgKEuIri1OirUh",
       badge: "Best Value - Save 37%",
       subtitle: "That's only $1.25/month!",
       features: [

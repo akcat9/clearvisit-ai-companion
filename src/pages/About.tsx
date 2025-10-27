@@ -62,11 +62,11 @@ const About = () => {
                 <Card key={index} className="overflow-hidden">
                   <CardContent className="p-0">
                     <div className="flex flex-col">
-                      <div className="w-full">
+                      <div className="w-full max-w-md mx-auto">
                         <img 
                           src={feature.image} 
                           alt={feature.title}
-                          className="w-full h-auto object-contain"
+                          className="w-full h-auto object-contain rounded-lg"
                         />
                       </div>
                       <div className="p-6 space-y-2">

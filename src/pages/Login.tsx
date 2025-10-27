@@ -194,6 +194,27 @@ const Login = () => {
               </form>
             </CardContent>
           </Card>
+
+          {isSignUp && (
+            <Card className="border-primary">
+              <CardContent className="pt-6">
+                <div className="text-center space-y-4">
+                  <h3 className="font-semibold text-lg">Ready to get started?</h3>
+                  <p className="text-sm text-muted-foreground">
+                    After creating your account, subscribe to access all tadoc features
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => navigate('/subscription')}
+                    type="button"
+                  >
+                    View Subscription Plans
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

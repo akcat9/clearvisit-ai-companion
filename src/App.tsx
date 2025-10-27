@@ -10,6 +10,11 @@ import Dashboard from "./pages/Dashboard";
 import VisitDetails from "./pages/VisitDetails";
 import SharedVisitsPage from "./pages/SharedVisits";
 import Settings from "./pages/Settings";
+import About from "./pages/About";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Contact from "./pages/Contact";
+import Subscription from "./pages/Subscription";
+import PaymentPortal from "./pages/PaymentPortal";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -55,6 +60,18 @@ const AppContent = () => {
               element={
                 <ProtectedRoute>
                   <Settings />
+                </ProtectedRoute>
+              } 
+            />
+            <Route path="/about" element={<About />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/subscription" element={<Subscription />} />
+            <Route 
+              path="/payment-portal" 
+              element={
+                <ProtectedRoute>
+                  <PaymentPortal />
                 </ProtectedRoute>
               } 
             />

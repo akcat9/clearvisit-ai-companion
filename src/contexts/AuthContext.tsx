@@ -37,10 +37,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const checkSubscription = async () => {
     if (!session) {
+      console.log('[SUBSCRIPTION CHECK] No session, clearing subscription status');
       setSubscriptionStatus(null);
       return;
     }
 
+    console.log('[SUBSCRIPTION CHECK] Starting subscription check for user:', session.user.email);
     setSubscriptionLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('check-subscription', {
@@ -50,13 +52,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
 
       if (error) {
-        console.error('Error checking subscription:', error);
+        console.error('[SUBSCRIPTION CHECK] Error checking subscription:', error);
         setSubscriptionStatus({ subscribed: false });
       } else {
+        console.log('[SUBSCRIPTION CHECK] Subscription status received:', data);
         setSubscriptionStatus(data);
       }
     } catch (error) {
-      console.error('Error checking subscription:', error);
+      console.error('[SUBSCRIPTION CHECK] Exception during subscription check:', error);
       setSubscriptionStatus({ subscribed: false });
     } finally {
       setSubscriptionLoading(false);

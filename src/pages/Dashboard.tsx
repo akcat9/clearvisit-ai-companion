@@ -162,8 +162,20 @@ const Dashboard = () => {
     appointments.filter(apt => apt.status === 'completed'), [appointments]
   );
 
-  // Show subscription required message if not subscribed
-  if (!subscriptionLoading && subscriptionStatus && !subscriptionStatus.subscribed) {
+  // Show loading while checking subscription
+  if (subscriptionLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Checking subscription...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show subscription required message if user is not subscribed or check failed
+  if (!subscriptionStatus || !subscriptionStatus?.subscribed) {
     return (
       <div className="min-h-screen bg-background">
         <Header />

@@ -112,6 +112,29 @@ const Login = () => {
             <p className="mt-2 text-muted-foreground text-sm sm:text-base">Record, analyze, and remember your doctor visits</p>
           </div>
 
+          {/* PWA Installation Instructions */}
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="pt-6 pb-6">
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm">📱 Install tadoc on Your Phone</h3>
+                <div className="text-xs text-muted-foreground space-y-2">
+                  <p className="font-medium">iPhone (Safari):</p>
+                  <ol className="list-decimal list-inside space-y-1 ml-2">
+                    <li>Tap the Share button (square with arrow)</li>
+                    <li>Scroll down and tap "Add to Home Screen"</li>
+                    <li>Tap "Add" in the top right</li>
+                  </ol>
+                  <p className="font-medium mt-3">Android (Chrome):</p>
+                  <ol className="list-decimal list-inside space-y-1 ml-2">
+                    <li>Tap the menu (three dots)</li>
+                    <li>Tap "Add to Home screen" or "Install app"</li>
+                    <li>Tap "Add" or "Install"</li>
+                  </ol>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-center text-xl">

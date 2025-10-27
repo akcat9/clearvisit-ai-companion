@@ -2,9 +2,6 @@ import { LogOut, Settings, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { AnnouncementsButton } from "./AnnouncementsButton";
-import { AnnouncementsModal } from "./AnnouncementsModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +13,6 @@ import {
 export const Header = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [showAnnouncements, setShowAnnouncements] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -30,10 +26,6 @@ export const Header = () => {
         </div>
         
         <div className="flex items-center gap-1 sm:gap-2">
-          {user && (
-            <AnnouncementsButton onClick={() => setShowAnnouncements(true)} />
-          )}
-          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 
@@ -105,11 +97,6 @@ export const Header = () => {
           </DropdownMenu>
         </div>
       </div>
-      
-      <AnnouncementsModal 
-        open={showAnnouncements} 
-        onOpenChange={setShowAnnouncements} 
-      />
     </header>
   );
 };

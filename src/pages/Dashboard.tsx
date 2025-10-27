@@ -189,14 +189,14 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-muted-foreground">
-                You need an active subscription to use tadoc. Please visit our website to subscribe.
+                You need an active subscription to use tadoc. Please visit our subscription page to subscribe.
               </p>
               <div className="space-y-2">
                 <Button 
-                  onClick={() => window.open('https://tadoc.app', '_blank')}
+                  onClick={() => navigate('/subscription')}
                   className="w-full"
                 >
-                  Subscribe at tadoc.app
+                  View Subscription Plans
                 </Button>
                 <Button 
                   onClick={() => checkSubscription()}

@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
+import { getUserName, getUserInitials } from '@/utils/userHelpers';
 
 interface Conversation {
   senderId: string;
@@ -106,20 +107,6 @@ const ConversationList: React.FC<ConversationListProps> = ({ onSelectConversatio
     }
   };
 
-  const getSenderName = (senderProfile: any) => {
-    if (!senderProfile) return 'Unknown';
-    return senderProfile.first_name && senderProfile.last_name
-      ? `${senderProfile.first_name} ${senderProfile.last_name}`
-      : senderProfile.email || 'Unknown';
-  };
-
-  const getInitials = (senderProfile: any) => {
-    if (!senderProfile) return 'U';
-    if (senderProfile.first_name && senderProfile.last_name) {
-      return `${senderProfile.first_name[0]}${senderProfile.last_name[0]}`.toUpperCase();
-    }
-    return senderProfile.email?.[0]?.toUpperCase() || 'U';
-  };
 
   if (loading) {
     return (
@@ -149,7 +136,7 @@ const ConversationList: React.FC<ConversationListProps> = ({ onSelectConversatio
           <div className="relative">
             <Avatar className="h-12 w-12">
               <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                {getInitials(conversation.senderProfile)}
+                {getUserInitials(conversation.senderProfile)}
               </AvatarFallback>
             </Avatar>
             {conversation.unreadCount > 0 && (
@@ -160,7 +147,7 @@ const ConversationList: React.FC<ConversationListProps> = ({ onSelectConversatio
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
               <p className="font-medium text-sm truncate">
-                {getSenderName(conversation.senderProfile)}
+                {getUserName(conversation.senderProfile)}
               </p>
               <span className="text-xs text-muted-foreground">
                 {format(new Date(conversation.lastMessageTime), 'MMM d')}

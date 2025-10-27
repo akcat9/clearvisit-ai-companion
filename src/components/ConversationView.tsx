@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Calendar, Clock, User, Check } from 'lucide-react';
 import { format } from 'date-fns';
+import { getUserName, getUserInitials } from '@/utils/userHelpers';
 
 interface SharedVisit {
   id: string;
@@ -102,20 +103,6 @@ const ConversationView: React.FC<ConversationViewProps> = ({ senderId, senderPro
     }
   };
 
-  const getSenderName = () => {
-    if (!senderProfile) return 'Unknown';
-    return senderProfile.first_name && senderProfile.last_name
-      ? `${senderProfile.first_name} ${senderProfile.last_name}`
-      : senderProfile.email || 'Unknown';
-  };
-
-  const getInitials = () => {
-    if (!senderProfile) return 'U';
-    if (senderProfile.first_name && senderProfile.last_name) {
-      return `${senderProfile.first_name[0]}${senderProfile.last_name[0]}`.toUpperCase();
-    }
-    return senderProfile.email?.[0]?.toUpperCase() || 'U';
-  };
 
   if (loading) {
     return (
@@ -135,11 +122,11 @@ const ConversationView: React.FC<ConversationViewProps> = ({ senderId, senderPro
         </Button>
         <Avatar className="h-10 w-10">
           <AvatarFallback className="bg-primary/10 text-primary font-medium">
-            {getInitials()}
+            {getUserInitials(senderProfile)}
           </AvatarFallback>
         </Avatar>
         <div>
-          <p className="font-medium">{getSenderName()}</p>
+          <p className="font-medium">{getUserName(senderProfile)}</p>
           <p className="text-sm text-muted-foreground">{messages.length} messages</p>
         </div>
       </div>

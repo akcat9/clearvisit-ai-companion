@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUnreadSharedVisits } from "@/hooks/useUnreadSharedVisits";
-import { format } from 'date-fns';
+import { formatTime } from "@/utils/formatters";
 import {
   Dialog,
   DialogContent,
@@ -72,19 +72,6 @@ const Dashboard = () => {
     fetchAppointments();
   }, [user, fetchAppointments]);
 
-  const formatTime = (timeString: string) => {
-    try {
-      // Parse the time string (e.g., "22:35:00" or "14:30:00")
-      const [hours, minutes] = timeString.split(':');
-      const date = new Date();
-      date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-      
-      // Format to 12-hour format
-      return format(date, 'h:mm a');
-    } catch (error) {
-      return timeString; // Return original if parsing fails
-    }
-  };
 
   const handleDeleteAppointment = async (appointmentId: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent navigation when clicking delete

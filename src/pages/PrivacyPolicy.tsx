@@ -20,7 +20,7 @@ const PrivacyPolicy = () => {
 
             <div className="prose prose-sm sm:prose-base max-w-none space-y-6">
               <p className="text-muted-foreground leading-relaxed">
-                This Privacy Policy describes how Adarsh Karthik ("Developer", "we", "our", or "us") collects, uses, and discloses your information in connection with your use of the "tadoc AI" mobile application (the "App").
+                This Privacy Policy describes how tadoc ("we", "our", or "us") collects, uses, and discloses your information in connection with your use of the "tadoc AI" mobile application (the "App").
               </p>
 
               <section className="space-y-3">
@@ -123,7 +123,6 @@ const PrivacyPolicy = () => {
                   If you have any questions about this Privacy Policy, you can contact us at:
                 </p>
                 <div className="pl-6 space-y-1 text-muted-foreground">
-                  <p><strong>Developer:</strong> Adarsh Karthik</p>
                   <p><strong>Email:</strong> <a href="mailto:aktennis9@gmail.com" className="text-primary hover:underline">aktennis9@gmail.com</a></p>
                 </div>
               </section>

@@ -1,33 +1,37 @@
 import { Header } from "@/components/Header";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Mic, BookOpen, Brain, Share2 } from "lucide-react";
+import createAppointmentImg from "@/assets/create-appointment.png";
+import preVisitEducationImg from "@/assets/pre-visit-education.png";
+import startRecordingImg from "@/assets/start-recording.png";
+import aiAnalysisImg from "@/assets/ai-analysis.png";
+import shareVisitImg from "@/assets/share-visit.png";
 
 const About = () => {
   const features = [
     {
-      icon: Calendar,
+      image: createAppointmentImg,
       title: "Create Appointment",
-      description: "Schedule and organize your doctor visits with ease. Add details about your symptoms, goals, and medical history."
+      description: "Schedule and organize your doctor visits with ease. Add details about your symptoms, goals, and medical history to prepare for your visit."
     },
     {
-      icon: Mic,
-      title: "Start Recording",
-      description: "Record your entire doctor visit with one tap. Never miss important information or forget what your doctor said."
-    },
-    {
-      icon: BookOpen,
+      image: preVisitEducationImg,
       title: "Pre-Visit Education",
-      description: "Learn about your condition before your appointment. Get prepared with relevant questions and information."
+      description: "Learn about your condition before your appointment. Get prepared with relevant questions and information about possible causes, symptoms, and visit preparation."
     },
     {
-      icon: Brain,
+      image: startRecordingImg,
+      title: "Start Recording",
+      description: "After finishing with your appointment, click start recording to capture the entire conversation. Click stop recording when done to save your visit."
+    },
+    {
+      image: aiAnalysisImg,
       title: "AI Analysis",
-      description: "Get intelligent summaries of your visits. AI breaks down medical terms and highlights key takeaways."
+      description: "Get intelligent summaries of your visits with AI. Review key symptoms, medical terms explained, prescriptions, and personalized insights from your doctor visit."
     },
     {
-      icon: Share2,
+      image: shareVisitImg,
       title: "Share Visit",
-      description: "Easily share visit summaries with family members or other healthcare providers who need to know."
+      description: "Easily share visit summaries with family members or other healthcare providers who need to know. Add recipient emails and optional personal messages."
     }
   ];
 
@@ -54,28 +58,29 @@ const About = () => {
             </h2>
             
             <div className="grid gap-6 sm:gap-8">
-              {features.map((feature, index) => {
-                const Icon = feature.icon;
-                return (
-                  <Card key={index} className="overflow-hidden">
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Icon className="w-6 h-6 text-primary" />
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <h3 className="text-lg sm:text-xl font-semibold text-foreground">
-                            {feature.title}
-                          </h3>
-                          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                            {feature.description}
-                          </p>
-                        </div>
+              {features.map((feature, index) => (
+                <Card key={index} className="overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="flex flex-col">
+                      <div className="w-full">
+                        <img 
+                          src={feature.image} 
+                          alt={feature.title}
+                          className="w-full h-auto object-contain"
+                        />
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                      <div className="p-6 space-y-2">
+                        <h3 className="text-lg sm:text-xl font-semibold text-foreground">
+                          {feature.title}
+                        </h3>
+                        <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                          {feature.description}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </section>
         </div>

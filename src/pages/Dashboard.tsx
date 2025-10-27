@@ -34,7 +34,7 @@ interface Appointment {
 }
 
 const Dashboard = () => {
-  const { user, subscriptionStatus, subscriptionLoading } = useAuth();
+  const { user, subscriptionStatus, subscriptionLoading, checkSubscription } = useAuth();
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
@@ -187,16 +187,29 @@ const Dashboard = () => {
                 Subscription Required
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
                 You need an active subscription to use tadoc. Please visit our website to subscribe.
               </p>
-              <Button 
-                onClick={() => window.open('https://tadoc.app', '_blank')}
-                className="w-full"
-              >
-                Subscribe at tadoc.app
-              </Button>
+              <div className="space-y-2">
+                <Button 
+                  onClick={() => window.open('https://tadoc.app', '_blank')}
+                  className="w-full"
+                >
+                  Subscribe at tadoc.app
+                </Button>
+                <Button 
+                  onClick={() => checkSubscription()}
+                  variant="outline"
+                  className="w-full"
+                  disabled={subscriptionLoading}
+                >
+                  {subscriptionLoading ? 'Checking...' : 'I Just Subscribed - Check Status'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                After subscribing, click the button above to unlock your account
+              </p>
             </CardContent>
           </Card>
         </main>

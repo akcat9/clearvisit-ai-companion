@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/Header";
-import { Plus, Share2, Trash2, HelpCircle, ChevronRight } from "lucide-react";
+import { Plus, Share2, Trash2, HelpCircle, ChevronRight, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppointmentModal } from "@/components/AppointmentModal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,7 +34,7 @@ interface Appointment {
 }
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, subscriptionStatus, subscriptionLoading } = useAuth();
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
@@ -161,6 +161,36 @@ const Dashboard = () => {
   const previousAppointments = useMemo(() => 
     appointments.filter(apt => apt.status === 'completed'), [appointments]
   );
+
+  // Show subscription required message if not subscribed
+  if (!subscriptionLoading && subscriptionStatus && !subscriptionStatus.subscribed) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto px-4 py-8 max-w-7xl">
+          <Card className="max-w-2xl mx-auto mt-20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <Lock className="h-6 w-6" />
+                Subscription Required
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4">
+                You need an active subscription to use TaDoc. Please visit our website to subscribe.
+              </p>
+              <Button 
+                onClick={() => window.open('https://tadoc.app', '_blank')}
+                className="w-full"
+              >
+                Subscribe at tadoc.app
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

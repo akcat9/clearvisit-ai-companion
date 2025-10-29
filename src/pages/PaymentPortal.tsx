@@ -33,13 +33,18 @@ const PaymentPortal = () => {
       if (error) throw error;
 
       if (data?.url) {
-        window.open(data.url, '_blank');
+        window.location.href = data.url;
       }
     } catch (error: any) {
       console.error('Error accessing customer portal:', error);
+      
+      const isNoCustomerError = error.message?.includes('No Stripe customer found');
+      
       toast({
-        title: "Error",
-        description: error.message || "Failed to access customer portal. Please try again.",
+        title: isNoCustomerError ? "No Subscription Found" : "Error",
+        description: isNoCustomerError 
+          ? "You need to complete a subscription checkout first. Please select a plan to get started."
+          : error.message || "Failed to access customer portal. Please try again.",
         variant: "destructive"
       });
     } finally {

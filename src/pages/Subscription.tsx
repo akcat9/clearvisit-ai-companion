@@ -35,7 +35,7 @@ const Subscription = () => {
       if (error) throw error;
 
       if (data?.url) {
-        window.open(data.url, '_blank');
+        window.location.href = data.url;
       }
     } catch (error: any) {
       console.error('Error creating checkout:', error);
@@ -146,8 +146,8 @@ const Subscription = () => {
                 className={`relative ${plan.highlighted ? 'border-primary shadow-lg' : ''}`}
               >
                 {plan.badge && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <span className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold">
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 max-w-[90%]">
+                    <span className="bg-primary text-primary-foreground px-2 sm:px-4 py-1 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap">
                       {plan.badge}
                     </span>
                   </div>

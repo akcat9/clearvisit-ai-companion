@@ -35,7 +35,18 @@ const Subscription = () => {
       if (error) throw error;
 
       if (data?.url) {
-        window.location.href = data.url;
+        const isStandalone = window.matchMedia?.('(display-mode: standalone)').matches || (window.navigator as any)?.standalone;
+        if (isStandalone) {
+          const a = document.createElement('a');
+          a.href = data.url;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        } else {
+          window.location.assign(data.url);
+        }
       }
     } catch (error: any) {
       console.error('Error creating checkout:', error);

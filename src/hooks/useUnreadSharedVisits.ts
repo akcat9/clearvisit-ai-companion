@@ -33,29 +33,20 @@ export const useUnreadSharedVisits = () => {
   }, [user]);
 
   const fetchUnreadCount = async () => {
-    if (!user) return;
+    if (!user?.email) return;
 
     try {
-      // Get user's email from profiles
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!profile?.email) return;
-
-      // Count unread shared visits (only received messages, not sent)
+      // Optimized: Single query using user email directly from auth
       const { count } = await supabase
         .from('shared_visits')
         .select('*', { count: 'exact', head: true })
-        .eq('recipient_email', profile.email)
+        .eq('recipient_email', user.email)
         .neq('sender_id', user.id)
         .is('viewed_at', null);
 
       setUnreadCount(count || 0);
     } catch (error) {
-      console.error('Error fetching unread count:', error);
+      // Silently fail - non-critical feature
     }
   };
 

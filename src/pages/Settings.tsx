@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { AlertTriangle, Trash2, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -115,6 +114,28 @@ export default function Settings() {
               </div>
               <p className="text-sm text-muted-foreground">
                 Email changes are not currently supported. Contact support if you need to update your email.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Support</CardTitle>
+              <CardDescription>
+                Need help? Get in touch with our support team.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-2">
+                For technical support, questions, or feedback, please contact us at:
+              </p>
+              <p className="text-sm font-medium">
+                <a 
+                  href="mailto:aktennis9@gmail.com" 
+                  className="text-primary hover:underline"
+                >
+                  aktennis9@gmail.com
+                </a>
               </p>
             </CardContent>
           </Card>

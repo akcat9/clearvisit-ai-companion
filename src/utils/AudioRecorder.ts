@@ -57,23 +57,18 @@ export class AudioRecorder {
       };
 
       this.recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
         if (event.error === 'no-speech') {
-          // Continue listening even if no speech detected
           return;
         }
       };
 
       this.recognition.onend = () => {
-        // Auto-restart if still recording (unless manually stopped)
-        if (this.isRecording && this.recognition) {
-          this.recognition.start();
-        }
+        // Don't auto-restart - causes memory leaks and glitches on mobile
+        this.isRecording = false;
       };
 
       this.recognition.start();
     } catch (error) {
-      console.error('Error starting speech recognition:', error);
       throw error;
     }
   }

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
 import { Header } from "@/components/Header";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -20,11 +21,12 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Redirect if user is already logged in
-  if (!authLoading && user) {
-    navigate("/dashboard", { replace: true });
-    return null;
-  }
+  // Handle redirect in useEffect to avoid setState during render
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [authLoading, user, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,63 +98,48 @@ const Login = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Loading...</p>
+          <p className="mt-2 text-muted-foreground text-sm">Loading...</p>
         </div>
       </div>
     );
+  }
+
+  // Don't render if redirecting
+  if (user) {
+    return null;
   }
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
-      <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4 py-4">
-        <div className="w-full max-w-md space-y-4 sm:space-y-6">
-          <div className="text-center">
-            <h1 className="text-2xl sm:text-3xl font-bold">Welcome to tadoc</h1>
-            <p className="mt-2 text-muted-foreground text-sm sm:text-base">Record, analyze, and remember your doctor visits</p>
+      <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-2 sm:px-4 py-2 sm:py-4">
+        <div className="w-full max-w-sm sm:max-w-md space-y-3 sm:space-y-4">
+          <div className="text-center px-2">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Welcome to tadoc</h1>
+            <p className="mt-1 sm:mt-2 text-muted-foreground text-xs sm:text-sm lg:text-base">
+              Record, analyze, and remember your doctor visits
+            </p>
           </div>
 
-          {/* PWA Installation Instructions */}
-          <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="pt-6 pb-6">
-              <div className="space-y-3">
-                <h3 className="font-semibold text-sm">📱 Install tadoc on Your Phone</h3>
-                <div className="text-xs text-muted-foreground space-y-2">
-                  <p className="font-medium">iPhone (Safari):</p>
-                  <ol className="list-decimal list-inside space-y-1 ml-2">
-                    <li>Tap the Share button (square with arrow)</li>
-                    <li>Scroll down and tap "Add to Home Screen"</li>
-                    <li>Tap "Add" in the top right</li>
-                  </ol>
-                  <p className="font-medium mt-3">Android (Chrome):</p>
-                  <ol className="list-decimal list-inside space-y-1 ml-2">
-                    <li>Tap the menu (three dots)</li>
-                    <li>Tap "Add to Home screen" or "Install app"</li>
-                    <li>Tap "Add" or "Install"</li>
-                  </ol>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-center text-xl">
+          <Card className="mx-2 sm:mx-0">
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="text-center text-lg sm:text-xl">
                 {isSignUp ? "Create Account" : "Sign In"}
               </CardTitle>
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-xs sm:text-sm text-muted-foreground px-2">
                 {isSignUp 
                   ? "Create your account to start tracking appointments"
                   : "Enter your email and password to access your appointments"
                 }
               </p>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-4">
+            <CardContent className="pt-0">
+              <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-3 sm:space-y-4">
                 {isSignUp && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div className="space-y-1 sm:space-y-2">
+                      <Label htmlFor="firstName" className="text-xs sm:text-sm">First Name</Label>
                       <Input
                         id="firstName"
                         type="text"
@@ -160,10 +147,11 @@ const Login = () => {
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         required={isSignUp}
+                        className="text-sm"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name</Label>
+                    <div className="space-y-1 sm:space-y-2">
+                      <Label htmlFor="lastName" className="text-xs sm:text-sm">Last Name</Label>
                       <Input
                         id="lastName"
                         type="text"
@@ -171,13 +159,14 @@ const Login = () => {
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         required={isSignUp}
+                        className="text-sm"
                       />
                     </div>
                   </div>
                 )}
                 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                <div className="space-y-1 sm:space-y-2">
+                  <Label htmlFor="email" className="text-xs sm:text-sm">Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -185,11 +174,12 @@ const Login = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    className="text-sm"
                   />
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                <div className="space-y-1 sm:space-y-2">
+                  <Label htmlFor="password" className="text-xs sm:text-sm">Password</Label>
                   <Input
                     id="password"
                     type="password"
@@ -197,19 +187,20 @@ const Login = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    className="text-sm"
                   />
                 </div>
 
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full text-sm" disabled={loading}>
                   {loading ? "Loading..." : (isSignUp ? "Create Account" : "Sign In")}
                 </Button>
 
-                <p className="text-center text-sm text-muted-foreground">
+                <p className="text-center text-xs sm:text-sm text-muted-foreground">
                   {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
                   <button
                     type="button"
                     onClick={() => setIsSignUp(!isSignUp)}
-                    className="text-primary hover:underline"
+                    className="text-primary hover:underline font-medium"
                   >
                     {isSignUp ? "Sign in" : "Sign up"}
                   </button>
@@ -217,27 +208,6 @@ const Login = () => {
               </form>
             </CardContent>
           </Card>
-
-          {isSignUp && (
-            <Card className="border-primary">
-              <CardContent className="pt-6">
-                <div className="text-center space-y-4">
-                  <h3 className="font-semibold text-lg">Ready to get started?</h3>
-                  <p className="text-sm text-muted-foreground">
-                    After creating your account, subscribe to access all tadoc features
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => navigate('/subscription')}
-                    type="button"
-                  >
-                    View Subscription Plans
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
     </div>

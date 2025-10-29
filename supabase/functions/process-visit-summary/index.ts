@@ -28,7 +28,7 @@ serve(async (req) => {
     }
 
     const prompt = `
-You are a medical AI assistant that analyzes doctor visit transcriptions.
+You are a medical AI assistant with expertise in medication analysis, follow-up care, and comprehensive visit summarization.
 
 APPOINTMENT REASON: "${appointmentReason}"
 PATIENT MEDICAL HISTORY: ${medicalHistory || "No previous history provided"}
@@ -42,18 +42,55 @@ IMPORTANT: Respond with ONLY valid JSON in this exact format:
 
 {
   "visitSummary": "A detailed paragraph summarizing what was actually discussed, symptoms mentioned, examination findings, and doctor's assessment based on the transcription",
-  "prescriptions": "List any medications, dosages, and instructions mentioned (or 'None mentioned' if no prescriptions)",
-  "followUpActions": "Any recommended next steps, tests, appointments, or lifestyle changes (or 'None specified' if no follow-ups)",
+  "medicationAnalysis": {
+    "prescriptions": [
+      {
+        "medication": "Medication name if mentioned",
+        "dosage": "Specific dosage mentioned",
+        "frequency": "How often to take",
+        "duration": "How long to take",
+        "instructions": "Special instructions mentioned",
+        "sideEffects": "Side effects discussed",
+        "interactions": "Drug interactions mentioned"
+      }
+    ],
+    "medicationManagement": [
+      "Specific instruction 1 about taking medications",
+      "Specific instruction 2 about medication timing"
+    ]
+  },
+  "followUpTimeline": {
+    "immediate": ["Actions to take within 24-48 hours"],
+    "shortTerm": ["Actions within 1-2 weeks"],
+    "longTerm": ["Actions within 1-3 months"],
+    "nextAppointment": "When to schedule next visit if mentioned"
+  },
   "keySymptoms": ["List", "the", "main", "symptoms", "or", "concerns", "discussed"],
-  "doctorRecommendations": ["Specific", "advice", "or", "recommendations", "given", "by", "the", "doctor"],
-  "questionsForDoctor": ["Question 1 to ask your doctor based on what was discussed", "Question 2 to ask your doctor based on what was discussed", "Question 3 to ask your doctor based on what was discussed"],
+  "doctorRecommendations": {
+    "lifestyle": ["Specific lifestyle changes mentioned"],
+    "monitoring": ["What to monitor or track"],
+    "warnings": ["Warning signs to watch for"],
+    "restrictions": ["Any restrictions mentioned (diet, activity, etc.)"]
+  },
+  "diagnosticResults": {
+    "testsOrdered": ["Test 1 if mentioned", "Test 2 if mentioned"],
+    "resultsDiscussed": ["Result 1 if discussed", "Result 2 if discussed"],
+    "futureTests": ["Upcoming tests mentioned"]
+  },
+  "costInsuranceDiscussion": {
+    "costMentioned": "Any cost discussions from the visit",
+    "insuranceCoverage": "Insurance coverage discussions",
+    "financialConcerns": "Any financial concerns addressed"
+  },
+  "questionsForDoctor": ["Follow-up question 1 based on visit", "Follow-up question 2 based on visit", "Follow-up question 3 based on visit"],
   "keyTermsExplained": {
     "term1": "Simple explanation of medical term mentioned in visit",
-    "term2": "Simple explanation of another medical term"
-  }
+    "term2": "Simple explanation of another medical term mentioned"
+  },
+  "riskFactors": ["Risk factor 1 if discussed", "Risk factor 2 if discussed"]
 }
 
-Do not include any markdown formatting, code blocks, or extra text. Return only the JSON object.`;
+Extract information ONLY from the actual transcription. If something wasn't mentioned, use "Not discussed" or leave arrays empty.`;
 
     console.log('Sending to OpenAI for visit analysis...');
 
@@ -72,7 +109,7 @@ Do not include any markdown formatting, code blocks, or extra text. Return only 
           },
           { role: 'user', content: prompt }
         ],
-        max_completion_tokens: 800,
+        max_completion_tokens: 1500,
       }),
     });
 
@@ -85,15 +122,42 @@ Do not include any markdown formatting, code blocks, or extra text. Return only 
         console.log('Rate limited, providing fallback response');
         const fallbackResponse = {
           visitSummary: `Visit completed for ${appointmentReason}. Patient discussed their concerns with the doctor. Please review the full transcription for details as AI processing was temporarily unavailable.`,
-          prescriptions: "Please review transcription for medication details",
-          followUpActions: "Please review transcription for follow-up instructions",
+          medicationAnalysis: {
+            prescriptions: [],
+            medicationManagement: ["Please review transcription for medication details"]
+          },
+          followUpTimeline: {
+            immediate: ["Please review transcription"],
+            shortTerm: ["Please review transcription"],
+            longTerm: ["Please review transcription"],
+            nextAppointment: "Please review transcription for appointment details"
+          },
           keySymptoms: ["Please review transcription"],
-          doctorRecommendations: ["Please review transcription for recommendations"],
+          doctorRecommendations: {
+            lifestyle: ["Please review transcription"],
+            monitoring: ["Please review transcription"],
+            warnings: ["Please review transcription"],
+            restrictions: ["Please review transcription"]
+          },
+          diagnosticResults: {
+            testsOrdered: [],
+            resultsDiscussed: [],
+            futureTests: []
+          },
+          costInsuranceDiscussion: {
+            costMentioned: "Not discussed",
+            insuranceCoverage: "Not discussed", 
+            financialConcerns: "Not discussed"
+          },
           questionsForDoctor: [
             "What should I monitor regarding my condition?",
             "When should I schedule my next appointment?",
             "Are there any warning signs I should watch for?"
-          ]
+          ],
+          keyTermsExplained: {
+            "medical_term": "Please review transcription for medical terms discussed"
+          },
+          riskFactors: ["Please review transcription for risk factors"]
         };
         return new Response(JSON.stringify(fallbackResponse), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -114,15 +178,42 @@ Do not include any markdown formatting, code blocks, or extra text. Return only 
       console.error('OpenAI returned empty content');
       const fallbackResponse = {
         visitSummary: `Visit completed for ${appointmentReason}. The AI was unable to process the transcription properly. Please review the transcription manually.`,
-        prescriptions: "Please review the visit transcription for prescription details",
-        followUpActions: "Please review the visit transcription for follow-up instructions",
+        medicationAnalysis: {
+          prescriptions: [],
+          medicationManagement: ["Please review the visit transcription for medication details"]
+        },
+        followUpTimeline: {
+          immediate: ["Review transcription for immediate actions"],
+          shortTerm: ["Review transcription for short-term actions"], 
+          longTerm: ["Review transcription for long-term actions"],
+          nextAppointment: "Review transcription for appointment scheduling"
+        },
         keySymptoms: ["Review transcription for symptoms discussed"],
-        doctorRecommendations: ["Review transcription for doctor's recommendations"],
+        doctorRecommendations: {
+          lifestyle: ["Review transcription for lifestyle recommendations"],
+          monitoring: ["Review transcription for monitoring instructions"],
+          warnings: ["Review transcription for warning signs"],
+          restrictions: ["Review transcription for restrictions"]
+        },
+        diagnosticResults: {
+          testsOrdered: [],
+          resultsDiscussed: [],
+          futureTests: []
+        },
+        costInsuranceDiscussion: {
+          costMentioned: "Not discussed",
+          insuranceCoverage: "Not discussed",
+          financialConcerns: "Not discussed"
+        },
         questionsForDoctor: [
           "What are the main takeaways from today's visit?",
           "What should I monitor before our next appointment?",
           "When should I schedule my next visit?"
-        ]
+        ],
+        keyTermsExplained: {
+          "medical_term": "Review transcription for medical terms"
+        },
+        riskFactors: ["Review transcription for risk factors mentioned"]
       };
       
       return new Response(JSON.stringify(fallbackResponse), {
@@ -146,15 +237,42 @@ Do not include any markdown formatting, code blocks, or extra text. Return only 
       // Fallback response with safe data
       const fallbackResponse = {
         visitSummary: `Visit completed for ${appointmentReason}. The doctor and patient discussed the condition and treatment options. Full details are available in the transcription.`,
-        prescriptions: "Please review the visit transcription for prescription details",
-        followUpActions: "Please review the visit transcription for follow-up instructions",
+        medicationAnalysis: {
+          prescriptions: [],
+          medicationManagement: ["Please review the visit transcription for medication details"]
+        },
+        followUpTimeline: {
+          immediate: ["Refer to transcription for immediate actions"],
+          shortTerm: ["Refer to transcription for short-term follow-up"],
+          longTerm: ["Refer to transcription for long-term care plan"],
+          nextAppointment: "Refer to transcription for next appointment details"
+        },
         keySymptoms: ["Refer to transcription for symptom details"],
-        doctorRecommendations: ["Refer to transcription for doctor's recommendations"],
+        doctorRecommendations: {
+          lifestyle: ["Refer to transcription for lifestyle advice"],
+          monitoring: ["Refer to transcription for monitoring instructions"],
+          warnings: ["Refer to transcription for warning signs"],
+          restrictions: ["Refer to transcription for any restrictions"]
+        },
+        diagnosticResults: {
+          testsOrdered: [],
+          resultsDiscussed: [],
+          futureTests: []
+        },
+        costInsuranceDiscussion: {
+          costMentioned: "Not discussed",
+          insuranceCoverage: "Not discussed",
+          financialConcerns: "Not discussed"
+        },
         questionsForDoctor: [
           "What are the next steps in my treatment plan?",
           "How should I monitor my symptoms?",
           "When should I return for follow-up?"
-        ]
+        ],
+        keyTermsExplained: {
+          "medical_term": "Refer to transcription for medical terms discussed"
+        },
+        riskFactors: ["Refer to transcription for risk factors mentioned"]
       };
       
       return new Response(JSON.stringify(fallbackResponse), {
@@ -163,8 +281,7 @@ Do not include any markdown formatting, code blocks, or extra text. Return only 
     }
   } catch (error) {
     console.error('Error in process-visit-summary function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

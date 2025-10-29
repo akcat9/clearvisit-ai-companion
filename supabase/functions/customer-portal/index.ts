@@ -42,13 +42,37 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    if (customers.data.length === 0) {
-      logStep("No Stripe customer found");
-      throw new Error("No Stripe customer found for this user. Please complete a subscription checkout first.");
+    // Try to resolve customer via our subscriptions table first
+    const { data: subscription, error: subError } = await supabaseClient
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle();
+
+    let customerId: string | null = null;
+
+    if (subError) {
+      logStep("Error querying subscriptions table", { message: subError.message });
     }
-    const customerId = customers.data[0].id;
-    logStep("Found Stripe customer", { customerId });
+
+    if (subscription?.stripe_subscription_id) {
+      // Derive customer from the Stripe subscription to avoid email mismatches
+      const sub = await stripe.subscriptions.retrieve(subscription.stripe_subscription_id);
+      customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
+      logStep("Derived customer from active subscription", { subscriptionId: subscription.stripe_subscription_id, customerId });
+    }
+
+    if (!customerId) {
+      // Fallback: look up by email
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      if (customers.data.length === 0) {
+        logStep("No Stripe customer found");
+        throw new Error("No Stripe customer found for this user. Please complete a subscription checkout first.");
+      }
+      customerId = customers.data[0].id;
+      logStep("Found Stripe customer", { customerId });
+    }
 
     const origin = req.headers.get("origin") || "http://localhost:8080";
     const portalSession = await stripe.billingPortal.sessions.create({

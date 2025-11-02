@@ -1,11 +1,15 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Lock, ExternalLink, RefreshCw } from 'lucide-react';
+import { Lock, ExternalLink, RefreshCw, LogOut } from 'lucide-react';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
 const SubscriptionGate = () => {
   const { checkSubscription, loading } = useSubscription();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
   const [checking, setChecking] = useState(false);
 
   const handleCheckAgain = async () => {
@@ -16,6 +20,11 @@ const SubscriptionGate = () => {
 
   const handleGetAccess = () => {
     window.open('https://tadoc.store', '_blank');
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
   };
 
   return (
@@ -67,6 +76,18 @@ const SubscriptionGate = () => {
         <p className="text-xs text-muted-foreground">
           Already subscribed? Click "Check Again" after completing your purchase.
         </p>
+
+        <div className="pt-4 border-t">
+          <Button
+            onClick={handleSignOut}
+            variant="ghost"
+            className="w-full"
+            size="sm"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Sign Out
+          </Button>
+        </div>
       </Card>
     </div>
   );

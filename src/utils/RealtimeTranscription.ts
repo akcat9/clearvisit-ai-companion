@@ -65,6 +65,7 @@ export class RealtimeTranscription {
   private dc: RTCDataChannel | null = null;
   private recorder: AudioRecorder | null = null;
   private isConnected = false;
+  private processedItems = new Set<string>();
 
   constructor(
     private onTranscript: (text: string) => void,
@@ -121,10 +122,19 @@ export class RealtimeTranscription {
       this.dc.addEventListener("message", (e) => {
         try {
           const event = JSON.parse(e.data);
-          console.log("Received event:", event.type);
+          console.log("Received event:", event.type, event);
           
           if (event.type === 'conversation.item.input_audio_transcription.completed') {
-            console.log('Transcription:', event.transcript);
+            const itemId = event.item_id;
+            
+            // Skip if we've already processed this item
+            if (this.processedItems.has(itemId)) {
+              console.log('Skipping duplicate transcript for item:', itemId);
+              return;
+            }
+            
+            this.processedItems.add(itemId);
+            console.log('New transcription for item', itemId, ':', event.transcript);
             this.onTranscript(event.transcript);
           }
         } catch (err) {
@@ -180,6 +190,7 @@ export class RealtimeTranscription {
     this.dc?.close();
     this.pc?.close();
     this.isConnected = false;
+    this.processedItems.clear();
   }
 
   isActive(): boolean {

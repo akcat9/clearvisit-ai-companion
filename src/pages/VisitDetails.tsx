@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, Mic, MicOff, FileText, BookOpen, AlertCircle } from 'lucide-react';
 import ShareVisitModal from '@/components/ShareVisitModal';
 import PreVisitEducation from '@/components/PreVisitEducation';
-import { AudioRecorderGoogleCloud } from '@/utils/AudioRecorderGoogleCloud';
+import { RealtimeTranscription } from '@/utils/RealtimeTranscription';
 import { formatTime } from "@/utils/timeUtils";
 
 
@@ -21,7 +21,7 @@ const VisitDetails = () => {
   const [manualNotes, setManualNotes] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [audioRecorder, setAudioRecorder] = useState<AudioRecorderGoogleCloud | null>(null);
+  const [audioRecorder, setAudioRecorder] = useState<RealtimeTranscription | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [liveTranscription, setLiveTranscription] = useState('');
   const [recordingComplete, setRecordingComplete] = useState(false);
@@ -111,19 +111,29 @@ const VisitDetails = () => {
     }
   };
 
-  // Recording with Google Cloud Speech-to-Text streaming
+  // Recording with OpenAI Realtime API (live transcription)
   const handleStartRecording = async () => {
     try {
       setLiveTranscription('');
       setRecordingComplete(false);
       
-      const recorder = new AudioRecorderGoogleCloud(
+      const recorder = new RealtimeTranscription(
         (transcription) => {
-          setLiveTranscription(prev => prev + ' ' + transcription);
+          setLiveTranscription(prev => {
+            const newText = prev ? prev + ' ' + transcription : transcription;
+            return newText;
+          });
+        },
+        (error) => {
+          toast({
+            title: "Transcription Error",
+            description: error,
+            variant: "destructive",
+          });
         }
       );
       
-      await recorder.startRecording();
+      await recorder.init();
       setAudioRecorder(recorder);
       setIsRecording(true);
       setRecordingDuration(0);
@@ -142,13 +152,13 @@ const VisitDetails = () => {
       
       toast({
         title: "Recording Started",
-        description: "Real-time streaming transcription with Google Cloud.",
+        description: "Live transcription active - speak now.",
       });
     } catch (error) {
       console.error('Recording error:', error);
       toast({
         title: "Recording Failed",
-        description: "Microphone access denied or not available.",
+        description: "Could not start live transcription.",
         variant: "destructive",
       });
     }
@@ -163,13 +173,13 @@ const VisitDetails = () => {
       durationIntervalRef.current = null;
     }
     
-    await audioRecorder.stopRecording();
+    audioRecorder.disconnect();
     setIsRecording(false);
     setRecordingComplete(true);
     
     toast({
       title: "Recording Stopped",
-      description: "Click 'Analyze with AI' to get medical insights.",
+      description: "Your live transcription is complete.",
     });
   };
 

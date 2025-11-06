@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -24,6 +24,8 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const [loading, setLoading] = useState(true);
   const [lastChecked, setLastChecked] = useState<number | null>(null);
+  const checkingRef = useRef(false);
+  const cacheTimeMs = 30000; // 30 seconds cache
 
   const checkSubscription = useCallback(async () => {
     if (!user?.id) {
@@ -32,6 +34,18 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
       return false;
     }
 
+    // Check cache first
+    const now = Date.now();
+    if (lastChecked && now - lastChecked < cacheTimeMs) {
+      return hasActiveSubscription;
+    }
+
+    // Prevent duplicate simultaneous calls
+    if (checkingRef.current) {
+      return hasActiveSubscription;
+    }
+
+    checkingRef.current = true;
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc('has_active_subscription' as any, {
@@ -40,7 +54,6 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
 
       if (error) {
         console.error('Subscription check error:', error);
-        // On error, keep previous state (fail open for better UX)
         return hasActiveSubscription;
       }
 
@@ -53,10 +66,11 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
       return hasActiveSubscription;
     } finally {
       setLoading(false);
+      checkingRef.current = false;
     }
-  }, [user?.id, hasActiveSubscription]);
+  }, [user?.id, hasActiveSubscription, lastChecked, cacheTimeMs]);
 
-  // Check subscription when user changes
+  // Initial check when user logs in
   useEffect(() => {
     if (user) {
       checkSubscription();
@@ -65,44 +79,54 @@ export const SubscriptionProvider = ({ children }: { children: React.ReactNode }
       setLoading(false);
       setLastChecked(null);
     }
-  }, [user, checkSubscription]);
+  }, [user?.id]); // Only depend on user.id, not the entire function
 
   // Auto-refresh every 5 minutes
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
 
     const interval = setInterval(() => {
       checkSubscription();
-    }, 5 * 60 * 1000); // 5 minutes
+    }, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [user, checkSubscription]);
+  }, [user?.id]);
 
-  // Check when page becomes visible
+  // Check when page becomes visible (with debounce)
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
 
+    let timeoutId: NodeJS.Timeout;
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        checkSubscription();
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(checkSubscription, 1000);
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [user, checkSubscription]);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearTimeout(timeoutId);
+    };
+  }, [user?.id]);
 
-  // Check when coming back online
+  // Check when coming back online (with debounce)
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
 
+    let timeoutId: NodeJS.Timeout;
     const handleOnline = () => {
-      checkSubscription();
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(checkSubscription, 1000);
     };
 
     window.addEventListener('online', handleOnline);
-    return () => window.removeEventListener('online', handleOnline);
-  }, [user, checkSubscription]);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      clearTimeout(timeoutId);
+    };
+  }, [user?.id]);
 
   const value = {
     hasActiveSubscription,

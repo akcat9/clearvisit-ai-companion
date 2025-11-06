@@ -1,42 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const useUnreadSharedVisits = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const { user } = useAuth();
+  const fetchingRef = useRef(false);
 
-  useEffect(() => {
-    if (!user) return;
+  const fetchUnreadCount = useCallback(async () => {
+    if (!user?.email || fetchingRef.current) return;
 
-    fetchUnreadCount();
-
-    // Set up real-time subscription
-    const channel = supabase
-      .channel('shared-visits-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'shared_visits'
-        },
-        () => {
-          fetchUnreadCount();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
-
-  const fetchUnreadCount = async () => {
-    if (!user?.email) return;
-
+    fetchingRef.current = true;
     try {
-      // Optimized: Single query using user email directly from auth
       const { count } = await supabase
         .from('shared_visits')
         .select('*', { count: 'exact', head: true })
@@ -47,8 +22,38 @@ export const useUnreadSharedVisits = () => {
       setUnreadCount(count || 0);
     } catch (error) {
       // Silently fail - non-critical feature
+    } finally {
+      fetchingRef.current = false;
     }
-  };
+  }, [user?.email]);
+
+  useEffect(() => {
+    if (!user?.email) return;
+
+    fetchUnreadCount();
+
+    // More targeted real-time subscription - only for recipient's emails
+    const channel = supabase
+      .channel(`shared-visits-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'shared_visits',
+          filter: `recipient_email=eq.${user.email}`
+        },
+        () => {
+          // Debounce refetch
+          setTimeout(fetchUnreadCount, 500);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.email, user?.id, fetchUnreadCount]);
 
   return { unreadCount, refetch: fetchUnreadCount };
 };

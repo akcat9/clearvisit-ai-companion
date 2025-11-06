@@ -84,6 +84,7 @@ serve(async (req) => {
         body: JSON.stringify({
           config: {
             encoding: 'WEBM_OPUS',
+            sampleRateHertz: 48000,
             audioChannelCount: 1,
             languageCode: 'en-US',
             enableAutomaticPunctuation: true,

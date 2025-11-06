@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, Mic, MicOff, FileText, BookOpen, AlertCircle } from 'lucide-react';
 import ShareVisitModal from '@/components/ShareVisitModal';
 import PreVisitEducation from '@/components/PreVisitEducation';
-import { AudioRecorder } from '@/utils/AudioRecorder';
+import { AudioRecorderWhisper } from '@/utils/AudioRecorderWhisper';
 import { formatTime } from "@/utils/timeUtils";
 
 
@@ -21,7 +21,7 @@ const VisitDetails = () => {
   const [manualNotes, setManualNotes] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [audioRecorder, setAudioRecorder] = useState<AudioRecorder | null>(null);
+  const [audioRecorder, setAudioRecorder] = useState<AudioRecorderWhisper | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [liveTranscription, setLiveTranscription] = useState('');
   const [recordingComplete, setRecordingComplete] = useState(false);
@@ -111,16 +111,18 @@ const VisitDetails = () => {
     }
   };
 
-  // Simple recording with instant speech recognition
+  // Recording with OpenAI Whisper (works on all devices including Android)
   const handleStartRecording = async () => {
     try {
       setLiveTranscription('');
       setRecordingComplete(false);
       
-      const recorder = new AudioRecorder(
+      const recorder = new AudioRecorderWhisper(
         (transcription) => {
           setLiveTranscription(transcription);
-        }
+        },
+        'https://hjupkurtumzqrwoytjnn.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqdXBrdXJ0dW16cXJ3b3l0am5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MjI2MDQsImV4cCI6MjA3MTk5ODYwNH0.d5LNBkCAZY1ceV9LoMuMR5-cx_J9iZ4VwC1hJ9b30bI'
       );
       
       await recorder.start();
@@ -142,9 +144,10 @@ const VisitDetails = () => {
       
       toast({
         title: "Recording Started",
-        description: "Speak clearly - transcription appears in real-time.",
+        description: "Speak clearly - AI transcription in progress (works on Android!).",
       });
     } catch (error) {
+      console.error('Recording error:', error);
       toast({
         title: "Recording Failed",
         description: "Microphone access denied or not available.",
@@ -153,7 +156,7 @@ const VisitDetails = () => {
     }
   };
 
-  const handleStopRecording = () => {
+  const handleStopRecording = async () => {
     if (!audioRecorder) return;
     
     // Clear the duration interval
@@ -162,7 +165,7 @@ const VisitDetails = () => {
       durationIntervalRef.current = null;
     }
     
-    const finalTranscript = audioRecorder.stop();
+    const finalTranscript = await audioRecorder.stop();
     setIsRecording(false);
     setRecordingComplete(true);
     

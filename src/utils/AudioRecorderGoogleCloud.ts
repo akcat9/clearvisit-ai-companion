@@ -21,12 +21,11 @@ export class AudioRecorderGoogleCloud {
       this.mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           this.audioChunks.push(event.data);
-          this.sendChunkForTranscription(event.data);
         }
       };
 
-      this.mediaRecorder.start(3000); // Capture chunks every 3 seconds for better recognition
-      console.log('Recording started with Google Cloud streaming');
+      this.mediaRecorder.start(); // Capture full audio; we'll transcribe once at stop for reliability
+      console.log('Recording started with Google Cloud (batch mode)');
     } catch (error) {
       console.error('Error starting recording:', error);
       throw error;
@@ -63,10 +62,33 @@ export class AudioRecorderGoogleCloud {
   async stopRecording(): Promise<string> {
     return new Promise((resolve) => {
       if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-        this.mediaRecorder.onstop = () => {
+        this.mediaRecorder.onstop = async () => {
           // Stop all tracks
           if (this.stream) {
             this.stream.getTracks().forEach(track => track.stop());
+          }
+
+          try {
+            const fullBlob = new Blob(this.audioChunks, { type: 'audio/webm;codecs=opus' });
+            const arrayBuffer = await fullBlob.arrayBuffer();
+            const base64Audio = btoa(
+              new Uint8Array(arrayBuffer).reduce(
+                (data, byte) => data + String.fromCharCode(byte),
+                ''
+              )
+            );
+
+            const { data, error } = await supabase.functions.invoke('stream-transcription', {
+              body: { audio: base64Audio }
+            });
+
+            if (error) {
+              console.error('Transcription error:', error);
+            } else if (data?.text) {
+              this.onTranscriptionUpdate(data.text);
+            }
+          } catch (e) {
+            console.error('Error transcribing full recording:', e);
           }
           
           resolve('Recording stopped');

@@ -63,17 +63,13 @@ export class AudioRecorder {
 export class RealtimeTranscription {
   private pc: RTCPeerConnection | null = null;
   private dc: RTCDataChannel | null = null;
-  private audioEl: HTMLAudioElement;
   private recorder: AudioRecorder | null = null;
   private isConnected = false;
 
   constructor(
     private onTranscript: (text: string) => void,
     private onError: (error: string) => void
-  ) {
-    this.audioEl = document.createElement("audio");
-    this.audioEl.autoplay = true;
-  }
+  ) {}
 
   async init() {
     try {
@@ -92,12 +88,6 @@ export class RealtimeTranscription {
       // Create peer connection
       this.pc = new RTCPeerConnection();
 
-      // Set up remote audio
-      this.pc.ontrack = e => {
-        console.log('Received remote audio track');
-        this.audioEl.srcObject = e.streams[0];
-      };
-
       // Add local audio track
       const ms = await navigator.mediaDevices.getUserMedia({ audio: true });
       this.pc.addTrack(ms.getTracks()[0]);
@@ -109,12 +99,12 @@ export class RealtimeTranscription {
         console.log('Data channel opened');
         this.isConnected = true;
         
-        // Send session update to enable transcription
+        // Send session update to enable transcription only (no audio response)
         this.sendEvent({
           type: "session.update",
           session: {
-            modalities: ["text", "audio"],
-            instructions: "You are a medical transcription assistant. Transcribe what the user says accurately.",
+            modalities: ["text"],
+            instructions: "You are a transcription service. Only transcribe what the user says, do not respond or generate any output.",
             input_audio_transcription: {
               model: "whisper-1"
             },

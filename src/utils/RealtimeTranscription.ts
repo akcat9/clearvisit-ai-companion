@@ -66,11 +66,11 @@ export class RealtimeTranscription {
   private recorder: AudioRecorder | null = null;
   private isConnected = false;
   private processedItems = new Set<string>();
+  private isPaused = false;
 
   constructor(
     private onTranscript: (text: string) => void,
-    private onError: (error: string) => void,
-    private onSpeaking?: (isSpeaking: boolean) => void
+    private onError: (error: string) => void
   ) {}
 
   async init() {
@@ -128,19 +128,15 @@ export class RealtimeTranscription {
           if (event.type === 'conversation.item.input_audio_transcription.completed') {
             const itemId = event.item_id;
             
-            // Skip if we've already processed this item
-            if (this.processedItems.has(itemId)) {
-              console.log('Skipping duplicate transcript for item:', itemId);
+            // Skip if we've already processed this item or if paused
+            if (this.processedItems.has(itemId) || this.isPaused) {
+              console.log('Skipping transcript - duplicate or paused:', itemId);
               return;
             }
             
             this.processedItems.add(itemId);
             console.log('New transcription for item', itemId, ':', event.transcript);
             this.onTranscript(event.transcript);
-          } else if (event.type === 'input_audio_buffer.speech_started') {
-            this.onSpeaking?.(true);
-          } else if (event.type === 'input_audio_buffer.speech_stopped') {
-            this.onSpeaking?.(false);
           }
         } catch (err) {
           console.error('Error parsing message:', err);
@@ -190,15 +186,33 @@ export class RealtimeTranscription {
     }
   }
 
-  disconnect() {
+  pause() {
+    this.isPaused = true;
+  }
+
+  resume() {
+    this.isPaused = false;
+  }
+
+  async disconnect(waitForPendingTranscripts = false) {
+    // Wait for any pending transcriptions to complete
+    if (waitForPendingTranscripts) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+    
     this.recorder?.stop();
     this.dc?.close();
     this.pc?.close();
     this.isConnected = false;
+    this.isPaused = false;
     this.processedItems.clear();
   }
 
   isActive(): boolean {
-    return this.isConnected;
+    return this.isConnected && !this.isPaused;
+  }
+
+  getPausedState(): boolean {
+    return this.isPaused;
   }
 }

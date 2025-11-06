@@ -25,7 +25,7 @@ const VisitDetails = () => {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [liveTranscription, setLiveTranscription] = useState('');
   const [recordingComplete, setRecordingComplete] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   
   // AI-generated content (only shown after processing)
   const [aiGeneratedData, setAiGeneratedData] = useState<{
@@ -137,7 +137,7 @@ const VisitDetails = () => {
     try {
       setLiveTranscription('');
       setRecordingComplete(false);
-      setIsSpeaking(false);
+      setIsPaused(false);
       
       const recorder = new RealtimeTranscription(
         (transcription) => {
@@ -154,9 +154,6 @@ const VisitDetails = () => {
             description: error,
             variant: "destructive",
           });
-        },
-        (speaking) => {
-          setIsSpeaking(speaking);
         }
       );
       
@@ -191,8 +188,35 @@ const VisitDetails = () => {
     }
   };
 
+  const handlePauseRecording = () => {
+    if (!audioRecorder) return;
+    audioRecorder.pause();
+    setIsPaused(true);
+    
+    toast({
+      title: "Recording Paused",
+      description: "Transcription paused. Click Resume to continue.",
+    });
+  };
+
+  const handleResumeRecording = () => {
+    if (!audioRecorder) return;
+    audioRecorder.resume();
+    setIsPaused(false);
+    
+    toast({
+      title: "Recording Resumed",
+      description: "Transcription active again.",
+    });
+  };
+
   const handleStopRecording = async () => {
     if (!audioRecorder) return;
+    
+    toast({
+      title: "Finishing transcription...",
+      description: "Waiting for any remaining audio to be transcribed.",
+    });
     
     // Clear the duration interval
     if (durationIntervalRef.current) {
@@ -200,10 +224,11 @@ const VisitDetails = () => {
       durationIntervalRef.current = null;
     }
     
-    audioRecorder.disconnect();
+    // Wait for pending transcriptions before disconnecting
+    await audioRecorder.disconnect(true);
     setIsRecording(false);
     setRecordingComplete(true);
-    setIsSpeaking(false);
+    setIsPaused(false);
     
     toast({
       title: "Recording Stopped",
@@ -428,21 +453,34 @@ const VisitDetails = () => {
                   Start Recording
                 </Button>
               ) : (
-                <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  {!isPaused ? (
+                    <Button 
+                      onClick={handlePauseRecording}
+                      variant="outline"
+                      className="flex items-center gap-2 flex-1"
+                    >
+                      <Mic className="w-4 h-4" />
+                      Pause
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={handleResumeRecording}
+                      variant="default"
+                      className="flex items-center gap-2 flex-1"
+                    >
+                      <Mic className="w-4 h-4" />
+                      Resume
+                    </Button>
+                  )}
                   <Button 
                     onClick={handleStopRecording}
                     variant="destructive"
-                    className="flex items-center gap-2 w-full"
+                    className="flex items-center gap-2 flex-1"
                   >
                     <MicOff className="w-4 h-4" />
-                    Stop Recording ({Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')})
+                    Stop ({Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')})
                   </Button>
-                  {isSpeaking && (
-                    <div className="flex items-center gap-2 text-green-600 animate-pulse">
-                      <div className="w-2 h-2 bg-green-600 rounded-full" />
-                      <span className="text-sm font-medium">Speaking detected...</span>
-                    </div>
-                  )}
                 </div>
               )}
 

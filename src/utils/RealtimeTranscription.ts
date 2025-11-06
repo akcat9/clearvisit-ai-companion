@@ -69,7 +69,8 @@ export class RealtimeTranscription {
 
   constructor(
     private onTranscript: (text: string) => void,
-    private onError: (error: string) => void
+    private onError: (error: string) => void,
+    private onSpeaking?: (isSpeaking: boolean) => void
   ) {}
 
   async init() {
@@ -113,7 +114,7 @@ export class RealtimeTranscription {
               type: "server_vad",
               threshold: 0.5,
               prefix_padding_ms: 300,
-              silence_duration_ms: 500
+              silence_duration_ms: 200
             }
           }
         });
@@ -136,6 +137,10 @@ export class RealtimeTranscription {
             this.processedItems.add(itemId);
             console.log('New transcription for item', itemId, ':', event.transcript);
             this.onTranscript(event.transcript);
+          } else if (event.type === 'input_audio_buffer.speech_started') {
+            this.onSpeaking?.(true);
+          } else if (event.type === 'input_audio_buffer.speech_stopped') {
+            this.onSpeaking?.(false);
           }
         } catch (err) {
           console.error('Error parsing message:', err);

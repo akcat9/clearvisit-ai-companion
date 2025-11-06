@@ -25,6 +25,7 @@ const VisitDetails = () => {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [liveTranscription, setLiveTranscription] = useState('');
   const [recordingComplete, setRecordingComplete] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   
   // AI-generated content (only shown after processing)
   const [aiGeneratedData, setAiGeneratedData] = useState<{
@@ -111,16 +112,39 @@ const VisitDetails = () => {
     }
   };
 
+  // Auto-save transcription to database
+  const autoSaveTranscription = async (transcription: string) => {
+    if (!id || !user?.id || !transcription.trim()) return;
+    
+    try {
+      await supabase
+        .from('visit_records')
+        .upsert({
+          appointment_id: id,
+          user_id: user.id,
+          transcription: transcription,
+          updated_at: new Date().toISOString()
+        }, { 
+          onConflict: 'appointment_id'
+        });
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+    }
+  };
+
   // Recording with OpenAI Realtime API (live transcription)
   const handleStartRecording = async () => {
     try {
       setLiveTranscription('');
       setRecordingComplete(false);
+      setIsSpeaking(false);
       
       const recorder = new RealtimeTranscription(
         (transcription) => {
           setLiveTranscription(prev => {
             const newText = prev ? prev + ' ' + transcription : transcription;
+            // Auto-save on each transcription update
+            autoSaveTranscription(newText);
             return newText;
           });
         },
@@ -130,6 +154,9 @@ const VisitDetails = () => {
             description: error,
             variant: "destructive",
           });
+        },
+        (speaking) => {
+          setIsSpeaking(speaking);
         }
       );
       
@@ -176,6 +203,7 @@ const VisitDetails = () => {
     audioRecorder.disconnect();
     setIsRecording(false);
     setRecordingComplete(true);
+    setIsSpeaking(false);
     
     toast({
       title: "Recording Stopped",
@@ -400,17 +428,33 @@ const VisitDetails = () => {
                   Start Recording
                 </Button>
               ) : (
-                <Button 
-                  onClick={handleStopRecording}
-                  variant="destructive"
-                  className="flex items-center gap-2"
-                >
-                  <MicOff className="w-4 h-4" />
-                  Stop Recording ({Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')})
-                </Button>
+                <div className="space-y-3">
+                  <Button 
+                    onClick={handleStopRecording}
+                    variant="destructive"
+                    className="flex items-center gap-2 w-full"
+                  >
+                    <MicOff className="w-4 h-4" />
+                    Stop Recording ({Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')})
+                  </Button>
+                  {isSpeaking && (
+                    <div className="flex items-center gap-2 text-green-600 animate-pulse">
+                      <div className="w-2 h-2 bg-green-600 rounded-full" />
+                      <span className="text-sm font-medium">Speaking detected...</span>
+                    </div>
+                  )}
+                </div>
               )}
 
-              {(recordingComplete || liveTranscription) && (
+              {isRecording && (
+                <div className="bg-yellow-50 border-2 border-yellow-300 p-3 rounded-lg">
+                  <p className="text-sm text-yellow-800 font-medium">
+                    ⚠️ You must stop recording before you can analyze with AI
+                  </p>
+                </div>
+              )}
+
+              {(recordingComplete || liveTranscription) && !isRecording && (
                 <Button 
                   onClick={handleAnalyzeWithAI}
                   disabled={isAnalyzing}

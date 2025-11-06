@@ -84,9 +84,11 @@ serve(async (req) => {
         body: JSON.stringify({
           config: {
             encoding: 'WEBM_OPUS',
-            sampleRateHertz: 48000,
+            audioChannelCount: 1,
             languageCode: 'en-US',
             enableAutomaticPunctuation: true,
+            model: 'default',
+            useEnhanced: true,
           },
           audio: {
             content: audio,
@@ -103,11 +105,13 @@ serve(async (req) => {
 
     const result = await speechResponse.json();
     
+    console.log('Google Cloud response:', JSON.stringify(result).substring(0, 200));
+    
     const transcript = result.results
       ?.map((r: any) => r.alternatives[0]?.transcript)
       .join(' ') || '';
 
-    console.log('Transcription successful:', transcript.substring(0, 50) + '...');
+    console.log('Transcription:', transcript || '(empty)');
 
     return new Response(
       JSON.stringify({ text: transcript }),

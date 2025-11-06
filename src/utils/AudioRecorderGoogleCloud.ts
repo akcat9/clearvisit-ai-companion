@@ -25,7 +25,7 @@ export class AudioRecorderGoogleCloud {
         }
       };
 
-      this.mediaRecorder.start(1000); // Capture chunks every 1 second
+      this.mediaRecorder.start(3000); // Capture chunks every 3 seconds for better recognition
       console.log('Recording started with Google Cloud streaming');
     } catch (error) {
       console.error('Error starting recording:', error);

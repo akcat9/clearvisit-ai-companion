@@ -40,24 +40,39 @@ interface EducationContent {
 }
 
 interface PreVisitEducationProps {
+  appointmentId: string;
   appointmentReason?: string;
   goal?: string;
   symptoms?: string;
+  cachedContent?: EducationContent | null;
 }
 
-const PreVisitEducation = ({ appointmentReason, goal, symptoms }: PreVisitEducationProps) => {
-  const [educationContent, setEducationContent] = useState<EducationContent | null>(null);
+const PreVisitEducation = ({ 
+  appointmentId, 
+  appointmentReason, 
+  goal, 
+  symptoms,
+  cachedContent 
+}: PreVisitEducationProps) => {
+  const [educationContent, setEducationContent] = useState<EducationContent | null>(cachedContent || null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
+    // If we have cached content, use it
+    if (cachedContent) {
+      setEducationContent(cachedContent);
+      return;
+    }
+
+    // Otherwise, generate new content
     if (appointmentReason) {
       generateEducationContent();
     }
-  }, [appointmentReason, goal, symptoms]);
+  }, [appointmentId, appointmentReason, goal, symptoms, cachedContent]);
 
-  const generateEducationContent = async () => {
+  const generateEducationContent = async (forceRegenerate = false) => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-previsit-education', {
@@ -79,6 +94,23 @@ const PreVisitEducation = ({ appointmentReason, goal, symptoms }: PreVisitEducat
       }
 
       setEducationContent(data);
+
+      // Save to database for caching
+      const { error: updateError } = await supabase
+        .from('appointments')
+        .update({ education_content: data })
+        .eq('id', appointmentId);
+
+      if (updateError) {
+        console.error('Error caching education content:', updateError);
+      }
+
+      if (forceRegenerate) {
+        toast({
+          title: "Content refreshed",
+          description: "Pre-visit education has been regenerated.",
+        });
+      }
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -157,13 +189,27 @@ const PreVisitEducation = ({ appointmentReason, goal, symptoms }: PreVisitEducat
   return (
     <Card className="w-full">
       <CardHeader className="pb-4">
-        <div className="flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-primary" />
-          <CardTitle className="text-lg">Pre-Visit Education</CardTitle>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-primary" />
+              <CardTitle className="text-lg">Pre-Visit Education</CardTitle>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Learn about your condition before your appointment
+            </p>
+          </div>
+          {educationContent && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => generateEducationContent(true)}
+              disabled={isLoading}
+            >
+              Regenerate
+            </Button>
+          )}
         </div>
-        <p className="text-sm text-muted-foreground">
-          Learn about your condition before your appointment
-        </p>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Section Selection */}

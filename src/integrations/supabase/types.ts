@@ -46,6 +46,7 @@ export type Database = {
           created_at: string
           date: string
           doctor_name: string
+          education_content: Json | null
           goal: string | null
           id: string
           reason: string
@@ -59,6 +60,7 @@ export type Database = {
           created_at?: string
           date: string
           doctor_name: string
+          education_content?: Json | null
           goal?: string | null
           id?: string
           reason: string
@@ -72,6 +74,7 @@ export type Database = {
           created_at?: string
           date?: string
           doctor_name?: string
+          education_content?: Json | null
           goal?: string | null
           id?: string
           reason?: string
@@ -91,6 +94,7 @@ export type Database = {
           first_name: string | null
           id: string
           last_name: string | null
+          stripe_customer_id: string | null
           updated_at: string
           user_id: string
           username: string | null
@@ -102,6 +106,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
+          stripe_customer_id?: string | null
           updated_at?: string
           user_id: string
           username?: string | null
@@ -113,6 +118,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
+          stripe_customer_id?: string | null
           updated_at?: string
           user_id?: string
           username?: string | null
@@ -154,6 +160,86 @@ export type Database = {
           visit_summary?: Json
         }
         Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string
+          id: string
+          interval: string
+          name: string
+          price: number
+          stripe_price_id: string | null
+          stripe_product_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interval: string
+          name: string
+          price: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interval?: string
+          name?: string
+          price?: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          created_at: string
+          current_period_end: string
+          current_period_start: string
+          id: string
+          plan_id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          current_period_end: string
+          current_period_start: string
+          id?: string
+          plan_id: string
+          status: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          plan_id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_announcement_views: {
         Row: {
@@ -225,13 +311,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      check_email_exists: {
-        Args: { email_address: string }
-        Returns: boolean
-      }
+      check_email_exists: { Args: { email_address: string }; Returns: boolean }
       get_user_by_username: {
         Args: { username_input: string }
         Returns: string
+      }
+      has_active_subscription: {
+        Args: { user_id_input: string }
+        Returns: boolean
       }
       log_auth_attempt: {
         Args: { success: boolean; username_input: string }

@@ -474,9 +474,11 @@ const VisitDetails = () => {
         {/* Pre-Visit Education */}
         <div className="mb-6">
           <PreVisitEducation 
+            appointmentId={appointment.id}
             appointmentReason={appointment.reason}
             goal={appointment.goal}
             symptoms={appointment.symptoms}
+            cachedContent={appointment.education_content}
           />
         </div>
 

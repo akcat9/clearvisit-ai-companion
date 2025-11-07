@@ -23,85 +23,51 @@ serve(async (req) => {
     console.log('Generating pre-visit education for:', appointmentReason);
 
     const prompt = `
-You are a medical educator with expertise in pharmaceuticals, diagnostics, and comprehensive patient care. Create detailed pre-visit education content.
+You are a medical educator helping patients prepare for their doctor visits. Create concise, practical education content.
 
 APPOINTMENT DETAILS:
 - Reason: "${appointmentReason}"
 - Goal: "${goal || 'Not specified'}"
 - Symptoms: "${symptoms || 'Not specified'}"
 
-Create comprehensive educational content to help the patient understand their condition BEFORE their visit. Include specific medical information while keeping language accessible.
+Create education content in EXACTLY these 5 categories. Keep content practical and actionable.
 
 Respond with ONLY valid JSON in this exact format:
 
 {
-  "mainCondition": {
-    "title": "Most likely condition name based on reason/symptoms",
-    "description": "Brief 1-line description",
-    "explanation": "2-3 sentences explaining what this condition is in simple terms"
+  "symptomsAndHistory": {
+    "title": "Understanding Symptoms and History",
+    "trackingTips": ["Tip about tracking onset, duration, triggers", "Tip about relief methods", "Another tracking tip"],
+    "descriptors": ["Common descriptor 1 (e.g., sharp vs dull pain)", "Descriptor 2 (e.g., localized vs radiating)", "Descriptor 3"],
+    "importantNotes": ["Note about medications to mention", "Note about allergies", "Note about past conditions"]
   },
-  "possibleCauses": ["Specific cause 1", "Specific cause 2", "Specific cause 3"],
-  "commonSymptoms": ["Specific symptom 1", "Specific symptom 2", "Specific symptom 3"],
-  "preparationTips": [
-    "Specific preparation tip for this condition",
-    "Another preparation tip", 
-    "Third tip for the visit"
-  ],
-  "questionsToAsk": [
-    "Important question about diagnosis",
-    "Question about treatment options",
-    "Question about prognosis and management"
-  ],
-  "pharmaceuticals": {
-    "title": "Common Medications for This Condition",
-    "medications": [
-      {
-        "name": "Medication name (generic/brand)",
-        "purpose": "What it treats",
-        "commonSideEffects": ["Side effect 1", "Side effect 2"],
-        "interactions": "Important drug interactions to discuss"
-      }
-    ]
+  "questionsForDoctor": {
+    "title": "Preparing Questions for the Doctor",
+    "topConcerns": ["How to list top 3 concerns", "How to prioritize what matters most"],
+    "effectiveQuestions": ["What are my treatment options?", "What's the next step if this doesn't work?", "What should I expect?"],
+    "clarificationPrompts": ["Can you explain that in simpler terms?", "How will this affect my daily life?", "What are the risks and benefits?"]
   },
-  "diagnosticTests": {
-    "title": "Tests Your Doctor May Order",
-    "tests": [
-      {
-        "name": "Test name",
-        "purpose": "What it checks for",
-        "procedure": "How it's done",
-        "preparation": "How to prepare"
-      }
-    ]
+  "testsAndMedications": {
+    "title": "Understanding Tests, Medications, and Referrals",
+    "whatToExpect": ["What to expect from labs", "What imaging tests might involve", "How prescriptions work"],
+    "medications": ["Difference between generic and brand", "Questions to ask about side effects", "Cost considerations"],
+    "referrals": ["How referrals work", "What follow-ups might be needed", "When to schedule next appointment"]
   },
-  "treatmentTimeline": {
-    "title": "What to Expect",
-    "phases": [
-      {
-        "phase": "Initial treatment",
-        "duration": "Time frame",
-        "expectations": "What to expect during this phase"
-      }
-    ]
+  "communicationAndLiteracy": {
+    "title": "Communication and Health Literacy",
+    "explainingSymptoms": ["How to describe symptoms without jargon", "Using specific examples", "Being clear about timeline"],
+    "takingNotes": ["Using Tadoc's AI transcription feature", "Writing down key points", "Recording important instructions"],
+    "confirmUnderstanding": ["Using teach-back method", "Asking for clarification", "Confirming next steps"]
   },
-  "lifestyleFactors": {
-    "title": "Lifestyle Considerations",
-    "diet": ["Dietary recommendation 1", "Dietary recommendation 2"],
-    "exercise": ["Exercise guideline 1", "Exercise guideline 2"],
-    "lifestyle": ["Lifestyle modification 1", "Lifestyle modification 2"]
-  },
-  "costInsurance": {
-    "title": "Cost and Insurance Information",
-    "questions": [
-      "What will this treatment cost?",
-      "Is this covered by my insurance?",
-      "Are there generic alternatives?"
-    ],
-    "tips": ["Cost-saving tip 1", "Insurance tip 2"]
+  "insuranceAndCosts": {
+    "title": "Insurance, Costs, and Visit Logistics",
+    "insurance": ["How to confirm coverage before visit", "Understanding co-pays and deductibles", "Prior authorization basics"],
+    "whatToBring": ["ID and insurance card", "Current medication list", "Referral forms if needed"],
+    "costTips": ["Ask about payment options", "Inquire about generic alternatives", "Check if tests are covered"]
   }
 }
 
-Include specific drug names, test procedures, and measurable recommendations where appropriate. Keep explanations simple but comprehensive.`;
+Keep each section focused, practical, and specific to the appointment reason where relevant.`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -110,15 +76,15 @@ Include specific drug names, test procedures, and measurable recommendations whe
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4o',
         messages: [
           { 
             role: 'system', 
-            content: 'You are a medical educator. Create patient education content in simple terms. Respond only with valid JSON.' 
+            content: 'You are a medical educator. Create patient education content in simple, practical terms. Respond only with valid JSON.' 
           },
           { role: 'user', content: prompt }
         ],
-        max_completion_tokens: 1200,
+        max_tokens: 2000,
       }),
     });
 
@@ -128,53 +94,35 @@ Include specific drug names, test procedures, and measurable recommendations whe
       
       // Fallback response
       const fallbackContent = {
-        mainCondition: {
-          title: appointmentReason || "Your Health Concern",
-          description: "Your doctor will help evaluate your condition",
-          explanation: "During your visit, your doctor will examine you and discuss your symptoms to determine the best treatment plan for your health concern."
+        symptomsAndHistory: {
+          title: "Understanding Symptoms and History",
+          trackingTips: ["Track when symptoms started and how they've changed", "Note what makes symptoms better or worse", "Keep a daily log if symptoms vary"],
+          descriptors: ["Describe pain intensity (1-10 scale)", "Note location and if it moves", "Use clear terms like sharp, dull, throbbing"],
+          importantNotes: ["List all current medications and supplements", "Mention any drug allergies", "Note relevant family health history"]
         },
-        possibleCauses: [
-          "Various factors can contribute to this condition",
-          "Your doctor will help identify the specific cause",
-          "Medical history and symptoms provide important clues"
-        ],
-        commonSymptoms: [
-          "Symptoms can vary from person to person",
-          "Your specific symptoms will be discussed",
-          "Keep track of when symptoms occur"
-        ],
-        preparationTips: [
-          "Write down all your symptoms and when they started",
-          "List any medications you are currently taking",
-          "Prepare questions about your condition"
-        ],
-        questionsToAsk: [
-          "What is causing my symptoms?",
-          "What treatment options are available?", 
-          "How can I manage this condition?"
-        ],
-        pharmaceuticals: {
-          title: "Medications Discussion",
-          medications: []
+        questionsForDoctor: {
+          title: "Preparing Questions for the Doctor",
+          topConcerns: ["Write down your top 3 concerns before the visit", "Prioritize what's most affecting your daily life"],
+          effectiveQuestions: ["What are my treatment options?", "What happens if we don't treat this?", "What should I expect in terms of recovery?"],
+          clarificationPrompts: ["Can you explain that in simpler terms?", "How will this affect my daily routine?", "What warning signs should I watch for?"]
         },
-        diagnosticTests: {
-          title: "Potential Tests",
-          tests: []
+        testsAndMedications: {
+          title: "Understanding Tests, Medications, and Referrals",
+          whatToExpect: ["Labs may require fasting", "Imaging tests are usually painless", "Results may take a few days"],
+          medications: ["Generic drugs have the same active ingredients as brand names", "Ask about side effects and interactions", "Check if samples are available"],
+          referrals: ["Referrals connect you to specialists", "Schedule follow-ups before leaving", "Ask how long to wait for improvement"]
         },
-        treatmentTimeline: {
-          title: "Treatment Expectations",
-          phases: []
+        communicationAndLiteracy: {
+          title: "Communication and Health Literacy",
+          explainingSymptoms: ["Use specific examples and timeframes", "Avoid medical jargon unless you're certain", "Be honest about all symptoms, even embarrassing ones"],
+          takingNotes: ["Use Tadoc's AI transcription to record the visit", "Write down medication names and dosages", "Note any follow-up instructions"],
+          confirmUnderstanding: ["Repeat back instructions in your own words", "Ask the doctor to clarify anything unclear", "Confirm next steps before leaving"]
         },
-        lifestyleFactors: {
-          title: "Lifestyle Considerations",
-          diet: ["Discuss dietary needs with your doctor"],
-          exercise: ["Get exercise recommendations from your doctor"],
-          lifestyle: ["Review lifestyle factors during your visit"]
-        },
-        costInsurance: {
-          title: "Financial Planning",
-          questions: ["What will treatment cost?", "Is this covered by insurance?"],
-          tips: ["Ask about payment options", "Inquire about generic medications"]
+        insuranceAndCosts: {
+          title: "Insurance, Costs, and Visit Logistics",
+          insurance: ["Call insurance before your visit to verify coverage", "Ask about co-pays when scheduling", "Understand what prior authorization means"],
+          whatToBring: ["Photo ID and insurance card", "List of current medications with dosages", "Any referral paperwork"],
+          costTips: ["Ask if generic options are available", "Inquire about payment plans if needed", "Check if tests can be done at lower-cost facilities"]
         }
       };
       
@@ -191,45 +139,35 @@ Include specific drug names, test procedures, and measurable recommendations whe
     if (!content || content.trim() === '') {
       console.error('OpenAI returned empty content');
       const fallbackContent = {
-        mainCondition: {
-          title: appointmentReason || "Your Health Concern",
-          description: "Your doctor will help evaluate your condition",
-          explanation: "During your visit, your doctor will examine you and discuss your symptoms to determine the best treatment plan."
+        symptomsAndHistory: {
+          title: "Understanding Symptoms and History",
+          trackingTips: ["Track symptom patterns", "Note triggers and relief", "Monitor changes over time"],
+          descriptors: ["Use specific descriptive terms", "Note severity and location", "Describe timing and duration"],
+          importantNotes: ["List medications and doses", "Mention allergies", "Note medical history"]
         },
-        possibleCauses: ["Multiple factors may be involved", "Your doctor will investigate", "Medical evaluation will help determine"],
-        commonSymptoms: ["Varies by individual", "Will be discussed during visit", "Keep track of your experiences"],
-        preparationTips: [
-          "List your main concerns",
-          "Note symptom patterns", 
-          "Bring medication list"
-        ],
-        questionsToAsk: [
-          "What should I know about my condition?",
-          "What are my treatment options?",
-          "How can I best manage this?"
-        ],
-        pharmaceuticals: {
-          title: "Medications Discussion",
-          medications: []
+        questionsForDoctor: {
+          title: "Preparing Questions for the Doctor",
+          topConcerns: ["List top 3 concerns", "Prioritize goals"],
+          effectiveQuestions: ["What are my options?", "What's the timeline?", "What if this doesn't work?"],
+          clarificationPrompts: ["Please explain in simpler terms", "How does this affect me?", "What should I watch for?"]
         },
-        diagnosticTests: {
-          title: "Potential Tests",
-          tests: []
+        testsAndMedications: {
+          title: "Understanding Tests, Medications, and Referrals",
+          whatToExpect: ["Expect labs or imaging", "Understand prescription process", "Know result timelines"],
+          medications: ["Ask about generic vs brand", "Discuss side effects", "Check costs"],
+          referrals: ["Understand specialist referrals", "Schedule follow-ups", "Know next steps"]
         },
-        treatmentTimeline: {
-          title: "Treatment Expectations",
-          phases: []
+        communicationAndLiteracy: {
+          title: "Communication and Health Literacy",
+          explainingSymptoms: ["Use clear, specific language", "Provide examples", "Be thorough and honest"],
+          takingNotes: ["Use Tadoc's AI transcription", "Write key points", "Record instructions"],
+          confirmUnderstanding: ["Use teach-back method", "Ask for clarification", "Confirm next steps"]
         },
-        lifestyleFactors: {
-          title: "Lifestyle Considerations",
-          diet: ["Discuss with your doctor"],
-          exercise: ["Get recommendations during visit"],
-          lifestyle: ["Review during appointment"]
-        },
-        costInsurance: {
-          title: "Financial Planning",
-          questions: ["Ask about costs", "Check insurance coverage"],
-          tips: ["Inquire about options", "Ask about alternatives"]
+        insuranceAndCosts: {
+          title: "Insurance, Costs, and Visit Logistics",
+          insurance: ["Verify coverage", "Understand co-pays", "Check authorization needs"],
+          whatToBring: ["ID and insurance", "Medication list", "Referral forms"],
+          costTips: ["Ask about payment options", "Check generic availability", "Inquire about coverage"]
         }
       };
       
@@ -249,37 +187,35 @@ Include specific drug names, test procedures, and measurable recommendations whe
       console.error('Failed to parse OpenAI response:', parseError);
       
       const fallbackContent = {
-        mainCondition: {
-          title: appointmentReason || "Your Health Concern", 
-          description: "Your doctor will help evaluate your condition",
-          explanation: "Your doctor will examine your symptoms and provide guidance on your health concern during the visit."
+        symptomsAndHistory: {
+          title: "Understanding Symptoms and History",
+          trackingTips: ["Track symptoms", "Note patterns", "Monitor changes"],
+          descriptors: ["Describe clearly", "Be specific", "Use examples"],
+          importantNotes: ["List medications", "Note allergies", "Medical history"]
         },
-        possibleCauses: ["Will be determined during evaluation"],
-        commonSymptoms: ["Will be discussed with your doctor"],
-        preparationTips: ["Prepare your questions", "List your symptoms", "Bring medical history"],
-        questionsToAsk: ["What is my diagnosis?", "What are treatment options?", "What should I expect?"],
-        pharmaceuticals: {
-          title: "Medications Discussion",
-          medications: []
+        questionsForDoctor: {
+          title: "Preparing Questions for the Doctor",
+          topConcerns: ["List concerns", "Prioritize"],
+          effectiveQuestions: ["What are options?", "Timeline?", "Next steps?"],
+          clarificationPrompts: ["Explain simply", "How affects me?", "Watch for?"]
         },
-        diagnosticTests: {
-          title: "Potential Tests",
-          tests: []
+        testsAndMedications: {
+          title: "Understanding Tests, Medications, and Referrals",
+          whatToExpect: ["Labs or imaging", "Prescriptions", "Results timing"],
+          medications: ["Generic vs brand", "Side effects", "Costs"],
+          referrals: ["Specialist referrals", "Follow-ups", "Next steps"]
         },
-        treatmentTimeline: {
-          title: "Treatment Expectations",
-          phases: []
+        communicationAndLiteracy: {
+          title: "Communication and Health Literacy",
+          explainingSymptoms: ["Clear language", "Examples", "Be honest"],
+          takingNotes: ["Use Tadoc AI", "Key points", "Instructions"],
+          confirmUnderstanding: ["Teach-back", "Clarify", "Confirm"]
         },
-        lifestyleFactors: {
-          title: "Lifestyle Considerations",
-          diet: ["Discuss with doctor"],
-          exercise: ["Get recommendations"],
-          lifestyle: ["Review during visit"]
-        },
-        costInsurance: {
-          title: "Financial Planning",
-          questions: ["Ask about costs"],
-          tips: ["Inquire about options"]
+        insuranceAndCosts: {
+          title: "Insurance, Costs, and Visit Logistics",
+          insurance: ["Verify coverage", "Co-pays", "Authorization"],
+          whatToBring: ["ID/insurance", "Med list", "Forms"],
+          costTips: ["Payment options", "Generics", "Coverage"]
         }
       };
       

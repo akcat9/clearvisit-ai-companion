@@ -66,6 +66,8 @@ export class RealtimeTranscription {
   private recorder: AudioRecorder | null = null;
   private isConnected = false;
   private processedItems = new Set<string>();
+  private processedTranscripts = new Set<string>();
+  private lastTranscriptTime = 0;
   private isPaused = false;
 
   constructor(
@@ -127,16 +129,50 @@ export class RealtimeTranscription {
           
           if (event.type === 'conversation.item.input_audio_transcription.completed') {
             const itemId = event.item_id;
+            const transcript = event.transcript?.trim() || '';
+            const currentTime = Date.now();
             
-            // Skip if we've already processed this item or if paused
-            if (this.processedItems.has(itemId) || this.isPaused) {
-              console.log('Skipping transcript - duplicate or paused:', itemId);
+            // Skip if paused
+            if (this.isPaused) {
+              console.log('Skipping transcript - paused:', itemId);
               return;
             }
             
+            // Skip if empty
+            if (!transcript) {
+              console.log('Skipping empty transcript:', itemId);
+              return;
+            }
+            
+            // Create unique keys for deduplication
+            const transcriptHash = transcript.toLowerCase().slice(-50); // Last 50 chars
+            const uniqueKey = `${itemId}_${transcriptHash}`;
+            
+            // Skip if we've seen this exact transcript recently (within 2 seconds)
+            if (this.processedTranscripts.has(uniqueKey) && (currentTime - this.lastTranscriptTime) < 2000) {
+              console.log('Skipping duplicate transcript:', itemId, transcript.slice(0, 30));
+              return;
+            }
+            
+            // Skip if we've seen this item_id already
+            if (this.processedItems.has(itemId)) {
+              console.log('Skipping duplicate item_id:', itemId);
+              return;
+            }
+            
+            // Mark as processed
             this.processedItems.add(itemId);
-            console.log('New transcription for item', itemId, ':', event.transcript);
-            this.onTranscript(event.transcript);
+            this.processedTranscripts.add(uniqueKey);
+            this.lastTranscriptTime = currentTime;
+            
+            // Clean up old transcripts (keep only last 100)
+            if (this.processedTranscripts.size > 100) {
+              const firstKey = this.processedTranscripts.values().next().value;
+              this.processedTranscripts.delete(firstKey);
+            }
+            
+            console.log('✓ New transcription:', transcript);
+            this.onTranscript(transcript);
           }
         } catch (err) {
           console.error('Error parsing message:', err);
@@ -206,6 +242,8 @@ export class RealtimeTranscription {
     this.isConnected = false;
     this.isPaused = false;
     this.processedItems.clear();
+    this.processedTranscripts.clear();
+    this.lastTranscriptTime = 0;
   }
 
   isActive(): boolean {

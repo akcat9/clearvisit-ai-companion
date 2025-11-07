@@ -23,51 +23,113 @@ serve(async (req) => {
     console.log('Generating pre-visit education for:', appointmentReason);
 
     const prompt = `
-You are a medical educator helping patients prepare for their doctor visits. Create concise, practical education content.
+You are a medical educator specializing in condition-specific patient preparation for doctor visits.
 
-APPOINTMENT DETAILS:
-- Reason: "${appointmentReason}"
-- Goal: "${goal || 'Not specified'}"
-- Symptoms: "${symptoms || 'Not specified'}"
+CRITICAL: Every single tip, question, and piece of advice MUST be specifically tailored to this patient's exact condition. Never give generic advice.
 
-Create education content in EXACTLY these 5 categories. Keep content practical and actionable.
+PATIENT'S CONDITION:
+- Main Reason for Visit: "${appointmentReason}"
+- Patient's Goal: "${goal || 'Not specified'}"
+- Current Symptoms: "${symptoms || 'Not specified'}"
 
-Respond with ONLY valid JSON in this exact format:
+YOUR TASK: Create highly specific, actionable education content for THIS EXACT CONDITION. Each section must reference the patient's condition directly.
+
+REQUIRED JSON FORMAT (respond with ONLY valid JSON):
 
 {
   "symptomsAndHistory": {
-    "title": "Understanding Symptoms and History",
-    "trackingTips": ["Tip about tracking onset, duration, triggers", "Tip about relief methods", "Another tracking tip"],
-    "descriptors": ["Common descriptor 1 (e.g., sharp vs dull pain)", "Descriptor 2 (e.g., localized vs radiating)", "Descriptor 3"],
-    "importantNotes": ["Note about medications to mention", "Note about allergies", "Note about past conditions"]
+    "title": "Understanding Your ${appointmentReason} - Symptoms and History",
+    "trackingTips": [
+      "For ${appointmentReason}, track: [specific symptom tracking for this condition]",
+      "Monitor: [condition-specific triggers and patterns]",
+      "Keep a log of: [specific things to track for this condition]"
+    ],
+    "descriptors": [
+      "Common descriptions for ${appointmentReason}: [condition-specific descriptor]",
+      "[Another condition-specific way to describe the problem]",
+      "[Third condition-specific descriptor]"
+    ],
+    "importantNotes": [
+      "For ${appointmentReason}, make sure to mention: [condition-specific medications/history]",
+      "[Condition-specific allergy or interaction concerns]",
+      "[Condition-specific past medical history to mention]"
+    ]
   },
   "questionsForDoctor": {
-    "title": "Preparing Questions for the Doctor",
-    "topConcerns": ["How to list top 3 concerns", "How to prioritize what matters most"],
-    "effectiveQuestions": ["What are my treatment options?", "What's the next step if this doesn't work?", "What should I expect?"],
-    "clarificationPrompts": ["Can you explain that in simpler terms?", "How will this affect my daily life?", "What are the risks and benefits?"]
+    "title": "Questions About Your ${appointmentReason}",
+    "topConcerns": [
+      "For ${appointmentReason}, your top concerns should include: [specific concern]",
+      "[Another condition-specific priority]"
+    ],
+    "effectiveQuestions": [
+      "What treatment options exist specifically for ${appointmentReason}?",
+      "With ${appointmentReason}, what's the expected timeline for [condition-specific outcome]?",
+      "If [condition-specific treatment] doesn't work, what's next?",
+      "[Another highly specific question for this condition]"
+    ],
+    "clarificationPrompts": [
+      "How will treating my ${appointmentReason} affect [condition-specific daily activity]?",
+      "What warning signs specific to ${appointmentReason} should I watch for?",
+      "Can you explain how [condition-specific treatment/test] works?"
+    ]
   },
   "testsAndMedications": {
-    "title": "Understanding Tests, Medications, and Referrals",
-    "whatToExpect": ["What to expect from labs", "What imaging tests might involve", "How prescriptions work"],
-    "medications": ["Difference between generic and brand", "Questions to ask about side effects", "Cost considerations"],
-    "referrals": ["How referrals work", "What follow-ups might be needed", "When to schedule next appointment"]
+    "title": "Tests and Treatments for ${appointmentReason}",
+    "whatToExpect": [
+      "For ${appointmentReason}, common tests include: [specific test 1 and why]",
+      "[Specific test/procedure 2 for this condition]",
+      "[What to expect during condition-specific examination]"
+    ],
+    "medications": [
+      "Common medications for ${appointmentReason}: [specific drug class and examples]",
+      "For ${appointmentReason}, ask about: [condition-specific medication concerns]",
+      "[Condition-specific side effects to discuss]"
+    ],
+    "referrals": [
+      "With ${appointmentReason}, you may be referred to: [specific specialist type]",
+      "[Condition-specific follow-up timing and why]",
+      "[What happens if symptoms persist - condition-specific next steps]"
+    ]
   },
   "communicationAndLiteracy": {
-    "title": "Communication and Health Literacy",
-    "explainingSymptoms": ["How to describe symptoms without jargon", "Using specific examples", "Being clear about timeline"],
-    "takingNotes": ["Using Tadoc's AI transcription feature", "Writing down key points", "Recording important instructions"],
-    "confirmUnderstanding": ["Using teach-back method", "Asking for clarification", "Confirming next steps"]
+    "title": "Communicating About Your ${appointmentReason}",
+    "explainingSymptoms": [
+      "When describing ${appointmentReason}, focus on: [specific aspect 1]",
+      "For ${appointmentReason}, doctors need to know: [specific information]",
+      "[Condition-specific timeline or severity information to share]"
+    ],
+    "takingNotes": [
+      "Use Tadoc's AI to capture: [condition-specific instructions]",
+      "Write down: [specific information for this condition]",
+      "Record: [condition-specific medication names or dosages]"
+    ],
+    "confirmUnderstanding": [
+      "For ${appointmentReason} treatment, ask the doctor to explain: [specific thing]",
+      "Confirm you understand: [condition-specific instruction or restriction]",
+      "[Condition-specific follow-up question to ensure understanding]"
+    ]
   },
   "insuranceAndCosts": {
-    "title": "Insurance, Costs, and Visit Logistics",
-    "insurance": ["How to confirm coverage before visit", "Understanding co-pays and deductibles", "Prior authorization basics"],
-    "whatToBring": ["ID and insurance card", "Current medication list", "Referral forms if needed"],
-    "costTips": ["Ask about payment options", "Inquire about generic alternatives", "Check if tests are covered"]
+    "title": "Coverage and Costs for ${appointmentReason}",
+    "insurance": [
+      "For ${appointmentReason}, verify coverage for: [specific test/treatment]",
+      "[Condition-specific prior authorization concern]",
+      "Check if [condition-specific medication or procedure] requires special approval"
+    ],
+    "whatToBring": [
+      "For ${appointmentReason}, bring: [condition-specific documents]",
+      "List of: [condition-specific medications or supplements]",
+      "[Condition-specific previous test results or imaging]"
+    ],
+    "costTips": [
+      "For ${appointmentReason}, ask about cost of: [specific treatment or test]",
+      "[Condition-specific generic medication alternatives]",
+      "Check if [condition-specific therapy or treatment] is covered"
+    ]
   }
 }
 
-Keep each section focused, practical, and specific to the appointment reason where relevant.`;
+REMEMBER: Mention "${appointmentReason}" frequently throughout. Never give generic advice - everything must be specific to THIS condition.`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -80,11 +142,11 @@ Keep each section focused, practical, and specific to the appointment reason whe
         messages: [
           { 
             role: 'system', 
-            content: 'You are a medical educator. Create patient education content in simple, practical terms. Respond only with valid JSON.' 
+            content: 'You are a medical educator specializing in condition-specific patient education. Every piece of advice must be tailored to the patient\'s exact medical situation - never give generic tips. Respond only with valid JSON in the exact format requested.' 
           },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 2000,
+        max_tokens: 3000,
       }),
     });
 
@@ -92,13 +154,13 @@ Keep each section focused, practical, and specific to the appointment reason whe
       const errorText = await response.text();
       console.error(`OpenAI API error: ${response.status} - ${errorText}`);
       
-      // Fallback response
+      // Fallback response with condition awareness
       const fallbackContent = {
         symptomsAndHistory: {
-          title: "Understanding Symptoms and History",
-          trackingTips: ["Track when symptoms started and how they've changed", "Note what makes symptoms better or worse", "Keep a daily log if symptoms vary"],
-          descriptors: ["Describe pain intensity (1-10 scale)", "Note location and if it moves", "Use clear terms like sharp, dull, throbbing"],
-          importantNotes: ["List all current medications and supplements", "Mention any drug allergies", "Note relevant family health history"]
+          title: `Understanding Your ${appointmentReason} - Symptoms and History`,
+          trackingTips: [`For ${appointmentReason}, track when symptoms started and patterns`, `Note what makes your ${appointmentReason} symptoms better or worse`, `Keep a daily log of your ${appointmentReason} progression`],
+          descriptors: [`Describe your ${appointmentReason} intensity (1-10 scale)`, `Note the location and nature of your ${appointmentReason}`, `Use clear terms for your ${appointmentReason} symptoms`],
+          importantNotes: [`List medications you're taking for ${appointmentReason}`, `Mention any drug allergies relevant to ${appointmentReason} treatment`, `Note your history with ${appointmentReason} or similar conditions`]
         },
         questionsForDoctor: {
           title: "Preparing Questions for the Doctor",

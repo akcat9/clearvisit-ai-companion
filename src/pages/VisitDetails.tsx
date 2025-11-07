@@ -42,6 +42,9 @@ const VisitDetails = () => {
   const { id } = useParams();
   const { toast } = useToast();
   const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const transcriptionBufferRef = useRef<string>('');
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSaveTimeRef = useRef<number>(0);
 
   useEffect(() => {
     if (!user) return;
@@ -51,6 +54,9 @@ const VisitDetails = () => {
     return () => {
       if (durationIntervalRef.current) {
         clearInterval(durationIntervalRef.current);
+      }
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
     };
   }, [id, user]);
@@ -112,41 +118,64 @@ const VisitDetails = () => {
     }
   };
 
-  // Auto-save transcription to database
-  const autoSaveTranscription = async (transcription: string) => {
+  // Debounced auto-save transcription to database (max once every 2 seconds)
+  const debouncedAutoSave = (transcription: string) => {
     if (!id || !user?.id || !transcription.trim()) return;
     
-    try {
-      await supabase
-        .from('visit_records')
-        .upsert({
-          appointment_id: id,
-          user_id: user.id,
-          transcription: transcription,
-          updated_at: new Date().toISOString()
-        }, { 
-          onConflict: 'appointment_id'
-        });
-    } catch (error) {
-      console.error('Auto-save failed:', error);
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
+    
+    // Set new timeout to save after 2 seconds of no new transcriptions
+    saveTimeoutRef.current = setTimeout(async () => {
+      const now = Date.now();
+      
+      // Also check if we've saved recently (throttle to once per 2 seconds minimum)
+      if (now - lastSaveTimeRef.current < 2000) {
+        return;
+      }
+      
+      try {
+        await supabase
+          .from('visit_records')
+          .upsert({
+            appointment_id: id,
+            user_id: user.id,
+            transcription: transcription,
+            updated_at: new Date().toISOString()
+          }, { 
+            onConflict: 'appointment_id'
+          });
+        
+        lastSaveTimeRef.current = now;
+        console.log('✓ Auto-saved transcription');
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+      }
+    }, 2000);
   };
 
   // Recording with OpenAI Realtime API (live transcription)
   const handleStartRecording = async () => {
     try {
       setLiveTranscription('');
+      transcriptionBufferRef.current = '';
       setRecordingComplete(false);
       setIsPaused(false);
       
       const recorder = new RealtimeTranscription(
         (transcription) => {
-          setLiveTranscription(prev => {
-            const newText = prev ? prev + ' ' + transcription : transcription;
-            // Auto-save on each transcription update
-            autoSaveTranscription(newText);
-            return newText;
-          });
+          // Accumulate transcriptions in buffer
+          transcriptionBufferRef.current = transcriptionBufferRef.current 
+            ? transcriptionBufferRef.current + ' ' + transcription 
+            : transcription;
+          
+          // Update UI immediately
+          setLiveTranscription(transcriptionBufferRef.current);
+          
+          // Debounced save to database
+          debouncedAutoSave(transcriptionBufferRef.current);
         },
         (error) => {
           toast({
@@ -190,6 +219,13 @@ const VisitDetails = () => {
 
   const handlePauseRecording = () => {
     if (!audioRecorder) return;
+    
+    // Pause timer
+    if (durationIntervalRef.current) {
+      clearInterval(durationIntervalRef.current);
+      durationIntervalRef.current = null;
+    }
+    
     audioRecorder.pause();
     setIsPaused(true);
     
@@ -201,6 +237,14 @@ const VisitDetails = () => {
 
   const handleResumeRecording = () => {
     if (!audioRecorder) return;
+    
+    // Resume timer from current duration
+    const startTime = Date.now() - (recordingDuration * 1000);
+    durationIntervalRef.current = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      setRecordingDuration(elapsed);
+    }, 1000);
+    
     audioRecorder.resume();
     setIsPaused(false);
     

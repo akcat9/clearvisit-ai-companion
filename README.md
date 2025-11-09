@@ -4,6 +4,29 @@
 
 **URL**: https://lovable.dev/projects/d8070118-22c4-4cad-a5c6-c9518c9a8e9f
 
+## Mobile & Android Compatibility
+
+This app is fully optimized for mobile devices including Android smartphones:
+
+### Android Browser Support
+- ✅ **Android Chrome**: Fully supported with audio recording via WebRTC
+- ✅ **Android Firefox**: Supported
+- ✅ **Samsung Internet**: Supported
+
+### Key Mobile Features
+- Touch-optimized UI with proper touch targets (minimum 44x44px)
+- Responsive layouts for all screen sizes
+- Safe area support for notched devices
+- Optimized input fields (no zoom on focus)
+- Smooth scrolling and animations
+
+### For Developers
+If experiencing issues on Android:
+1. Ensure microphone permissions are granted in browser settings
+2. Use HTTPS (required for microphone access)
+3. Clear browser cache and reload
+4. Check that WebRTC is enabled in browser settings
+
 ## How can I edit this code?
 
 There are several ways of editing your application.

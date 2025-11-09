@@ -60,106 +60,106 @@ export const AppointmentModal = ({ onClose, onSubmit }: AppointmentModalProps) =
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-md w-[95vw] max-h-[90vh] overflow-y-auto mx-4">
+      <DialogContent className="max-w-md w-[calc(100vw-2rem)] sm:w-full max-h-[85vh] overflow-y-auto mx-2 sm:mx-4">
         <DialogHeader>
-          <DialogTitle>Create New Appointment</DialogTitle>
+          <DialogTitle className="text-base sm:text-lg">Create New Appointment</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="doctorName">Doctor's Name</Label>
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="doctorName" className="text-sm">Doctor's Name</Label>
               <Input
                 id="doctorName"
-                placeholder="John Smith"
+                placeholder="Dr. John Smith"
                 value={formData.doctorName}
                 onChange={(e) => handleChange("doctorName", e.target.value)}
                 required
-                className={errors.doctorName ? "border-destructive" : ""}
+                className={`text-sm sm:text-base ${errors.doctorName ? "border-destructive" : ""}`}
               />
               {errors.doctorName && (
-                <p className="text-sm text-destructive">{errors.doctorName}</p>
+                <p className="text-xs sm:text-sm text-destructive">{errors.doctorName}</p>
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label htmlFor="date" className="text-sm">Date</Label>
                 <Input
                   id="date"
                   type="date"
                   value={formData.date}
                   onChange={(e) => handleChange("date", e.target.value)}
                   required
-                  className={errors.date ? "border-destructive" : ""}
+                  className={`text-sm sm:text-base ${errors.date ? "border-destructive" : ""}`}
                 />
                 {errors.date && (
-                  <p className="text-sm text-destructive">{errors.date}</p>
+                  <p className="text-xs sm:text-sm text-destructive">{errors.date}</p>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="time">Time</Label>
+              <div className="space-y-1.5 sm:space-y-2">
+                <Label htmlFor="time" className="text-sm">Time</Label>
                 <Input
                   id="time"
                   type="time"
                   value={formData.time}
                   onChange={(e) => handleChange("time", e.target.value)}
                   required
-                  className={errors.time ? "border-destructive" : ""}
+                  className={`text-sm sm:text-base ${errors.time ? "border-destructive" : ""}`}
                 />
                 {errors.time && (
-                  <p className="text-sm text-destructive">{errors.time}</p>
+                  <p className="text-xs sm:text-sm text-destructive">{errors.time}</p>
                 )}
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="reason">Reason for Visit</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="reason" className="text-sm">Reason for Visit</Label>
               <Textarea
                 id="reason"
                 placeholder="Describe the reason for your appointment"
                 value={formData.reason}
                 onChange={(e) => handleChange("reason", e.target.value)}
                 required
-                className={errors.reason ? "border-destructive" : ""}
+                className={`text-sm sm:text-base min-h-[80px] ${errors.reason ? "border-destructive" : ""}`}
               />
               {errors.reason && (
-                <p className="text-sm text-destructive">{errors.reason}</p>
+                <p className="text-xs sm:text-sm text-destructive">{errors.reason}</p>
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="goal">Goal for Visit</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="goal" className="text-sm">Goal for Visit</Label>
               <Textarea
                 id="goal"
-                placeholder="What do you hope to achieve with this appointment?"
+                placeholder="What do you hope to achieve?"
                 value={formData.goal}
                 onChange={(e) => handleChange("goal", e.target.value)}
-                className={errors.goal ? "border-destructive" : ""}
+                className={`text-sm sm:text-base min-h-[80px] ${errors.goal ? "border-destructive" : ""}`}
               />
               {errors.goal && (
-                <p className="text-sm text-destructive">{errors.goal}</p>
+                <p className="text-xs sm:text-sm text-destructive">{errors.goal}</p>
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="symptoms">Symptoms (optional)</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="symptoms" className="text-sm">Symptoms (optional)</Label>
               <Textarea
                 id="symptoms"
-                placeholder="List any symptoms you're experiencing"
+                placeholder="List any symptoms"
                 value={formData.symptoms}
                 onChange={(e) => handleChange("symptoms", e.target.value)}
-                className={errors.symptoms ? "border-destructive" : ""}
+                className={`text-sm sm:text-base min-h-[80px] ${errors.symptoms ? "border-destructive" : ""}`}
               />
               {errors.symptoms && (
-                <p className="text-sm text-destructive">{errors.symptoms}</p>
+                <p className="text-xs sm:text-sm text-destructive">{errors.symptoms}</p>
               )}
             </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+          <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1 text-sm">
               Cancel
             </Button>
-            <Button type="submit" className="flex-1">
+            <Button type="submit" className="flex-1 text-sm">
               Create Appointment
             </Button>
           </div>

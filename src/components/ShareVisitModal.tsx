@@ -148,41 +148,41 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md max-w-[95vw] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto mx-2">
         <DialogHeader>
-          <DialogTitle>Share Visit Summary</DialogTitle>
+          <DialogTitle className="text-base sm:text-lg">Share Visit Summary</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="emails">Recipient Emails</Label>
+        <div className="space-y-3 sm:space-y-4">
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label htmlFor="emails" className="text-sm">Recipient Emails</Label>
             <MultiEmailInput
               emails={formData.recipientEmails}
               onEmailsChange={(emails) => setFormData(prev => ({ ...prev, recipientEmails: emails }))}
               placeholder="Enter email addresses..."
             />
             {errors.recipientEmails && (
-              <p className="text-sm text-destructive">{errors.recipientEmails}</p>
+              <p className="text-xs sm:text-sm text-destructive">{errors.recipientEmails}</p>
             )}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="message">Message (Optional)</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label htmlFor="message" className="text-sm">Message (Optional)</Label>
             <Textarea
               id="message"
               placeholder="Add a personal message..."
               rows={3}
               value={formData.message}
               onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
-              className={errors.message ? "border-destructive" : ""}
+              className={`text-sm sm:text-base ${errors.message ? "border-destructive" : ""}`}
             />
             {errors.message && (
-              <p className="text-sm text-destructive">{errors.message}</p>
+              <p className="text-xs sm:text-sm text-destructive">{errors.message}</p>
             )}
           </div>
-          <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => setIsOpen(false)}>
+          <div className="flex flex-col-reverse sm:flex-row gap-2 justify-end">
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="text-sm">
               Cancel
             </Button>
-            <Button onClick={handleShare} disabled={isSharing}>
+            <Button onClick={handleShare} disabled={isSharing} className="text-sm">
               {isSharing ? "Sharing..." : "Share"}
             </Button>
           </div>

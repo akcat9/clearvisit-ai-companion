@@ -421,49 +421,49 @@ const VisitDetails = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Header />
-      <div className="container mx-auto p-3 sm:p-4 lg:p-6 max-w-4xl">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+      <div className="container mx-auto px-2 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 max-w-4xl">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-6">
           <Button
             variant="outline"
             size="sm"
             onClick={() => navigate("/dashboard")}
-            className="flex items-center gap-2 w-full sm:w-auto"
+            className="flex items-center gap-2 w-full sm:w-auto text-sm"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Button>
-          <h1 className="text-xl sm:text-2xl font-bold">Visit Details</h1>
+          <h1 className="text-lg sm:text-2xl font-bold">Visit Details</h1>
         </div>
 
         {/* Appointment Info */}
-        <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-blue-900 flex items-center gap-2">
-              <AlertCircle className="w-5 h-5" />
+        <Card className="mb-4 sm:mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardTitle className="text-blue-900 flex items-center gap-2 text-base sm:text-lg">
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
               Appointment Information
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3">
-            <div className="flex flex-wrap gap-2 text-sm">
+          <CardContent className="grid gap-2 sm:gap-3">
+            <div className="flex flex-wrap gap-1 sm:gap-2 text-xs sm:text-sm">
               <span className="font-semibold text-blue-800">Doctor:</span> 
               <span className="text-blue-700">{appointment.doctorName}</span>
             </div>
-            <div className="flex flex-wrap gap-2 text-sm">
+            <div className="flex flex-wrap gap-1 sm:gap-2 text-xs sm:text-sm">
               <span className="font-semibold text-blue-800">Date & Time:</span> 
               <span className="text-blue-700">{appointment.date} at {formatTime(appointment.time)}</span>
             </div>
-            <div className="flex flex-wrap gap-2 text-sm">
+            <div className="flex flex-wrap gap-1 sm:gap-2 text-xs sm:text-sm">
               <span className="font-semibold text-blue-800">Reason:</span> 
               <span className="text-blue-700">{appointment.reason}</span>
             </div>
             {appointment.goal && (
-              <div className="flex flex-wrap gap-2 text-sm">
+              <div className="flex flex-wrap gap-1 sm:gap-2 text-xs sm:text-sm">
                 <span className="font-semibold text-blue-800">Goal:</span> 
                 <span className="text-blue-700">{appointment.goal}</span>
               </div>
             )}
             {appointment.symptoms && (
-              <div className="flex flex-wrap gap-2 text-sm">
+              <div className="flex flex-wrap gap-1 sm:gap-2 text-xs sm:text-sm">
                 <span className="font-semibold text-blue-800">Symptoms:</span> 
                 <span className="text-blue-700">{appointment.symptoms}</span>
               </div>
@@ -472,7 +472,7 @@ const VisitDetails = () => {
         </Card>
 
         {/* Pre-Visit Education */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <PreVisitEducation 
             appointmentId={appointment.id}
             appointmentReason={appointment.reason}
@@ -483,17 +483,17 @@ const VisitDetails = () => {
         </div>
 
         {/* Recording Section */}
-        <Card className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-          <CardHeader className="flex flex-row items-center gap-2">
-            <Mic className="w-5 h-5 text-green-700" />
-            <CardTitle className="text-green-900">Record Visit</CardTitle>
+        <Card className="mb-4 sm:mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+          <CardHeader className="flex flex-row items-center gap-2 pb-3 sm:pb-6">
+            <Mic className="w-4 h-4 sm:w-5 sm:h-5 text-green-700" />
+            <CardTitle className="text-green-900 text-base sm:text-lg">Record Visit</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col gap-3 sm:gap-4">
+          <CardContent className="space-y-3 sm:space-y-4">
+            <div className="flex flex-col gap-2 sm:gap-3">
               {!isRecording ? (
                 <Button 
                   onClick={handleStartRecording}
-                  className="flex items-center gap-2"
+                  className="flex items-center justify-center gap-2 text-sm sm:text-base min-h-[44px]"
                 >
                   <Mic className="w-4 h-4" />
                   Start Recording
@@ -504,7 +504,7 @@ const VisitDetails = () => {
                     <Button 
                       onClick={handlePauseRecording}
                       variant="outline"
-                      className="flex items-center gap-2 flex-1"
+                      className="flex items-center justify-center gap-2 flex-1 text-sm sm:text-base min-h-[44px]"
                     >
                       <Mic className="w-4 h-4" />
                       Pause
@@ -513,7 +513,7 @@ const VisitDetails = () => {
                     <Button 
                       onClick={handleResumeRecording}
                       variant="default"
-                      className="flex items-center gap-2 flex-1"
+                      className="flex items-center justify-center gap-2 flex-1 text-sm sm:text-base min-h-[44px]"
                     >
                       <Mic className="w-4 h-4" />
                       Resume
@@ -522,7 +522,7 @@ const VisitDetails = () => {
                   <Button 
                     onClick={handleStopRecording}
                     variant="destructive"
-                    className="flex items-center gap-2 flex-1"
+                    className="flex items-center justify-center gap-2 flex-1 text-sm sm:text-base min-h-[44px]"
                   >
                     <MicOff className="w-4 h-4" />
                     Stop ({Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')})
@@ -531,8 +531,8 @@ const VisitDetails = () => {
               )}
 
               {isRecording && (
-                <div className="bg-yellow-50 border-2 border-yellow-300 p-3 rounded-lg">
-                  <p className="text-sm text-yellow-800 font-medium">
+                <div className="bg-yellow-50 border-2 border-yellow-300 p-2 sm:p-3 rounded-lg">
+                  <p className="text-xs sm:text-sm text-yellow-800 font-medium">
                     ⚠️ You must stop recording before you can analyze with AI
                   </p>
                 </div>
@@ -542,7 +542,7 @@ const VisitDetails = () => {
                 <Button 
                   onClick={handleAnalyzeWithAI}
                   disabled={isAnalyzing}
-                  className="flex items-center gap-2"
+                  className="flex items-center justify-center gap-2 text-sm sm:text-base min-h-[44px]"
                 >
                   <FileText className="w-4 h-4" />
                   {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
@@ -552,9 +552,9 @@ const VisitDetails = () => {
 
             {/* Live Transcription */}
             {liveTranscription && (
-              <div className="bg-white border-2 border-green-200 p-4 rounded-lg">
-                <h4 className="font-medium mb-2 text-green-800">Live Transcription:</h4>
-                <div className="text-sm text-green-700 max-h-40 overflow-y-auto leading-relaxed">
+              <div className="bg-white border-2 border-green-200 p-3 sm:p-4 rounded-lg">
+                <h4 className="font-medium mb-2 text-green-800 text-sm sm:text-base">Live Transcription:</h4>
+                <div className="text-xs sm:text-sm text-green-700 max-h-40 overflow-y-auto leading-relaxed">
                   {liveTranscription}
                 </div>
               </div>
@@ -562,18 +562,19 @@ const VisitDetails = () => {
 
             {/* Manual Notes */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Manual Notes (Optional)</label>
+              <label className="text-xs sm:text-sm font-medium">Manual Notes (Optional)</label>
               <Textarea
                 placeholder="Add any additional notes about your visit..."
                 value={manualNotes}
                 onChange={(e) => setManualNotes(e.target.value)}
-                className="min-h-[100px]"
+                className="min-h-[100px] text-sm sm:text-base"
               />
               <Button
                 onClick={handleSaveNotes}
                 disabled={isSavingNotes || !manualNotes.trim()}
                 variant="outline"
                 size="sm"
+                className="text-sm min-h-[40px]"
               >
                 {isSavingNotes ? 'Saving...' : 'Save Notes'}
               </Button>
@@ -583,18 +584,18 @@ const VisitDetails = () => {
 
         {/* AI Analysis Results */}
         {aiGeneratedData && (
-          <Card className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
-            <CardHeader>
-              <CardTitle className="text-purple-900 flex items-center gap-2">
-                <BookOpen className="w-5 h-5" />
+          <Card className="mb-4 sm:mb-6 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="text-purple-900 flex items-center gap-2 text-base sm:text-lg">
+                <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
                 AI Analysis Results
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6">
               {aiGeneratedData.visitSummary && (
-                <div className="bg-white rounded-lg p-4 border border-purple-200">
-                  <h4 className="font-semibold mb-3 text-purple-800 text-base">Visit Summary</h4>
-                  <p className="text-purple-700 leading-relaxed text-sm">{aiGeneratedData.visitSummary}</p>
+                <div className="bg-white rounded-lg p-3 sm:p-4 border border-purple-200">
+                  <h4 className="font-semibold mb-2 sm:mb-3 text-purple-800 text-sm sm:text-base">Visit Summary</h4>
+                  <p className="text-purple-700 leading-relaxed text-xs sm:text-sm">{aiGeneratedData.visitSummary}</p>
                 </div>
               )}
 

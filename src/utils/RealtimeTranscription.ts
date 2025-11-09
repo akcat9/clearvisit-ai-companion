@@ -1,74 +1,53 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export class AudioRecorder {
-  private stream: MediaStream | null = null;
-  private audioContext: AudioContext | null = null;
-  private processor: ScriptProcessorNode | null = null;
-  private source: MediaStreamAudioSourceNode | null = null;
+// Detect if we're on Android
+const isAndroid = /Android/i.test(navigator.userAgent);
 
-  constructor(private onAudioData: (audioData: Float32Array) => void) {}
-
-  async start() {
-    try {
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          sampleRate: 24000,
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
-      
-      this.audioContext = new AudioContext({
-        sampleRate: 24000,
-      });
-      
-      this.source = this.audioContext.createMediaStreamSource(this.stream);
-      this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
-      
-      this.processor.onaudioprocess = (e) => {
-        const inputData = e.inputBuffer.getChannelData(0);
-        this.onAudioData(new Float32Array(inputData));
-      };
-      
-      this.source.connect(this.processor);
-      this.processor.connect(this.audioContext.destination);
-    } catch (error) {
-      console.error('Error accessing microphone:', error);
-      throw error;
+// Get optimal audio constraints for the device
+const getAudioConstraints = () => {
+  const baseConstraints = {
+    audio: {
+      channelCount: 1,
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
     }
+  };
+
+  // Android-specific optimizations
+  if (isAndroid) {
+    return {
+      audio: {
+        ...baseConstraints.audio,
+        sampleRate: { ideal: 24000 },
+        latency: 0,
+        // Android Chrome works better without strict constraints
+        echoCancellation: { ideal: true },
+        noiseSuppression: { ideal: true },
+        autoGainControl: { ideal: true },
+      }
+    };
   }
 
-  stop() {
-    if (this.source) {
-      this.source.disconnect();
-      this.source = null;
+  return {
+    audio: {
+      ...baseConstraints.audio,
+      sampleRate: 24000,
     }
-    if (this.processor) {
-      this.processor.disconnect();
-      this.processor = null;
-    }
-    if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
-      this.stream = null;
-    }
-    if (this.audioContext) {
-      this.audioContext.close();
-      this.audioContext = null;
-    }
-  }
-}
+  };
+};
 
 export class RealtimeTranscription {
   private pc: RTCPeerConnection | null = null;
   private dc: RTCDataChannel | null = null;
-  private recorder: AudioRecorder | null = null;
+  private audioStream: MediaStream | null = null;
   private isConnected = false;
   private processedItems = new Set<string>();
   private processedTranscripts = new Set<string>();
   private lastTranscriptTime = 0;
   private isPaused = false;
+  private connectionAttempts = 0;
+  private maxConnectionAttempts = 3;
 
   constructor(
     private onTranscript: (text: string) => void,
@@ -77,6 +56,10 @@ export class RealtimeTranscription {
 
   async init() {
     try {
+      this.connectionAttempts++;
+      console.log(`[${isAndroid ? 'Android' : 'Desktop'}] Initializing transcription (attempt ${this.connectionAttempts})...`);
+      
+      // Get ephemeral token
       console.log('Getting ephemeral token...');
       const { data, error } = await supabase.functions.invoke('realtime-token');
       
@@ -87,45 +70,80 @@ export class RealtimeTranscription {
       }
 
       const EPHEMERAL_KEY = data.client_secret.value;
-      console.log('Got ephemeral token, creating peer connection...');
+      console.log('✓ Got ephemeral token');
 
-      // Create peer connection
-      this.pc = new RTCPeerConnection();
+      // Request microphone permission with device-specific constraints
+      console.log('Requesting microphone access...');
+      const constraints = getAudioConstraints();
+      this.audioStream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('✓ Microphone access granted');
+
+      // Create peer connection with TURN servers for better Android compatibility
+      this.pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' }
+        ]
+      });
+
+      // Log connection state changes
+      this.pc.onconnectionstatechange = () => {
+        console.log('Connection state:', this.pc?.connectionState);
+        if (this.pc?.connectionState === 'failed') {
+          this.onError('Connection failed. Please try again.');
+        }
+      };
 
       // Add local audio track
-      const ms = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this.pc.addTrack(ms.getTracks()[0]);
+      const audioTrack = this.audioStream.getAudioTracks()[0];
+      console.log('Audio track settings:', audioTrack.getSettings());
+      this.pc.addTrack(audioTrack, this.audioStream);
 
       // Set up data channel
       this.dc = this.pc.createDataChannel("oai-events");
       
       this.dc.addEventListener("open", () => {
-        console.log('Data channel opened');
+        console.log('✓ Data channel opened');
         this.isConnected = true;
         
-        // Send session update to enable transcription only (no audio response)
-        this.sendEvent({
-          type: "session.update",
-          session: {
-            modalities: ["text"],
-            instructions: "You are a transcription service. Only transcribe what the user says, do not respond or generate any output.",
-            input_audio_transcription: {
-              model: "whisper-1"
-            },
-            turn_detection: {
-              type: "server_vad",
-              threshold: 0.5,
-              prefix_padding_ms: 300,
-              silence_duration_ms: 200
+        // Android-specific: wait a bit before sending session config
+        const configDelay = isAndroid ? 500 : 100;
+        
+        setTimeout(() => {
+          // Send session update to enable transcription only (no audio response)
+          this.sendEvent({
+            type: "session.update",
+            session: {
+              modalities: ["text"],
+              instructions: "You are a medical transcription service. Transcribe everything the user says accurately, including medical terminology. Do not respond or generate any output, only transcribe.",
+              input_audio_transcription: {
+                model: "whisper-1"
+              },
+              turn_detection: {
+                type: "server_vad",
+                threshold: isAndroid ? 0.6 : 0.5, // Slightly higher threshold for Android to reduce false positives
+                prefix_padding_ms: 300,
+                silence_duration_ms: isAndroid ? 500 : 200 // Longer silence detection for Android
+              }
             }
-          }
-        });
+          });
+          console.log('✓ Session configuration sent');
+        }, configDelay);
+      });
+      
+      this.dc.addEventListener("error", (error) => {
+        console.error('Data channel error:', error);
+        this.onError('Connection error occurred');
       });
 
       this.dc.addEventListener("message", (e) => {
         try {
           const event = JSON.parse(e.data);
-          console.log("Received event:", event.type, event);
+          
+          // Only log important events to reduce console spam
+          if (event.type === 'error' || event.type.includes('transcription')) {
+            console.log(`[${event.type}]`, event);
+          }
           
           if (event.type === 'conversation.item.input_audio_transcription.completed') {
             const itemId = event.item_id;
@@ -134,29 +152,28 @@ export class RealtimeTranscription {
             
             // Skip if paused
             if (this.isPaused) {
-              console.log('Skipping transcript - paused:', itemId);
+              console.log('⏸ Skipping transcript - paused:', itemId);
               return;
             }
             
             // Skip if empty
             if (!transcript) {
-              console.log('Skipping empty transcript:', itemId);
               return;
             }
             
             // Create unique keys for deduplication
-            const transcriptHash = transcript.toLowerCase().slice(-50); // Last 50 chars
+            const transcriptHash = transcript.toLowerCase().slice(-50);
             const uniqueKey = `${itemId}_${transcriptHash}`;
             
-            // Skip if we've seen this exact transcript recently (within 2 seconds)
-            if (this.processedTranscripts.has(uniqueKey) && (currentTime - this.lastTranscriptTime) < 2000) {
-              console.log('Skipping duplicate transcript:', itemId, transcript.slice(0, 30));
+            // Skip if we've seen this exact transcript recently (within 3 seconds for Android, 2 for others)
+            const duplicateWindow = isAndroid ? 3000 : 2000;
+            if (this.processedTranscripts.has(uniqueKey) && (currentTime - this.lastTranscriptTime) < duplicateWindow) {
+              console.log('⏭ Skipping duplicate:', transcript.slice(0, 30) + '...');
               return;
             }
             
             // Skip if we've seen this item_id already
             if (this.processedItems.has(itemId)) {
-              console.log('Skipping duplicate item_id:', itemId);
               return;
             }
             
@@ -165,23 +182,32 @@ export class RealtimeTranscription {
             this.processedTranscripts.add(uniqueKey);
             this.lastTranscriptTime = currentTime;
             
-            // Clean up old transcripts (keep only last 100)
-            if (this.processedTranscripts.size > 100) {
+            // Clean up old transcripts (keep only last 50 for Android, 100 for others)
+            const maxCache = isAndroid ? 50 : 100;
+            if (this.processedTranscripts.size > maxCache) {
               const firstKey = this.processedTranscripts.values().next().value;
               this.processedTranscripts.delete(firstKey);
             }
             
-            console.log('✓ New transcription:', transcript);
+            console.log('✓ Transcription:', transcript);
             this.onTranscript(transcript);
+          } else if (event.type === 'error') {
+            console.error('❌ OpenAI error:', event.error);
+            this.onError(event.error?.message || 'Transcription error');
           }
         } catch (err) {
-          console.error('Error parsing message:', err);
+          console.error('❌ Error parsing message:', err);
         }
       });
 
       // Create and set local description
-      const offer = await this.pc.createOffer();
+      console.log('Creating offer...');
+      const offer = await this.pc.createOffer({
+        offerToReceiveAudio: false, // We only send audio, don't receive
+        offerToReceiveVideo: false
+      });
       await this.pc.setLocalDescription(offer);
+      console.log('✓ Offer created');
 
       // Connect to OpenAI's Realtime API
       const baseUrl = "https://api.openai.com/v1/realtime";
@@ -198,6 +224,8 @@ export class RealtimeTranscription {
       });
 
       if (!sdpResponse.ok) {
+        const errorText = await sdpResponse.text();
+        console.error('OpenAI API error:', sdpResponse.status, errorText);
         throw new Error(`OpenAI connection failed: ${sdpResponse.status}`);
       }
 
@@ -207,11 +235,23 @@ export class RealtimeTranscription {
       };
       
       await this.pc.setRemoteDescription(answer);
-      console.log("WebRTC connection established");
+      console.log(`✓ WebRTC connection established (${isAndroid ? 'Android' : 'Desktop'} mode)`);
 
     } catch (error) {
-      console.error("Error initializing transcription:", error);
-      this.onError(error instanceof Error ? error.message : 'Failed to initialize');
+      console.error("❌ Error initializing transcription:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to initialize';
+      
+      // Provide more helpful error messages for Android
+      if (isAndroid && errorMessage.includes('permission')) {
+        this.onError('Microphone permission denied. Please enable microphone access in your browser settings.');
+      } else if (isAndroid && this.connectionAttempts < this.maxConnectionAttempts) {
+        this.onError('Connection failed. Retrying...');
+        // Auto-retry on Android
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return this.init();
+      } else {
+        this.onError(errorMessage);
+      }
       throw error;
     }
   }
@@ -223,27 +263,52 @@ export class RealtimeTranscription {
   }
 
   pause() {
+    console.log('⏸ Pausing transcription');
     this.isPaused = true;
   }
 
   resume() {
+    console.log('▶ Resuming transcription');
     this.isPaused = false;
   }
 
   async disconnect(waitForPendingTranscripts = false) {
-    // Wait for any pending transcriptions to complete
+    console.log('Disconnecting transcription...');
+    
+    // Wait for any pending transcriptions to complete (longer on Android)
     if (waitForPendingTranscripts) {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const waitTime = isAndroid ? 3000 : 2000;
+      await new Promise(resolve => setTimeout(resolve, waitTime));
     }
     
-    this.recorder?.stop();
-    this.dc?.close();
-    this.pc?.close();
+    // Stop audio tracks
+    if (this.audioStream) {
+      this.audioStream.getTracks().forEach(track => {
+        track.stop();
+        console.log('✓ Audio track stopped');
+      });
+      this.audioStream = null;
+    }
+    
+    // Close connections
+    if (this.dc) {
+      this.dc.close();
+      this.dc = null;
+    }
+    if (this.pc) {
+      this.pc.close();
+      this.pc = null;
+    }
+    
+    // Reset state
     this.isConnected = false;
     this.isPaused = false;
+    this.connectionAttempts = 0;
     this.processedItems.clear();
     this.processedTranscripts.clear();
     this.lastTranscriptTime = 0;
+    
+    console.log('✓ Disconnected');
   }
 
   isActive(): boolean {

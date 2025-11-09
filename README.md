@@ -9,9 +9,15 @@
 This app is fully optimized for mobile devices including Android smartphones:
 
 ### Android Browser Support
-- ✅ **Android Chrome**: Fully supported with audio recording via WebRTC
+- ✅ **Android Chrome**: Fully supported with real-time speech recognition via WebRTC
 - ✅ **Android Firefox**: Supported
 - ✅ **Samsung Internet**: Supported
+
+### Speech Recognition Features
+- **Real-time transcription** powered by OpenAI Whisper
+- **Android-optimized** audio capture with fallback mechanisms
+- **Automatic retry** logic for unstable connections
+- **Enhanced noise suppression** for medical terminology accuracy
 
 ### Key Mobile Features
 - Touch-optimized UI with proper touch targets (minimum 44x44px)
@@ -20,12 +26,20 @@ This app is fully optimized for mobile devices including Android smartphones:
 - Optimized input fields (no zoom on focus)
 - Smooth scrolling and animations
 
-### For Developers
-If experiencing issues on Android:
-1. Ensure microphone permissions are granted in browser settings
-2. Use HTTPS (required for microphone access)
-3. Clear browser cache and reload
-4. Check that WebRTC is enabled in browser settings
+### For Developers - Troubleshooting Android Issues
+If experiencing speech recognition issues on Android:
+1. **Microphone permissions**: Ensure microphone access is granted in browser settings (Settings → Site settings → Microphone)
+2. **HTTPS required**: Microphone access requires HTTPS (works automatically on Lovable)
+3. **Clear browser cache**: Clear cache and reload if experiencing connection issues
+4. **Check console logs**: Open Chrome DevTools for detailed connection logs
+5. **Connection state**: Look for "WebRTC connection established (Android mode)" in console
+6. **Audio constraints**: The app auto-detects Android and uses optimized audio settings
+
+Common Android-specific behaviors:
+- Slightly higher VAD threshold (0.6 vs 0.5) to reduce false positives
+- Longer silence detection (500ms vs 200ms) for better phrase capture
+- Extended duplicate window (3s vs 2s) for more reliable deduplication
+- Auto-retry up to 3 times on connection failures
 
 ## How can I edit this code?
 

@@ -26,6 +26,8 @@ const VisitDetails = () => {
   const [liveTranscription, setLiveTranscription] = useState('');
   const [recordingComplete, setRecordingComplete] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
   
   // AI-generated content (only shown after processing)
   const [aiGeneratedData, setAiGeneratedData] = useState<{
@@ -158,11 +160,20 @@ const VisitDetails = () => {
 
   // Recording with OpenAI Realtime API (live transcription)
   const handleStartRecording = async () => {
+    if (isInitializing) return;
+    
+    setIsInitializing(true);
+    
     try {
       setLiveTranscription('');
       transcriptionBufferRef.current = '';
       setRecordingComplete(false);
       setIsPaused(false);
+      
+      toast({
+        title: "Initializing...",
+        description: "Setting up live transcription.",
+      });
       
       const recorder = new RealtimeTranscription(
         (transcription) => {
@@ -214,6 +225,8 @@ const VisitDetails = () => {
         description: "Could not start live transcription.",
         variant: "destructive",
       });
+    } finally {
+      setIsInitializing(false);
     }
   };
 
@@ -255,7 +268,9 @@ const VisitDetails = () => {
   };
 
   const handleStopRecording = async () => {
-    if (!audioRecorder) return;
+    if (!audioRecorder || isStopping) return;
+    
+    setIsStopping(true);
     
     toast({
       title: "Finishing transcription...",
@@ -268,16 +283,27 @@ const VisitDetails = () => {
       durationIntervalRef.current = null;
     }
     
-    // Wait for pending transcriptions before disconnecting
-    await audioRecorder.disconnect(true);
-    setIsRecording(false);
-    setRecordingComplete(true);
-    setIsPaused(false);
-    
-    toast({
-      title: "Recording Stopped",
-      description: "Your live transcription is complete.",
-    });
+    try {
+      // Wait for pending transcriptions before disconnecting
+      await audioRecorder.disconnect(true);
+      setIsRecording(false);
+      setRecordingComplete(true);
+      setIsPaused(false);
+      
+      toast({
+        title: "Recording Stopped",
+        description: "Your live transcription is complete.",
+      });
+    } catch (error) {
+      console.error('Error stopping recording:', error);
+      toast({
+        title: "Error",
+        description: "Failed to stop recording properly.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsStopping(false);
+    }
   };
 
   // AI analysis function
@@ -494,9 +520,10 @@ const VisitDetails = () => {
                 <Button 
                   onClick={handleStartRecording}
                   className="flex items-center justify-center gap-2 text-sm sm:text-base min-h-[44px]"
+                  disabled={isInitializing}
                 >
                   <Mic className="w-4 h-4" />
-                  Start Recording
+                  {isInitializing ? "Initializing..." : "Start Recording"}
                 </Button>
               ) : (
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -505,6 +532,7 @@ const VisitDetails = () => {
                       onClick={handlePauseRecording}
                       variant="outline"
                       className="flex items-center justify-center gap-2 flex-1 text-sm sm:text-base min-h-[44px]"
+                      disabled={isStopping}
                     >
                       <Mic className="w-4 h-4" />
                       Pause
@@ -514,6 +542,7 @@ const VisitDetails = () => {
                       onClick={handleResumeRecording}
                       variant="default"
                       className="flex items-center justify-center gap-2 flex-1 text-sm sm:text-base min-h-[44px]"
+                      disabled={isStopping}
                     >
                       <Mic className="w-4 h-4" />
                       Resume
@@ -523,9 +552,10 @@ const VisitDetails = () => {
                     onClick={handleStopRecording}
                     variant="destructive"
                     className="flex items-center justify-center gap-2 flex-1 text-sm sm:text-base min-h-[44px]"
+                    disabled={isStopping}
                   >
                     <MicOff className="w-4 h-4" />
-                    Stop ({Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')})
+                    {isStopping ? "Stopping..." : `Stop (${Math.floor(recordingDuration / 60)}:${(recordingDuration % 60).toString().padStart(2, '0')})`}
                   </Button>
                 </div>
               )}

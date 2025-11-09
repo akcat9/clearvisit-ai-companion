@@ -105,7 +105,15 @@ const Dashboard = () => {
   };
 
   const handleCreateAppointment = async (appointmentData: any) => {
-    if (!user) return;
+    if (!user) {
+      console.error('No user found');
+      toast({
+        title: "Error",
+        description: "You must be logged in to create appointments",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       const { data, error } = await supabase
@@ -124,9 +132,10 @@ const Dashboard = () => {
         .single();
 
       if (error) {
+        console.error('Appointment creation error:', error);
         toast({
           title: "Error",
-          description: "Failed to create appointment",
+          description: error.message || "Failed to create appointment",
           variant: "destructive"
         });
         return;
@@ -138,10 +147,11 @@ const Dashboard = () => {
         title: "Success",
         description: "Appointment created successfully"
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Unexpected error creating appointment:', error);
       toast({
         title: "Error",
-        description: "Something went wrong",
+        description: error?.message || "Something went wrong",
         variant: "destructive"
       });
     }

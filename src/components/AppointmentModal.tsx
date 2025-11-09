@@ -23,13 +23,17 @@ export const AppointmentModal = ({ onClose, onSubmit }: AppointmentModalProps) =
     symptoms: ""
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSubmitting) return;
     
     try {
       const validatedData = appointmentSchema.parse(formData);
-      onSubmit(validatedData);
+      setIsSubmitting(true);
+      await onSubmit(validatedData);
       setErrors({});
     } catch (error: any) {
       if (error.errors) {
@@ -47,6 +51,8 @@ export const AppointmentModal = ({ onClose, onSubmit }: AppointmentModalProps) =
           variant: "destructive",
         });
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -156,11 +162,11 @@ export const AppointmentModal = ({ onClose, onSubmit }: AppointmentModalProps) =
             </div>
 
           <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4">
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1 text-sm">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1 text-sm" disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" className="flex-1 text-sm">
-              Create Appointment
+            <Button type="submit" className="flex-1 text-sm" disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Create Appointment"}
             </Button>
           </div>
         </form>

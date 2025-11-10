@@ -7,35 +7,36 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface EducationContent {
-  symptomsAndHistory: {
+  causesAndPathophysiology: {
     title: string;
-    trackingTips: string[];
-    descriptors: string[];
-    importantNotes: string[];
+    primaryCauses: string[];
+    riskFactors: string[];
+    underlyingMechanisms: string[];
   };
-  questionsForDoctor: {
+  treatmentRecommendations: {
     title: string;
-    topConcerns: string[];
-    effectiveQuestions: string[];
-    clarificationPrompts: string[];
+    firstLineTherapies: string[];
+    alternativeApproaches: string[];
+    expectedOutcomes: string[];
+    lifestyleModifications: string[];
   };
-  testsAndMedications: {
+  medicationInformation: {
     title: string;
-    whatToExpect: string[];
-    medications: string[];
-    referrals: string[];
+    commonMedications: string[];
+    sideEffects: string[];
+    drugInteractions: string[];
   };
-  communicationAndLiteracy: {
+  keyPointsForDoctor: {
     title: string;
-    explainingSymptoms: string[];
-    takingNotes: string[];
-    confirmUnderstanding: string[];
+    diagnosticQuestions: string[];
+    treatmentQuestions: string[];
+    prognosisQuestions: string[];
   };
-  insuranceAndCosts: {
+  clinicalContext: {
     title: string;
-    insurance: string[];
-    whatToBring: string[];
-    costTips: string[];
+    prevalence: string;
+    typicalPresentation: string;
+    redFlags: string[];
   };
 }
 
@@ -145,44 +146,44 @@ const PreVisitEducation = ({
 
   const sections = [
     {
-      id: 'symptomsAndHistory',
-      title: educationContent.symptomsAndHistory.title,
-      description: 'Learn how to track and describe your health issue',
-      content: educationContent.symptomsAndHistory,
-      icon: <BookOpen className="w-5 h-5" />,
+      id: 'causesAndPathophysiology',
+      title: educationContent.causesAndPathophysiology.title,
+      description: 'Scientific explanation of what causes your condition',
+      content: educationContent.causesAndPathophysiology,
+      icon: <Activity className="w-5 h-5" />,
       color: 'bg-blue-50 border-blue-200 text-blue-800'
     },
     {
-      id: 'questionsForDoctor',
-      title: educationContent.questionsForDoctor.title,
-      description: 'Make the most of your appointment time',
-      content: educationContent.questionsForDoctor,
-      icon: <HelpCircle className="w-5 h-5" />,
-      color: 'bg-purple-50 border-purple-200 text-purple-800'
-    },
-    {
-      id: 'testsAndMedications',
-      title: educationContent.testsAndMedications.title,
-      description: 'Know what to expect from labs, meds, and referrals',
-      content: educationContent.testsAndMedications,
-      icon: <Pill className="w-5 h-5" />,
+      id: 'treatmentRecommendations',
+      title: educationContent.treatmentRecommendations.title,
+      description: 'Evidence-based treatment approaches and expected outcomes',
+      content: educationContent.treatmentRecommendations,
+      icon: <Heart className="w-5 h-5" />,
       color: 'bg-green-50 border-green-200 text-green-800'
     },
     {
-      id: 'communicationAndLiteracy',
-      title: educationContent.communicationAndLiteracy.title,
-      description: 'Improve confidence and reduce misunderstanding',
-      content: educationContent.communicationAndLiteracy,
-      icon: <Lightbulb className="w-5 h-5" />,
+      id: 'medicationInformation',
+      title: educationContent.medicationInformation.title,
+      description: 'Common medications, mechanisms, and side effects',
+      content: educationContent.medicationInformation,
+      icon: <Pill className="w-5 h-5" />,
+      color: 'bg-purple-50 border-purple-200 text-purple-800'
+    },
+    {
+      id: 'keyPointsForDoctor',
+      title: educationContent.keyPointsForDoctor.title,
+      description: 'Critical questions to maximize your appointment',
+      content: educationContent.keyPointsForDoctor,
+      icon: <HelpCircle className="w-5 h-5" />,
       color: 'bg-orange-50 border-orange-200 text-orange-800'
     },
     {
-      id: 'insuranceAndCosts',
-      title: educationContent.insuranceAndCosts.title,
-      description: 'Reduce anxiety around payment and paperwork',
-      content: educationContent.insuranceAndCosts,
-      icon: <DollarSign className="w-5 h-5" />,
-      color: 'bg-amber-50 border-amber-200 text-amber-800'
+      id: 'clinicalContext',
+      title: educationContent.clinicalContext.title,
+      description: 'Medical background and warning signs to watch',
+      content: educationContent.clinicalContext,
+      icon: <AlertCircle className="w-5 h-5" />,
+      color: 'bg-red-50 border-red-200 text-red-800'
     }
   ];
 
@@ -196,7 +197,7 @@ const PreVisitEducation = ({
               <CardTitle className="text-lg">Pre-Visit Education</CardTitle>
             </div>
             <p className="text-sm text-muted-foreground">
-              Learn about your condition before your appointment
+              Scientific medical education for your condition
             </p>
           </div>
           {educationContent && (
@@ -251,137 +252,137 @@ const PreVisitEducation = ({
               return (
                 <div>
                   <h4 className="font-semibold mb-3 text-sm">{section.title}</h4>
-                  {selectedSection === 'symptomsAndHistory' && 'trackingTips' in section.content ? (
+                  {selectedSection === 'causesAndPathophysiology' && 'primaryCauses' in section.content ? (
                     <div className="space-y-3">
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Tracking Your Symptoms</h5>
+                        <h5 className="font-medium text-sm mb-2">Primary Causes</h5>
                         <div className="space-y-1">
-                          {section.content.trackingTips.map((tip, index) => (
-                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{tip}</div>
+                          {section.content.primaryCauses.map((cause, index) => (
+                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{cause}</div>
                           ))}
                         </div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">How to Describe Symptoms</h5>
+                        <h5 className="font-medium text-sm mb-2">Risk Factors</h5>
                         <div className="space-y-1">
-                          {section.content.descriptors.map((desc, index) => (
-                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{desc}</div>
+                          {section.content.riskFactors.map((factor, index) => (
+                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{factor}</div>
                           ))}
                         </div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Important Notes</h5>
+                        <h5 className="font-medium text-sm mb-2">Biological Mechanisms</h5>
                         <div className="space-y-1">
-                          {section.content.importantNotes.map((note, index) => (
-                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{note}</div>
+                          {section.content.underlyingMechanisms.map((mechanism, index) => (
+                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{mechanism}</div>
                           ))}
                         </div>
                       </div>
                     </div>
-                  ) : selectedSection === 'questionsForDoctor' && 'topConcerns' in section.content ? (
+                  ) : selectedSection === 'treatmentRecommendations' && 'firstLineTherapies' in section.content ? (
                     <div className="space-y-3">
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Prioritizing Your Concerns</h5>
+                        <h5 className="font-medium text-sm mb-2">First-Line Therapies</h5>
                         <div className="space-y-1">
-                          {section.content.topConcerns.map((concern, index) => (
-                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{concern}</div>
+                          {section.content.firstLineTherapies.map((therapy, index) => (
+                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{therapy}</div>
                           ))}
                         </div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Effective Questions</h5>
+                        <h5 className="font-medium text-sm mb-2">Alternative Approaches</h5>
                         <div className="space-y-1">
-                          {section.content.effectiveQuestions.map((q, index) => (
-                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{q}</div>
+                          {section.content.alternativeApproaches.map((approach, index) => (
+                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{approach}</div>
                           ))}
                         </div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Asking for Clarification</h5>
+                        <h5 className="font-medium text-sm mb-2">Expected Outcomes</h5>
                         <div className="space-y-1">
-                          {section.content.clarificationPrompts.map((prompt, index) => (
-                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{prompt}</div>
+                          {section.content.expectedOutcomes.map((outcome, index) => (
+                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{outcome}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="border rounded-lg p-3 bg-gray-50">
+                        <h5 className="font-medium text-sm mb-2">Lifestyle Modifications</h5>
+                        <div className="space-y-1">
+                          {section.content.lifestyleModifications.map((mod, index) => (
+                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{mod}</div>
                           ))}
                         </div>
                       </div>
                     </div>
-                  ) : selectedSection === 'testsAndMedications' && 'whatToExpect' in section.content ? (
+                  ) : selectedSection === 'medicationInformation' && 'commonMedications' in section.content ? (
                     <div className="space-y-3">
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">What to Expect</h5>
+                        <h5 className="font-medium text-sm mb-2">Common Medications</h5>
                         <div className="space-y-1">
-                          {section.content.whatToExpect.map((item, index) => (
-                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{item}</div>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Medications</h5>
-                        <div className="space-y-1">
-                          {section.content.medications.map((med, index) => (
+                          {section.content.commonMedications.map((med, index) => (
                             <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{med}</div>
                           ))}
                         </div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Referrals and Follow-ups</h5>
+                        <h5 className="font-medium text-sm mb-2">Side Effects</h5>
                         <div className="space-y-1">
-                          {section.content.referrals.map((ref, index) => (
-                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{ref}</div>
+                          {section.content.sideEffects.map((effect, index) => (
+                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{effect}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="border rounded-lg p-3 bg-gray-50">
+                        <h5 className="font-medium text-sm mb-2">Drug Interactions</h5>
+                        <div className="space-y-1">
+                          {section.content.drugInteractions.map((interaction, index) => (
+                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{interaction}</div>
                           ))}
                         </div>
                       </div>
                     </div>
-                  ) : selectedSection === 'communicationAndLiteracy' && 'explainingSymptoms' in section.content ? (
+                  ) : selectedSection === 'keyPointsForDoctor' && 'diagnosticQuestions' in section.content ? (
                     <div className="space-y-3">
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Explaining Your Symptoms</h5>
+                        <h5 className="font-medium text-sm mb-2">Diagnostic Questions</h5>
                         <div className="space-y-1">
-                          {section.content.explainingSymptoms.map((item, index) => (
-                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{item}</div>
+                          {section.content.diagnosticQuestions.map((q, index) => (
+                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{q}</div>
                           ))}
                         </div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Taking Notes</h5>
+                        <h5 className="font-medium text-sm mb-2">Treatment Questions</h5>
                         <div className="space-y-1">
-                          {section.content.takingNotes.map((note, index) => (
-                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{note}</div>
+                          {section.content.treatmentQuestions.map((q, index) => (
+                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{q}</div>
                           ))}
                         </div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Confirming Understanding</h5>
+                        <h5 className="font-medium text-sm mb-2">Prognosis Questions</h5>
                         <div className="space-y-1">
-                          {section.content.confirmUnderstanding.map((item, index) => (
-                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{item}</div>
+                          {section.content.prognosisQuestions.map((q, index) => (
+                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{q}</div>
                           ))}
                         </div>
                       </div>
                     </div>
-                  ) : selectedSection === 'insuranceAndCosts' && 'insurance' in section.content ? (
+                  ) : selectedSection === 'clinicalContext' && 'prevalence' in section.content ? (
                     <div className="space-y-3">
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Insurance Basics</h5>
-                        <div className="space-y-1">
-                          {section.content.insurance.map((item, index) => (
-                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{item}</div>
-                          ))}
-                        </div>
+                        <h5 className="font-medium text-sm mb-2">Prevalence</h5>
+                        <div className="text-xs text-gray-700 bg-white p-2 rounded">{section.content.prevalence}</div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">What to Bring</h5>
-                        <div className="space-y-1">
-                          {section.content.whatToBring.map((item, index) => (
-                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{item}</div>
-                          ))}
-                        </div>
+                        <h5 className="font-medium text-sm mb-2">Typical Presentation</h5>
+                        <div className="text-xs text-gray-700 bg-white p-2 rounded">{section.content.typicalPresentation}</div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Cost-Saving Tips</h5>
+                        <h5 className="font-medium text-sm mb-2">Red Flags - Seek Immediate Care</h5>
                         <div className="space-y-1">
-                          {section.content.costTips.map((tip, index) => (
-                            <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{tip}</div>
+                          {section.content.redFlags.map((flag, index) => (
+                            <div key={index} className="text-xs text-red-700 bg-red-50 p-2 rounded font-medium border border-red-200">{flag}</div>
                           ))}
                         </div>
                       </div>

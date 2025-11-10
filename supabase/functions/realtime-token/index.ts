@@ -14,25 +14,26 @@ serve(async (req) => {
   }
 
   try {
-    // JWT is already verified by Supabase (verify_jwt = true)
-    // Create client to get user info
-    const authHeader = req.headers.get('Authorization')!;
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) {
-      return new Response(
-        JSON.stringify({ error: 'User not found' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Allow unauthenticated access if JWT is disabled for this function
+    // Safely attempt to resolve user (if Authorization header is present)
+    const authHeader = req.headers.get('Authorization') || '';
+    let userId = 'public';
+    if (authHeader) {
+      try {
+        const supabaseClient = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+          { global: { headers: { Authorization: authHeader } } }
+        );
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (user?.id) userId = user.id;
+      } catch { /* ignore auth resolution errors */ }
     }
 
-    // Rate limiting: max 5 requests per minute
-    const rateLimit = checkRateLimit(user.id, 5, 60000);
+    // Rate limiting: key by user when available, otherwise by IP
+    const ip = req.headers.get('x-forwarded-for') || 'ip-unknown';
+    const rateKey = userId === 'public' ? `realtime:${ip}` : `realtime:${userId}`;
+    const rateLimit = checkRateLimit(rateKey, 5, 60000);
     if (!rateLimit.allowed) {
       return new Response(
         JSON.stringify({ error: 'Rate limit exceeded', retryAfter: rateLimit.retryAfter }),

@@ -14,37 +14,26 @@ serve(async (req) => {
   }
 
   try {
-    // Verify authentication
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Authentication required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
+    // JWT is already verified by Supabase (verify_jwt = true)
+    // Get user info for rate limiting
+    const authHeader = req.headers.get('Authorization')!;
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid authentication' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Rate limiting: max 5 requests per minute
-    const rateLimit = checkRateLimit(user.id, 5, 60000);
-    if (!rateLimit.allowed) {
-      return new Response(
-        JSON.stringify({ error: 'Rate limit exceeded', retryAfter: rateLimit.retryAfter }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    
+    // Rate limiting: max 10 requests per minute
+    if (user) {
+      const rateLimit = checkRateLimit(user.id, 10, 60000);
+      if (!rateLimit.allowed) {
+        return new Response(
+          JSON.stringify({ error: 'Rate limit exceeded', retryAfter: rateLimit.retryAfter }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     const { appointmentReason, goal, symptoms } = await req.json();

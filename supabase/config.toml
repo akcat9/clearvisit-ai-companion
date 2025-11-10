@@ -1,16 +1,19 @@
 project_id = "hjupkurtumzqrwoytjnn"
 
 [functions.transcribe-audio]
-verify_jwt = false
+verify_jwt = true
 
 [functions.realtime-token]
-verify_jwt = false
+verify_jwt = true
 
 [functions.process-visit-summary]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-previsit-education]
-verify_jwt = false
+verify_jwt = true
 
 [functions.delete-user-account]
+verify_jwt = true
+
+[functions.process-visit-recording]
 verify_jwt = true

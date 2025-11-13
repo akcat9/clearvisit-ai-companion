@@ -36,6 +36,8 @@ serve(async (req) => {
     }
 
     const { appointmentReason, goal, symptoms } = await req.json();
+    
+    console.log('Pre-visit education request - validating inputs...');
 
     // Validate inputs
     const reasonValidation = validateTextInput(appointmentReason || '', 5, 500, 'Appointment reason');

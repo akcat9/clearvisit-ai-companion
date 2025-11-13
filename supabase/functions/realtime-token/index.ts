@@ -29,13 +29,13 @@ serve(async (req) => {
       } catch { /* ignore auth resolution errors */ }
     }
 
-    // Rate limiting: key by user when available, otherwise by IP
+    // Rate limiting: max 100 requests per minute
     const ip = req.headers.get('x-forwarded-for') || 'ip-unknown';
     const rateKey = userId === 'public' ? `realtime:${ip}` : `realtime:${userId}`;
-    const rateLimit = checkRateLimit(rateKey, 15, 60000);
+    const rateLimit = checkRateLimit(rateKey, 100, 60000);
     if (!rateLimit.allowed) {
       return new Response(
-        JSON.stringify({ error: 'Rate limit exceeded', retryAfter: rateLimit.retryAfter }),
+        JSON.stringify({ error: 'Too many requests' }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

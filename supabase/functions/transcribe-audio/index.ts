@@ -25,12 +25,12 @@ serve(async (req) => {
 
     const { data: { user } } = await supabaseClient.auth.getUser();
     
-    // Rate limiting: max 20 transcription requests per minute
+    // Rate limiting: max 100 transcriptions per minute
     if (user) {
-      const rateLimit = checkRateLimit(user.id, 20, 60000);
+      const rateLimit = checkRateLimit(user.id, 100, 60000);
       if (!rateLimit.allowed) {
         return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded', retryAfter: rateLimit.retryAfter }),
+          JSON.stringify({ error: 'Too many requests' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

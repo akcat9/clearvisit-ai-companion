@@ -24,12 +24,12 @@ serve(async (req) => {
 
     const { data: { user } } = await supabaseClient.auth.getUser();
     
-    // Rate limiting: max 5 requests per minute (expensive operation)
+    // Rate limiting: max 50 requests per minute
     if (user) {
-      const rateLimit = checkRateLimit(user.id, 5, 60000);
+      const rateLimit = checkRateLimit(user.id, 50, 60000);
       if (!rateLimit.allowed) {
         return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded', retryAfter: rateLimit.retryAfter }),
+          JSON.stringify({ error: 'Too many requests, please wait' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -37,7 +37,7 @@ serve(async (req) => {
 
     const { fullTranscription, appointmentReason, medicalHistory } = await req.json();
 
-    // Validate inputs
+    // Simplified validation - just check length
     if (!fullTranscription || fullTranscription.length < 50) {
       return new Response(
         JSON.stringify({ error: 'Transcription too short' }),
@@ -48,21 +48,6 @@ serve(async (req) => {
     if (fullTranscription.length > 50000) {
       return new Response(
         JSON.stringify({ error: 'Transcription too long' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const reasonValidation = validateTextInput(appointmentReason || '', 5, 500, 'Appointment reason');
-    if (!reasonValidation.valid) {
-      return new Response(
-        JSON.stringify({ error: reasonValidation.error }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (medicalHistory && medicalHistory.length > 5000) {
-      return new Response(
-        JSON.stringify({ error: 'Medical history too long' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

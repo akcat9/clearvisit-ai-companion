@@ -24,12 +24,12 @@ serve(async (req) => {
 
     const { data: { user } } = await supabaseClient.auth.getUser();
     
-    // Rate limiting: max 10 requests per minute
+    // Rate limiting: max 50 requests per minute
     if (user) {
-      const rateLimit = checkRateLimit(user.id, 10, 60000);
+      const rateLimit = checkRateLimit(user.id, 50, 60000);
       if (!rateLimit.allowed) {
         return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded', retryAfter: rateLimit.retryAfter }),
+          JSON.stringify({ error: 'Too many requests, please wait' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -37,6 +37,7 @@ serve(async (req) => {
 
     const { appointmentId, appointmentReason, recordingData } = await req.json();
 
+    // Simplified validation - just check basics
     if (!appointmentId || !recordingData) {
       return new Response(
         JSON.stringify({ error: 'Missing required data' }),
@@ -44,16 +45,6 @@ serve(async (req) => {
       );
     }
 
-    // Validate appointment reason
-    const reasonValidation = validateTextInput(appointmentReason || '', 5, 500, 'Appointment reason');
-    if (!reasonValidation.valid) {
-      return new Response(
-        JSON.stringify({ error: reasonValidation.error }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Validate recording data
     if (recordingData.length < 50) {
       return new Response(
         JSON.stringify({ error: 'Recording data too short' }),

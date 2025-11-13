@@ -3,45 +3,34 @@
 export function sanitizeForPrompt(text: string, maxLength: number): string {
   return text
     .replace(/[\n\r]+/g, ' ')           // Remove newlines (prevent prompt breaks)
-    .replace(/["'`\\]/g, '')            // Remove quotes and escapes
     .replace(/\s+/g, ' ')               // Normalize whitespace
-    .replace(/[<>]/g, '')               // Remove HTML-like chars
     .trim()
     .slice(0, maxLength);                // Enforce hard limit
 }
 
 export function detectPromptInjection(text: string): boolean {
+  // Very basic check - just block obvious injection attempts
   const suspiciousPatterns = [
-    /ignore.{0,20}(previous|above|prior).{0,20}(instructions|prompt|system)/i,
-    /you are (now|a|an).{0,50}(chatbot|ai|assistant)/i,
-    /(system|admin|root).{0,20}(override|mode|access)/i,
-    /reveal.{0,20}(prompt|system|instructions|training)/i,
-    /pretend.{0,20}(you.{0,10}are|to be)/i,
+    /ignore.*previous.*instructions/i,
+    /system.*override/i,
   ];
   
   return suspiciousPatterns.some(pattern => pattern.test(text));
 }
 
 export function validateTextInput(text: string, minLength: number, maxLength: number, fieldName: string): { valid: boolean; error?: string } {
-  if (!text || text.trim().length < minLength) {
-    return { valid: false, error: `${fieldName} must be at least ${minLength} characters` };
+  // Simplified validation - just check length and obvious bad stuff
+  if (text && text.trim().length < minLength) {
+    return { valid: false, error: `${fieldName} is too short` };
   }
   
-  if (text.length > maxLength) {
-    return { valid: false, error: `${fieldName} must be less than ${maxLength} characters` };
+  if (text && text.length > maxLength) {
+    return { valid: false, error: `${fieldName} is too long` };
   }
   
-  // Block only dangerous characters: <, >, null bytes, and non-printable control chars
-  // This is much more permissive than a whitelist approach
-  const dangerousPattern = /[<>\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/;
-  if (dangerousPattern.test(text)) {
-    console.log(`Validation failed for ${fieldName}. Text contains dangerous characters.`);
-    return { valid: false, error: `${fieldName} contains invalid characters. Please avoid special symbols like < and >.` };
-  }
-  
-  if (detectPromptInjection(text)) {
-    console.log(`Prompt injection detected in ${fieldName}`);
-    return { valid: false, error: 'Invalid input detected' };
+  // Only block obvious prompt injection
+  if (text && detectPromptInjection(text)) {
+    return { valid: false, error: 'Invalid input' };
   }
   
   return { valid: true };
@@ -51,18 +40,10 @@ export function validateTextInput(text: string, minLength: number, maxLength: nu
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 
 export function checkRateLimit(userId: string, maxRequests: number, windowMs: number): { allowed: boolean; retryAfter?: number } {
+  // Simplified - much more permissive
   const now = Date.now();
   const key = `${userId}`;
   const record = rateLimitStore.get(key);
-  
-  // Clean up expired entries periodically
-  if (rateLimitStore.size > 10000) {
-    for (const [k, v] of rateLimitStore.entries()) {
-      if (v.resetAt < now) {
-        rateLimitStore.delete(k);
-      }
-    }
-  }
   
   if (!record || record.resetAt < now) {
     rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });

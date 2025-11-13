@@ -24,48 +24,25 @@ serve(async (req) => {
 
     const { data: { user } } = await supabaseClient.auth.getUser();
     
-    // Rate limiting: max 10 requests per minute
+    // Rate limiting: max 50 requests per minute (very permissive)
     if (user) {
-      const rateLimit = checkRateLimit(user.id, 10, 60000);
+      const rateLimit = checkRateLimit(user.id, 50, 60000);
       if (!rateLimit.allowed) {
         return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded', retryAfter: rateLimit.retryAfter }),
+          JSON.stringify({ error: 'Too many requests, please wait a moment' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     }
 
     const { appointmentReason, goal, symptoms } = await req.json();
-    
-    console.log('Pre-visit education request - validating inputs...');
 
-    // Validate inputs
-    const reasonValidation = validateTextInput(appointmentReason || '', 5, 500, 'Appointment reason');
-    if (!reasonValidation.valid) {
+    // Simplified validation - just check if appointment reason exists
+    if (!appointmentReason || appointmentReason.trim().length < 5) {
       return new Response(
-        JSON.stringify({ error: reasonValidation.error }),
+        JSON.stringify({ error: 'Please provide an appointment reason' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-    }
-
-    if (goal) {
-      const goalValidation = validateTextInput(goal, 0, 500, 'Goal');
-      if (!goalValidation.valid) {
-        return new Response(
-          JSON.stringify({ error: goalValidation.error }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
-
-    if (symptoms) {
-      const symptomsValidation = validateTextInput(symptoms, 0, 1000, 'Symptoms');
-      if (!symptomsValidation.valid) {
-        return new Response(
-          JSON.stringify({ error: symptomsValidation.error }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
     }
 
     // Sanitize inputs

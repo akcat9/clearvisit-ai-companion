@@ -33,7 +33,7 @@ serve(async (req) => {
     // Rate limiting: key by user when available, otherwise by IP
     const ip = req.headers.get('x-forwarded-for') || 'ip-unknown';
     const rateKey = userId === 'public' ? `realtime:${ip}` : `realtime:${userId}`;
-    const rateLimit = checkRateLimit(rateKey, 5, 60000);
+    const rateLimit = checkRateLimit(rateKey, 15, 60000);
     if (!rateLimit.allowed) {
       return new Response(
         JSON.stringify({ error: 'Rate limit exceeded', retryAfter: rateLimit.retryAfter }),

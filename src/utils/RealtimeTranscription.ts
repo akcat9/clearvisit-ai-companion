@@ -48,22 +48,32 @@ export class RealtimeTranscription {
   private isPaused = false;
   private connectionAttempts = 0;
   private maxConnectionAttempts = 3;
+  private isRateLimited = false;
 
   constructor(
     private onTranscript: (text: string) => void,
-    private onError: (error: string) => void
+    private onError: (error: string) => void,
+    private onStatusChange?: (status: string) => void
   ) {}
 
   async init() {
     try {
       this.connectionAttempts++;
       console.log(`[${isAndroid ? 'Android' : 'Desktop'}] Initializing transcription (attempt ${this.connectionAttempts})...`);
+      this.onStatusChange?.(this.connectionAttempts === 1 ? 'Connecting...' : `Connecting... (attempt ${this.connectionAttempts} of ${this.maxConnectionAttempts})`);
       
       // Get ephemeral token
       console.log('Getting ephemeral token...');
       const { data, error } = await supabase.functions.invoke('realtime-token');
       
-      if (error) throw error;
+      if (error) {
+        // Check for rate limit error
+        if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
+          this.isRateLimited = true;
+          throw new Error('Too many attempts. Please wait 1 minute before trying again.');
+        }
+        throw error;
+      }
       
       if (!data.client_secret?.value) {
         throw new Error("Failed to get ephemeral token");
@@ -107,7 +117,7 @@ export class RealtimeTranscription {
         this.isConnected = true;
         
         // Android-specific: wait a bit before sending session config
-        const configDelay = isAndroid ? 500 : 100;
+        const configDelay = isAndroid ? 1000 : 100;
         
         setTimeout(() => {
           // Send session update to enable transcription only (no audio response)
@@ -241,16 +251,29 @@ export class RealtimeTranscription {
       console.error("❌ Error initializing transcription:", error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to initialize';
       
-      // Provide more helpful error messages for Android
-      if (isAndroid && errorMessage.includes('permission')) {
+      // Don't retry if rate limited
+      if (this.isRateLimited) {
+        this.onError(errorMessage);
+        this.onStatusChange?.('Rate limited');
+        throw error;
+      }
+      
+      // Provide more helpful error messages
+      if (errorMessage.includes('permission')) {
         this.onError('Microphone permission denied. Please enable microphone access in your browser settings.');
-      } else if (isAndroid && this.connectionAttempts < this.maxConnectionAttempts) {
+        this.onStatusChange?.('Permission denied');
+      } else if (this.connectionAttempts < this.maxConnectionAttempts) {
         this.onError('Connection failed. Retrying...');
-        // Auto-retry on Android
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        this.onStatusChange?.(`Retrying... (${this.connectionAttempts}/${this.maxConnectionAttempts})`);
+        
+        // Exponential backoff: 1s, 2s, 4s
+        const backoffDelay = Math.pow(2, this.connectionAttempts - 1) * 1000;
+        console.log(`Waiting ${backoffDelay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
         return this.init();
       } else {
         this.onError(errorMessage);
+        this.onStatusChange?.('Connection failed');
       }
       throw error;
     }
@@ -304,6 +327,7 @@ export class RealtimeTranscription {
     this.isConnected = false;
     this.isPaused = false;
     this.connectionAttempts = 0;
+    this.isRateLimited = false;
     this.processedItems.clear();
     this.processedTranscripts.clear();
     this.lastTranscriptTime = 0;

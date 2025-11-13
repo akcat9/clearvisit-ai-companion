@@ -31,14 +31,16 @@ export function validateTextInput(text: string, minLength: number, maxLength: nu
     return { valid: false, error: `${fieldName} must be less than ${maxLength} characters` };
   }
   
-  // Check for basic allowed characters (letters, numbers, common punctuation)
-  // Allow most common text characters while blocking control chars and potentially dangerous ones
-  const allowedPattern = /^[a-zA-Z0-9\s,.'":\-!?();&/@#$%*+=\[\]{}]+$/;
-  if (!allowedPattern.test(text)) {
-    return { valid: false, error: `${fieldName} contains invalid characters. Please use only letters, numbers, and common punctuation.` };
+  // Block only dangerous characters: <, >, null bytes, and non-printable control chars
+  // This is much more permissive than a whitelist approach
+  const dangerousPattern = /[<>\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/;
+  if (dangerousPattern.test(text)) {
+    console.log(`Validation failed for ${fieldName}. Text contains dangerous characters.`);
+    return { valid: false, error: `${fieldName} contains invalid characters. Please avoid special symbols like < and >.` };
   }
   
   if (detectPromptInjection(text)) {
+    console.log(`Prompt injection detected in ${fieldName}`);
     return { valid: false, error: 'Invalid input detected' };
   }
   

@@ -32,9 +32,10 @@ export function validateTextInput(text: string, minLength: number, maxLength: nu
   }
   
   // Check for basic allowed characters (letters, numbers, common punctuation)
-  const allowedPattern = /^[a-zA-Z0-9\s,.'\-!?()]+$/;
+  // Allow most common text characters while blocking control chars and potentially dangerous ones
+  const allowedPattern = /^[a-zA-Z0-9\s,.'":\-!?();&/@#$%*+=\[\]{}]+$/;
   if (!allowedPattern.test(text)) {
-    return { valid: false, error: `${fieldName} contains invalid characters` };
+    return { valid: false, error: `${fieldName} contains invalid characters. Please use only letters, numbers, and common punctuation.` };
   }
   
   if (detectPromptInjection(text)) {

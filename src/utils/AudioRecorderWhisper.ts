@@ -1,15 +1,12 @@
 // Universal AudioRecorder using MediaRecorder API + OpenAI Whisper
-// Works on ALL devices including Android Chrome
+// Works on ALL devices including Android Chrome and iOS PWAs
 export class AudioRecorderWhisper {
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
   private stream: MediaStream | null = null;
-  private transcriptionInterval: NodeJS.Timeout | null = null;
-  private fullTranscript = '';
   private isRecording = false;
 
   constructor(
-    private onLiveTranscription: (transcription: string) => void,
     private supabaseUrl: string,
     private supabaseAnonKey: string
   ) {}
@@ -36,7 +33,6 @@ export class AudioRecorderWhisper {
       });
 
       this.audioChunks = [];
-      this.fullTranscript = '';
       this.isRecording = true;
 
       this.mediaRecorder.ondataavailable = (event) => {
@@ -45,14 +41,8 @@ export class AudioRecorderWhisper {
         }
       };
 
-      this.mediaRecorder.start(5000); // Collect data every 5 seconds
-
-      // Send audio chunks for transcription every 10 seconds
-      this.transcriptionInterval = setInterval(async () => {
-        if (this.audioChunks.length > 0 && this.isRecording) {
-          await this.transcribeChunks();
-        }
-      }, 10000);
+      // Collect audio data continuously - we'll transcribe only when stopped
+      this.mediaRecorder.start();
 
       console.log('AudioRecorderWhisper started successfully');
     } catch (error) {
@@ -61,8 +51,8 @@ export class AudioRecorderWhisper {
     }
   }
 
-  private async transcribeChunks() {
-    if (this.audioChunks.length === 0) return;
+  private async transcribeAudio(): Promise<string> {
+    if (this.audioChunks.length === 0) return '';
 
     try {
       // Create blob from accumulated chunks
@@ -86,16 +76,14 @@ export class AudioRecorderWhisper {
 
       if (response.ok) {
         const { text } = await response.json();
-        if (text) {
-          this.fullTranscript += ' ' + text;
-          this.onLiveTranscription(this.fullTranscript.trim());
-        }
+        return text || '';
+      } else {
+        console.error('Transcription API error:', response.status);
+        return '';
       }
-
-      // Clear processed chunks
-      this.audioChunks = [];
     } catch (error) {
       console.error('Transcription error:', error);
+      return '';
     }
   }
 
@@ -114,37 +102,30 @@ export class AudioRecorderWhisper {
   async stop(): Promise<string> {
     this.isRecording = false;
 
-    // Clear interval
-    if (this.transcriptionInterval) {
-      clearInterval(this.transcriptionInterval);
-      this.transcriptionInterval = null;
-    }
+    // Stop media recorder and wait for final data
+    return new Promise((resolve) => {
+      if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+        this.mediaRecorder.onstop = async () => {
+          // Stop audio stream
+          if (this.stream) {
+            this.stream.getTracks().forEach(track => track.stop());
+            this.stream = null;
+          }
 
-    // Stop media recorder
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-      this.mediaRecorder.stop();
-    }
-
-    // Stop audio stream
-    if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
-      this.stream = null;
-    }
-
-    // Transcribe any remaining chunks
-    if (this.audioChunks.length > 0) {
-      await this.transcribeChunks();
-    }
-
-    console.log('AudioRecorderWhisper stopped');
-    return this.fullTranscript.trim();
-  }
-
-  getRecordingData(): string {
-    return this.fullTranscript.trim();
-  }
-
-  clearTranscript() {
-    this.fullTranscript = '';
+          // Now transcribe the complete recording
+          console.log('AudioRecorderWhisper stopped, transcribing...');
+          const transcript = await this.transcribeAudio();
+          
+          // Clear chunks after transcription
+          this.audioChunks = [];
+          
+          resolve(transcript);
+        };
+        
+        this.mediaRecorder.stop();
+      } else {
+        resolve('');
+      }
+    });
   }
 }

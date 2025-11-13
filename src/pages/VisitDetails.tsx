@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, Mic, MicOff, FileText, BookOpen, AlertCircle } from 'lucide-react';
 import ShareVisitModal from '@/components/ShareVisitModal';
 import PreVisitEducation from '@/components/PreVisitEducation';
-import { RealtimeTranscription } from '@/utils/RealtimeTranscription';
+import { AudioRecorderWhisper } from '@/utils/AudioRecorderWhisper';
 import { formatTime } from "@/utils/timeUtils";
 
 
@@ -21,11 +21,10 @@ const VisitDetails = () => {
   const [manualNotes, setManualNotes] = useState("");
   const [isSavingNotes, setIsSavingNotes] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [audioRecorder, setAudioRecorder] = useState<RealtimeTranscription | null>(null);
+  const [audioRecorder, setAudioRecorder] = useState<AudioRecorderWhisper | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [liveTranscription, setLiveTranscription] = useState('');
   const [recordingComplete, setRecordingComplete] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   
@@ -158,7 +157,7 @@ const VisitDetails = () => {
     }, 2000);
   };
 
-  // Recording with OpenAI Realtime API (live transcription)
+  // Recording with MediaRecorder + Whisper (works on all devices)
   const handleStartRecording = async () => {
     if (isInitializing) return;
     
@@ -168,36 +167,18 @@ const VisitDetails = () => {
       setLiveTranscription('');
       transcriptionBufferRef.current = '';
       setRecordingComplete(false);
-      setIsPaused(false);
       
       toast({
-        title: "Initializing...",
-        description: "Setting up live transcription.",
+        title: "Starting Recording...",
+        description: "Requesting microphone access.",
       });
       
-      const recorder = new RealtimeTranscription(
-        (transcription) => {
-          // Accumulate transcriptions in buffer
-          transcriptionBufferRef.current = transcriptionBufferRef.current 
-            ? transcriptionBufferRef.current + ' ' + transcription 
-            : transcription;
-          
-          // Update UI immediately
-          setLiveTranscription(transcriptionBufferRef.current);
-          
-          // Debounced save to database
-          debouncedAutoSave(transcriptionBufferRef.current);
-        },
-        (error) => {
-          toast({
-            title: "Transcription Error",
-            description: error,
-            variant: "destructive",
-          });
-        }
+      const recorder = new AudioRecorderWhisper(
+        'https://hjupkurtumzqrwoytjnn.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqdXBrdXJ0dW16cXJ3b3l0am5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MjI2MDQsImV4cCI6MjA3MTk5ODYwNH0.d5LNBkCAZY1ceV9LoMuMR5-cx_J9iZ4VwC1hJ9b30bI'
       );
       
-      await recorder.init();
+      await recorder.start();
       setAudioRecorder(recorder);
       setIsRecording(true);
       setRecordingDuration(0);
@@ -216,13 +197,13 @@ const VisitDetails = () => {
       
       toast({
         title: "Recording Started",
-        description: "Live transcription active - speak now.",
+        description: "Speak now. Transcription will happen when you stop.",
       });
     } catch (error) {
       console.error('Recording error:', error);
       toast({
         title: "Recording Failed",
-        description: "Could not start live transcription.",
+        description: error instanceof Error ? error.message : "Could not start recording.",
         variant: "destructive",
       });
     } finally {
@@ -230,42 +211,7 @@ const VisitDetails = () => {
     }
   };
 
-  const handlePauseRecording = () => {
-    if (!audioRecorder) return;
-    
-    // Pause timer
-    if (durationIntervalRef.current) {
-      clearInterval(durationIntervalRef.current);
-      durationIntervalRef.current = null;
-    }
-    
-    audioRecorder.pause();
-    setIsPaused(true);
-    
-    toast({
-      title: "Recording Paused",
-      description: "Transcription paused. Click Resume to continue.",
-    });
-  };
-
-  const handleResumeRecording = () => {
-    if (!audioRecorder) return;
-    
-    // Resume timer from current duration
-    const startTime = Date.now() - (recordingDuration * 1000);
-    durationIntervalRef.current = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      setRecordingDuration(elapsed);
-    }, 1000);
-    
-    audioRecorder.resume();
-    setIsPaused(false);
-    
-    toast({
-      title: "Recording Resumed",
-      description: "Transcription active again.",
-    });
-  };
+  // Removed pause/resume - not needed for simple record-stop flow
 
   const handleStopRecording = async () => {
     if (!audioRecorder || isStopping) return;
@@ -273,8 +219,8 @@ const VisitDetails = () => {
     setIsStopping(true);
     
     toast({
-      title: "Finishing transcription...",
-      description: "Waiting for any remaining audio to be transcribed.",
+      title: "Processing...",
+      description: "Stopping recording and transcribing audio.",
     });
     
     // Clear the duration interval
@@ -284,21 +230,46 @@ const VisitDetails = () => {
     }
     
     try {
-      // Wait for pending transcriptions before disconnecting
-      await audioRecorder.disconnect(true);
+      // Stop recording and get transcript
+      const transcript = await audioRecorder.stop();
+      
       setIsRecording(false);
       setRecordingComplete(true);
-      setIsPaused(false);
       
-      toast({
-        title: "Recording Stopped",
-        description: "Your live transcription is complete.",
-      });
+      // Update UI with transcript
+      if (transcript) {
+        setLiveTranscription(transcript);
+        transcriptionBufferRef.current = transcript;
+        
+        // Save to database
+        if (id && user?.id) {
+          await supabase
+            .from('visit_records')
+            .upsert({
+              appointment_id: id,
+              user_id: user.id,
+              transcription: transcript,
+              updated_at: new Date().toISOString()
+            }, { 
+              onConflict: 'appointment_id'
+            });
+        }
+        
+        toast({
+          title: "Recording Complete",
+          description: "Your audio has been transcribed successfully.",
+        });
+      } else {
+        toast({
+          title: "Recording Stopped",
+          description: "No transcription available. The audio may have been too short.",
+        });
+      }
     } catch (error) {
       console.error('Error stopping recording:', error);
       toast({
         title: "Error",
-        description: "Failed to stop recording properly.",
+        description: "Failed to process recording.",
         variant: "destructive",
       });
     } finally {
@@ -526,38 +497,15 @@ const VisitDetails = () => {
                   {isInitializing ? "Initializing..." : "Start Recording"}
                 </Button>
               ) : (
-                <div className="flex flex-col sm:flex-row gap-2">
-                  {!isPaused ? (
-                    <Button 
-                      onClick={handlePauseRecording}
-                      variant="outline"
-                      className="flex items-center justify-center gap-2 flex-1 text-sm sm:text-base min-h-[44px]"
-                      disabled={isStopping}
-                    >
-                      <Mic className="w-4 h-4" />
-                      Pause
-                    </Button>
-                  ) : (
-                    <Button 
-                      onClick={handleResumeRecording}
-                      variant="default"
-                      className="flex items-center justify-center gap-2 flex-1 text-sm sm:text-base min-h-[44px]"
-                      disabled={isStopping}
-                    >
-                      <Mic className="w-4 h-4" />
-                      Resume
-                    </Button>
-                  )}
-                  <Button 
-                    onClick={handleStopRecording}
-                    variant="destructive"
-                    className="flex items-center justify-center gap-2 flex-1 text-sm sm:text-base min-h-[44px]"
-                    disabled={isStopping}
-                  >
-                    <MicOff className="w-4 h-4" />
-                    {isStopping ? "Stopping..." : `Stop (${Math.floor(recordingDuration / 60)}:${(recordingDuration % 60).toString().padStart(2, '0')})`}
-                  </Button>
-                </div>
+                <Button 
+                  onClick={handleStopRecording}
+                  variant="destructive"
+                  className="flex items-center justify-center gap-2 w-full text-sm sm:text-base min-h-[44px]"
+                  disabled={isStopping}
+                >
+                  <MicOff className="w-4 h-4" />
+                  {isStopping ? "Stopping..." : `Stop Recording (${Math.floor(recordingDuration / 60)}:${(recordingDuration % 60).toString().padStart(2, '0')})`}
+                </Button>
               )}
 
               {isRecording && (

@@ -24,7 +24,7 @@ const Login = () => {
 
   // Handle redirect in useEffect to avoid setState during render
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!authLoading && user && window.location.pathname !== '/reset-password') {
       navigate("/dashboard", { replace: true });
     }
   }, [authLoading, user, navigate]);

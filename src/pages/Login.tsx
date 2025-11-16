@@ -16,6 +16,7 @@ const Login = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -92,6 +93,36 @@ const Login = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const redirectUrl = `${window.location.origin}/reset-password`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Reset link sent",
+        description: "Please check your email for the password reset link",
+      });
+      
+      setIsForgotPassword(false);
+    } catch (error: any) {
+      toast({
+        title: "Error sending reset link",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Show loading while checking auth state
   if (authLoading) {
     return (
@@ -125,17 +156,19 @@ const Login = () => {
           <Card className="mx-2 sm:mx-0">
             <CardHeader className="pb-3 sm:pb-6">
               <CardTitle className="text-center text-lg sm:text-xl">
-                {isSignUp ? "Create Account" : "Sign In"}
+                {isForgotPassword ? "Reset Password" : (isSignUp ? "Create Account" : "Sign In")}
               </CardTitle>
               <p className="text-center text-xs sm:text-sm text-muted-foreground px-2">
-                {isSignUp 
-                  ? "Create your account to start tracking appointments"
-                  : "Enter your email and password to access your appointments"
+                {isForgotPassword 
+                  ? "Enter your email to receive a password reset link"
+                  : (isSignUp 
+                    ? "Create your account to start tracking appointments"
+                    : "Enter your email and password to access your appointments")
                 }
               </p>
             </CardHeader>
             <CardContent className="pt-0">
-              <form onSubmit={isSignUp ? handleSignUp : handleSignIn} className="space-y-3 sm:space-y-4">
+              <form onSubmit={isForgotPassword ? handleForgotPassword : (isSignUp ? handleSignUp : handleSignIn)} className="space-y-3 sm:space-y-4">
                 {isSignUp && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="space-y-1 sm:space-y-2">
@@ -178,32 +211,60 @@ const Login = () => {
                   />
                 </div>
                 
-                <div className="space-y-1 sm:space-y-2">
-                  <Label htmlFor="password" className="text-xs sm:text-sm">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="text-sm"
-                  />
-                </div>
+                {!isForgotPassword && (
+                  <div className="space-y-1 sm:space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password" className="text-xs sm:text-sm">Password</Label>
+                      {!isSignUp && (
+                        <button
+                          type="button"
+                          onClick={() => setIsForgotPassword(true)}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Forgot password?
+                        </button>
+                      )}
+                    </div>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="text-sm"
+                    />
+                  </div>
+                )}
 
                 <Button type="submit" className="w-full text-sm" disabled={loading}>
-                  {loading ? "Loading..." : (isSignUp ? "Create Account" : "Sign In")}
+                  {loading ? "Loading..." : (isForgotPassword ? "Send Reset Link" : (isSignUp ? "Create Account" : "Sign In"))}
                 </Button>
 
                 <p className="text-center text-xs sm:text-sm text-muted-foreground">
-                  {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-                  <button
-                    type="button"
-                    onClick={() => setIsSignUp(!isSignUp)}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    {isSignUp ? "Sign in" : "Sign up"}
-                  </button>
+                  {isForgotPassword ? (
+                    <>
+                      Remember your password?{" "}
+                      <button
+                        type="button"
+                        onClick={() => setIsForgotPassword(false)}
+                        className="text-primary hover:underline font-medium"
+                      >
+                        Sign in
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+                      <button
+                        type="button"
+                        onClick={() => setIsSignUp(!isSignUp)}
+                        className="text-primary hover:underline font-medium"
+                      >
+                        {isSignUp ? "Sign in" : "Sign up"}
+                      </button>
+                    </>
+                  )}
                 </p>
               </form>
             </CardContent>

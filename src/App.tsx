@@ -10,7 +10,6 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Lazy load pages for better performance
 const Login = lazy(() => import("./pages/Login"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const VisitDetails = lazy(() => import("./pages/VisitDetails"));
 const SharedVisitsPage = lazy(() => import("./pages/SharedVisits"));
@@ -44,8 +43,7 @@ const AppContent = () => {
       <Suspense fallback={<PageLoader />}>
         <Routes>
               <Route path="/" element={<Login />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route 
+              <Route
                 path="/dashboard"
                 element={
                   <ProtectedRoute>

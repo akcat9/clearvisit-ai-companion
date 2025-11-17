@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Navigate } from 'react-router-dom';
 import SubscriptionGate from '@/components/SubscriptionGate';
+import Onboarding from '@/components/Onboarding';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,8 +12,18 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading: authLoading } = useAuth();
   const { hasActiveSubscription, loading: subLoading } = useSubscription();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
 
-  if (authLoading || subLoading) {
+  useEffect(() => {
+    if (!authLoading && user) {
+      const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+      setShowOnboarding(!hasSeenOnboarding);
+      setCheckingOnboarding(false);
+    }
+  }, [authLoading, user]);
+
+  if (authLoading || subLoading || checkingOnboarding) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -24,6 +36,10 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (!user) {
     return <Navigate to="/" replace />;
+  }
+
+  if (showOnboarding) {
+    return <Onboarding onComplete={() => setShowOnboarding(false)} />;
   }
 
   if (!hasActiveSubscription) {

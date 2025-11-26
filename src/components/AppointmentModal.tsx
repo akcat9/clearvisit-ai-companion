@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { appointmentSchema, type AppointmentFormData } from "@/lib/validation";
+import { useTranslation } from 'react-i18next';
 
 interface AppointmentModalProps {
   onClose: () => void;
@@ -14,6 +15,7 @@ interface AppointmentModalProps {
 
 export const AppointmentModal = ({ onClose, onSubmit }: AppointmentModalProps) => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<AppointmentFormData>({
     doctorName: "",
     date: "",
@@ -46,8 +48,8 @@ export const AppointmentModal = ({ onClose, onSubmit }: AppointmentModalProps) =
         setErrors(newErrors);
         
         toast({
-          title: "Validation Error",
-          description: "Please check the form for errors",
+          title: t('appointment.validationError'),
+          description: t('appointment.validationError'),
           variant: "destructive",
         });
       }
@@ -68,15 +70,15 @@ export const AppointmentModal = ({ onClose, onSubmit }: AppointmentModalProps) =
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-md w-[calc(100vw-2rem)] sm:w-full max-h-[85vh] overflow-y-auto mx-2 sm:mx-4">
         <DialogHeader>
-          <DialogTitle className="text-base sm:text-lg">Create New Appointment</DialogTitle>
+          <DialogTitle className="text-base sm:text-lg">{t('appointment.createTitle')}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
             <div className="space-y-1.5 sm:space-y-2">
-              <Label htmlFor="doctorName" className="text-sm">Doctor's Name</Label>
+              <Label htmlFor="doctorName" className="text-sm">{t('appointment.doctorName')}</Label>
               <Input
                 id="doctorName"
-                placeholder="Dr. John Smith"
+                placeholder={t('appointment.doctorPlaceholder')}
                 value={formData.doctorName}
                 onChange={(e) => handleChange("doctorName", e.target.value)}
                 required
@@ -89,7 +91,7 @@ export const AppointmentModal = ({ onClose, onSubmit }: AppointmentModalProps) =
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="date" className="text-sm">Date</Label>
+                <Label htmlFor="date" className="text-sm">{t('appointment.date')}</Label>
                 <Input
                   id="date"
                   type="date"
@@ -103,7 +105,7 @@ export const AppointmentModal = ({ onClose, onSubmit }: AppointmentModalProps) =
                 )}
               </div>
               <div className="space-y-1.5 sm:space-y-2">
-                <Label htmlFor="time" className="text-sm">Time</Label>
+                <Label htmlFor="time" className="text-sm">{t('appointment.time')}</Label>
                 <Input
                   id="time"
                   type="time"
@@ -119,10 +121,10 @@ export const AppointmentModal = ({ onClose, onSubmit }: AppointmentModalProps) =
             </div>
 
             <div className="space-y-1.5 sm:space-y-2">
-              <Label htmlFor="reason" className="text-sm">Reason for Visit</Label>
+              <Label htmlFor="reason" className="text-sm">{t('appointment.reason')}</Label>
               <Textarea
                 id="reason"
-                placeholder="Describe the reason for your appointment"
+                placeholder={t('appointment.reasonPlaceholder')}
                 value={formData.reason}
                 onChange={(e) => handleChange("reason", e.target.value)}
                 required
@@ -134,10 +136,10 @@ export const AppointmentModal = ({ onClose, onSubmit }: AppointmentModalProps) =
             </div>
 
             <div className="space-y-1.5 sm:space-y-2">
-              <Label htmlFor="goal" className="text-sm">Goal for Visit</Label>
+              <Label htmlFor="goal" className="text-sm">{t('appointment.goal')}</Label>
               <Textarea
                 id="goal"
-                placeholder="What do you hope to achieve?"
+                placeholder={t('appointment.goalPlaceholder')}
                 value={formData.goal}
                 onChange={(e) => handleChange("goal", e.target.value)}
                 className={`text-sm sm:text-base min-h-[80px] ${errors.goal ? "border-destructive" : ""}`}
@@ -148,10 +150,10 @@ export const AppointmentModal = ({ onClose, onSubmit }: AppointmentModalProps) =
             </div>
 
             <div className="space-y-1.5 sm:space-y-2">
-              <Label htmlFor="symptoms" className="text-sm">Symptoms (optional)</Label>
+              <Label htmlFor="symptoms" className="text-sm">{t('appointment.symptoms')}</Label>
               <Textarea
                 id="symptoms"
-                placeholder="List any symptoms"
+                placeholder={t('appointment.symptomsPlaceholder')}
                 value={formData.symptoms}
                 onChange={(e) => handleChange("symptoms", e.target.value)}
                 className={`text-sm sm:text-base min-h-[80px] ${errors.symptoms ? "border-destructive" : ""}`}
@@ -163,10 +165,10 @@ export const AppointmentModal = ({ onClose, onSubmit }: AppointmentModalProps) =
 
           <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-3 sm:pt-4">
             <Button type="button" variant="outline" onClick={onClose} className="flex-1 text-sm" disabled={isSubmitting}>
-              Cancel
+              {t('appointment.cancel')}
             </Button>
             <Button type="submit" className="flex-1 text-sm" disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create Appointment"}
+              {isSubmitting ? t('appointment.creating') : t('appointment.create')}
             </Button>
           </div>
         </form>

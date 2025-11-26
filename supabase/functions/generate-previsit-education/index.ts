@@ -13,25 +13,32 @@ serve(async (req) => {
   }
 
   try {
-    // JWT is already verified by Supabase (verify_jwt = true)
-    // Get user info for rate limiting
-    const authHeader = req.headers.get('Authorization')!;
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    // Get user info for rate limiting (optional since verify_jwt = false)
+    let user = null;
+    const authHeader = req.headers.get('Authorization');
     
-    // Rate limiting: max 50 requests per minute (very permissive)
-    if (user) {
-      const rateLimit = checkRateLimit(user.id, 50, 60000);
-      if (!rateLimit.allowed) {
-        return new Response(
-          JSON.stringify({ error: 'Too many requests, please wait a moment' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    if (authHeader) {
+      try {
+        const supabaseClient = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+          { global: { headers: { Authorization: authHeader } } }
         );
+        const { data } = await supabaseClient.auth.getUser();
+        user = data?.user;
+        
+        // Rate limiting: max 50 requests per minute (very permissive)
+        if (user) {
+          const rateLimit = checkRateLimit(user.id, 50, 60000);
+          if (!rateLimit.allowed) {
+            return new Response(
+              JSON.stringify({ error: 'Too many requests, please wait a moment' }),
+              { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        }
+      } catch (authError) {
+        console.log('Auth check skipped:', authError.message);
       }
     }
 

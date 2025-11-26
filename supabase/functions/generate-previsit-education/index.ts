@@ -46,10 +46,10 @@ serve(async (req) => {
     console.log('📝 Received request:', { appointmentReason, goal, symptoms });
 
     // Simplified validation - just check if appointment reason exists
-    if (!appointmentReason || appointmentReason.trim().length < 5) {
+    if (!appointmentReason || appointmentReason.trim().length < 2) {
       console.error('❌ Validation failed: appointment reason too short');
       return new Response(
-        JSON.stringify({ error: 'Please provide an appointment reason' }),
+        JSON.stringify({ error: 'Please provide an appointment reason (at least 2 characters)' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

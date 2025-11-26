@@ -3,12 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
 import { Header } from "@/components/Header";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -20,8 +20,8 @@ const Login = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
-  // Handle redirect in useEffect to avoid setState during render
   useEffect(() => {
     if (!authLoading && user) {
       navigate("/dashboard", { replace: true });
@@ -41,12 +41,12 @@ const Login = () => {
       if (error) throw error;
       
       toast({
-        title: "Signed in successfully",
-        description: "Welcome back to tadoc",
+        title: t('auth.signedInSuccessfully'),
+        description: t('auth.welcomeBack'),
       });
     } catch (error: any) {
       toast({
-        title: "Error signing in",
+        title: t('auth.errorSigningIn'),
         description: error.message,
         variant: "destructive",
       });
@@ -78,12 +78,12 @@ const Login = () => {
       if (error) throw error;
       
       toast({
-        title: "Account created successfully",
-        description: "Please check your email to verify your account",
+        title: t('auth.accountCreated'),
+        description: t('auth.checkEmailVerify'),
       });
     } catch (error: any) {
       toast({
-        title: "Error creating account",
+        title: t('auth.errorCreatingAccount'),
         description: error.message,
         variant: "destructive",
       });
@@ -92,23 +92,21 @@ const Login = () => {
     }
   };
 
-
-  // Show loading while checking auth state
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground text-sm">Loading...</p>
+          <p className="mt-2 text-muted-foreground text-sm">{t('auth.loading')}</p>
         </div>
       </div>
     );
   }
 
-  // Don't render if redirecting
   if (user) {
     return null;
   }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -116,22 +114,19 @@ const Login = () => {
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-2 sm:px-4 py-2 sm:py-4">
         <div className="w-full max-w-sm sm:max-w-md space-y-3 sm:space-y-4">
           <div className="text-center px-2">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Welcome to tadoc</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">{t('auth.welcomeTitle')}</h1>
             <p className="mt-1 sm:mt-2 text-muted-foreground text-xs sm:text-sm lg:text-base">
-              Record, analyze, and remember your doctor visits
+              {t('app.tagline')}
             </p>
           </div>
-
 
           <Card className="mx-2 sm:mx-0">
             <CardHeader className="pb-3 sm:pb-6">
               <CardTitle className="text-center text-lg sm:text-xl">
-                {isSignUp ? "Create Account" : "Sign In"}
+                {isSignUp ? t('auth.createAccount') : t('auth.signIn')}
               </CardTitle>
               <p className="text-center text-xs sm:text-sm text-muted-foreground px-2">
-                {isSignUp 
-                  ? "Create your account to start tracking appointments"
-                  : "Enter your email and password to access your appointments"}
+                {isSignUp ? t('auth.signUpDescription') : t('auth.signInDescription')}
               </p>
             </CardHeader>
             <CardContent className="pt-0">
@@ -139,7 +134,7 @@ const Login = () => {
                 {isSignUp && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="firstName" className="text-xs sm:text-sm">First Name</Label>
+                      <Label htmlFor="firstName" className="text-xs sm:text-sm">{t('auth.firstName')}</Label>
                       <Input
                         id="firstName"
                         type="text"
@@ -151,7 +146,7 @@ const Login = () => {
                       />
                     </div>
                     <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="lastName" className="text-xs sm:text-sm">Last Name</Label>
+                      <Label htmlFor="lastName" className="text-xs sm:text-sm">{t('auth.lastName')}</Label>
                       <Input
                         id="lastName"
                         type="text"
@@ -166,7 +161,7 @@ const Login = () => {
                 )}
                 
                 <div className="space-y-1 sm:space-y-2">
-                  <Label htmlFor="email" className="text-xs sm:text-sm">Email</Label>
+                  <Label htmlFor="email" className="text-xs sm:text-sm">{t('auth.email')}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -179,7 +174,7 @@ const Login = () => {
                 </div>
                 
                 <div className="space-y-1 sm:space-y-2">
-                  <Label htmlFor="password" className="text-xs sm:text-sm">Password</Label>
+                  <Label htmlFor="password" className="text-xs sm:text-sm">{t('auth.password')}</Label>
                   <Input
                     id="password"
                     type="password"
@@ -192,17 +187,17 @@ const Login = () => {
                 </div>
 
                 <Button type="submit" className="w-full text-sm" disabled={loading}>
-                  {loading ? "Loading..." : (isSignUp ? "Create Account" : "Sign In")}
+                  {loading ? t('auth.loading') : (isSignUp ? t('auth.createAccount') : t('auth.signIn'))}
                 </Button>
 
                 <p className="text-center text-xs sm:text-sm text-muted-foreground">
-                  {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+                  {isSignUp ? t('auth.alreadyHaveAccount') : t('auth.dontHaveAccount')}{" "}
                   <button
                     type="button"
                     onClick={() => setIsSignUp(!isSignUp)}
                     className="text-primary hover:underline font-medium"
                   >
-                    {isSignUp ? "Sign in" : "Sign up"}
+                    {isSignUp ? t('auth.signIn') : t('auth.signUp')}
                   </button>
                 </p>
               </form>

@@ -75,6 +75,8 @@ const PreVisitEducation = ({
 
   const generateEducationContent = async (forceRegenerate = false) => {
     setIsLoading(true);
+    console.log('🔄 Starting education content generation...', { appointmentReason, goal, symptoms });
+    
     try {
       const { data, error } = await supabase.functions.invoke('generate-previsit-education', {
         body: {
@@ -84,11 +86,13 @@ const PreVisitEducation = ({
         }
       });
 
+      console.log('📥 Edge function response:', { data, error });
+
       if (error) {
-        console.error('Error generating education content:', error);
+        console.error('❌ Error generating education content:', error);
         toast({
           title: "Education content unavailable",
-          description: "Unable to load pre-visit information.",
+          description: `Unable to load pre-visit information. ${error.message || ''}`,
           variant: "destructive",
         });
         return;

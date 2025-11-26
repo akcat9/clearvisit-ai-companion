@@ -38,9 +38,9 @@ serve(async (req) => {
     const { fullTranscription, appointmentReason, medicalHistory } = await req.json();
 
     // Simplified validation - just check length
-    if (!fullTranscription || fullTranscription.length < 50) {
+    if (!fullTranscription || fullTranscription.length < 10) {
       return new Response(
-        JSON.stringify({ error: 'Transcription too short' }),
+        JSON.stringify({ error: 'Transcription too short (minimum 10 characters)' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

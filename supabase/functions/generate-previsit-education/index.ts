@@ -43,9 +43,11 @@ serve(async (req) => {
     }
 
     const { appointmentReason, goal, symptoms } = await req.json();
+    console.log('📝 Received request:', { appointmentReason, goal, symptoms });
 
     // Simplified validation - just check if appointment reason exists
     if (!appointmentReason || appointmentReason.trim().length < 5) {
+      console.error('❌ Validation failed: appointment reason too short');
       return new Response(
         JSON.stringify({ error: 'Please provide an appointment reason' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -59,8 +61,13 @@ serve(async (req) => {
 
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
-      throw new Error('Service temporarily unavailable');
+      console.error('❌ OPENAI_API_KEY not configured');
+      return new Response(
+        JSON.stringify({ error: 'AI service not configured. Please contact support.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+    console.log('✅ OpenAI API key found');
 
     const prompt = `You are a medical education AI assistant with clinical expertise. Provide scientifically-grounded pre-visit education for a patient.
 
@@ -158,7 +165,8 @@ Generate scientifically detailed educational content based on the appointment in
     });
 
     if (!response.ok) {
-      console.error('OpenAI API error:', response.status);
+      const errorText = await response.text();
+      console.error('❌ OpenAI API error:', response.status, errorText);
       
       // Fallback response
       const fallbackContent = {
@@ -202,15 +210,18 @@ Generate scientifically detailed educational content based on the appointment in
 
     const data = await response.json();
     let content = data.choices[0]?.message?.content || '';
+    console.log('📦 Raw AI response length:', content.length);
     content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
     try {
       const parsedContent = JSON.parse(content);
+      console.log('✅ Successfully parsed AI response');
       return new Response(JSON.stringify(parsedContent), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } catch (parseError) {
-      console.error('JSON parse error');
+      console.error('❌ JSON parse error:', parseError.message);
+      console.error('Content that failed to parse:', content.substring(0, 200));
       
       // Return fallback
       const fallbackContent = {

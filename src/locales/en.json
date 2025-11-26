@@ -30,6 +30,11 @@
     "settings": "Settings"
   },
   "dashboard": {
+    "title": "My Appointments",
+    "upcoming": "Upcoming Appointments",
+    "previous": "Previous Appointments",
+    "clickNew": "Click \"New Appointment\" to schedule your first visit",
+    "copyright": "All rights reserved",
     "myAppointments": "My Appointments",
     "howToUse": "How to Use tadoc",
     "simpleSteps": "Simple steps to get started:",
@@ -61,6 +66,8 @@
     "somethingWentWrong": "Something went wrong"
   },
   "appointment": {
+    "go": "Go",
+    "delete": "Delete",
     "createNew": "Create New Appointment",
     "doctorName": "Doctor's Name",
     "date": "Date",

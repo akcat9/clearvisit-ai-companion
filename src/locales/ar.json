@@ -30,6 +30,11 @@
     "settings": "الإعدادات"
   },
   "dashboard": {
+    "title": "مواعيدي",
+    "upcoming": "المواعيد القادمة",
+    "previous": "المواعيد السابقة",
+    "clickNew": "انقر على \"موعد جديد\" لجدولة زيارتك الأولى",
+    "copyright": "جميع الحقوق محفوظة",
     "myAppointments": "مواعيدي",
     "howToUse": "كيفية استخدام تادوك",
     "simpleSteps": "خطوات بسيطة للبدء:",
@@ -61,6 +66,8 @@
     "somethingWentWrong": "حدث خطأ ما"
   },
   "appointment": {
+    "go": "اذهب",
+    "delete": "حذف",
     "createNew": "إنشاء موعد جديد",
     "doctorName": "اسم الطبيب",
     "date": "التاريخ",

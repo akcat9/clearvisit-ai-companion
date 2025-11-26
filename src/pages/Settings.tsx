@@ -5,9 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle, Trash2, ArrowLeft } from "lucide-react";
+import { AlertTriangle, Trash2, ArrowLeft, Languages } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,15 +32,24 @@ export default function Settings() {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
+  const handleLanguageChange = (language: string) => {
+    i18n.changeLanguage(language);
+    toast({
+      title: t('settings.languageUpdated'),
+      description: t('settings.languageUpdatedDesc'),
+    });
+  };
+
   const handleDeleteAccount = async () => {
     if (confirmText !== "DELETE") {
       toast({
-        title: "Confirmation required",
-        description: "Please type 'DELETE' to confirm account deletion.",
+        title: t('settings.confirmationRequired'),
+        description: t('settings.pleaseTypeDelete'),
         variant: "destructive",
       });
       return;
@@ -48,8 +65,8 @@ export default function Settings() {
       if (error) {
         console.error('Error deleting account:', error);
         toast({
-          title: "Error deleting account",
-          description: "There was an error deleting your account. Please try again.",
+          title: t('settings.errorDeleting'),
+          description: t('settings.errorDeletingDesc'),
           variant: "destructive",
         });
         setIsDeleting(false);
@@ -57,8 +74,8 @@ export default function Settings() {
       }
 
       toast({
-        title: "Account deleted",
-        description: "Your account and all data have been permanently deleted.",
+        title: t('settings.accountDeleted'),
+        description: t('settings.accountDeletedDesc'),
       });
 
       // Sign out and redirect to home
@@ -66,8 +83,8 @@ export default function Settings() {
     } catch (error) {
       console.error('Error deleting account:', error);
       toast({
-        title: "Error deleting account",
-        description: "There was an error deleting your account. Please try again.",
+        title: t('settings.errorDeleting'),
+        description: t('settings.errorDeletingDesc'),
         variant: "destructive",
       });
       setIsDeleting(false);
@@ -84,26 +101,26 @@ export default function Settings() {
             className="flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
+            {t('settings.backToDashboard')}
           </Button>
         </div>
 
         <div className="space-y-8">
           <div>
-            <h1 className="text-3xl font-bold">Settings</h1>
-            <p className="text-muted-foreground">Manage your account settings and preferences.</p>
+            <h1 className="text-3xl font-bold">{t('settings.title')}</h1>
+            <p className="text-muted-foreground">{t('settings.subtitle')}</p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Account Information</CardTitle>
+              <CardTitle>{t('settings.accountInfo')}</CardTitle>
               <CardDescription>
-                Your account details and information.
+                {t('settings.accountDetails')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('settings.email')}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -113,21 +130,51 @@ export default function Settings() {
                 />
               </div>
               <p className="text-sm text-muted-foreground">
-                Email changes are not currently supported. Contact support if you need to update your email.
+                {t('settings.emailChangeNotSupported')}
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Support</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Languages className="w-5 h-5" />
+                {t('settings.preferences')}
+              </CardTitle>
               <CardDescription>
-                Need help? Get in touch with our support team.
+                {t('settings.preferencesDesc')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="language">{t('settings.language')}</Label>
+                <Select value={i18n.language} onValueChange={handleLanguageChange}>
+                  <SelectTrigger id="language" className="w-full">
+                    <SelectValue placeholder={t('settings.selectLanguage')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">{t('languages.en')}</SelectItem>
+                    <SelectItem value="es">{t('languages.es')}</SelectItem>
+                    <SelectItem value="ar">{t('languages.ar')}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {t('settings.selectLanguage')}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('settings.support')}</CardTitle>
+              <CardDescription>
+                {t('settings.supportDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-2">
-                For technical support, questions, or feedback, please contact us at:
+                {t('settings.supportText')}
               </p>
               <p className="text-sm font-medium">
                 <a 
@@ -144,65 +191,64 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="text-destructive flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5" />
-                Danger Zone
+                {t('settings.dangerZone')}
               </CardTitle>
               <CardDescription>
-                Irreversible and destructive actions.
+                {t('settings.dangerZoneDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="p-4 border border-destructive rounded-lg bg-destructive/5">
-                <h3 className="font-semibold mb-2">Delete Account</h3>
+                <h3 className="font-semibold mb-2">{t('settings.deleteAccount')}</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Permanently delete your account and all associated data. This action cannot be undone.
-                  All of your appointments, visit records, shared visits, and personal information will be permanently removed.
+                  {t('settings.deleteAccountDesc')}
                 </p>
                 
                 <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" className="flex items-center gap-2">
                       <Trash2 className="w-4 h-4" />
-                      Delete Account
+                      {t('settings.deleteAccount')}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogTitle>{t('settings.areYouSure')}</AlertDialogTitle>
                       <AlertDialogDescription className="space-y-2">
                         <p>
-                          This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+                          {t('settings.cannotBeUndone')}
                         </p>
-                        <p className="font-semibold">This includes:</p>
+                        <p className="font-semibold">{t('settings.thisIncludes')}</p>
                         <ul className="list-disc list-inside text-sm space-y-1">
-                          <li>All your appointments and visit records</li>
-                          <li>All shared visits (sent and received)</li>
-                          <li>Your profile and personal information</li>
-                          <li>All AI-generated summaries and analyses</li>
+                          <li>{t('settings.allAppointments')}</li>
+                          <li>{t('settings.allSharedVisits')}</li>
+                          <li>{t('settings.profileInfo')}</li>
+                          <li>{t('settings.allAiSummaries')}</li>
                         </ul>
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="py-4">
                       <Label htmlFor="confirm-delete" className="text-sm font-medium">
-                        Type <code className="bg-muted px-1 py-0.5 rounded text-xs">DELETE</code> to confirm
+                        {t('settings.typeDelete')} <code className="bg-muted px-1 py-0.5 rounded text-xs">DELETE</code> {t('settings.toConfirm')}
                       </Label>
                       <Input
                         id="confirm-delete"
                         value={confirmText}
                         onChange={(e) => setConfirmText(e.target.value)}
-                        placeholder="Type DELETE here"
+                        placeholder={t('settings.typeDeleteHere')}
                         className="mt-2"
                       />
                     </div>
                     <AlertDialogFooter>
                       <AlertDialogCancel onClick={() => setConfirmText("")}>
-                        Cancel
+                        {t('settings.cancel')}
                       </AlertDialogCancel>
                       <AlertDialogAction
                         onClick={handleDeleteAccount}
                         disabled={confirmText !== "DELETE" || isDeleting}
                         className="bg-destructive hover:bg-destructive/90"
                       >
-                        {isDeleting ? "Deleting..." : "Delete Account"}
+                        {isDeleting ? t('settings.deleting') : t('settings.deleteAccount')}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

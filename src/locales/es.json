@@ -30,6 +30,11 @@
     "settings": "Configuración"
   },
   "dashboard": {
+    "title": "Mis citas",
+    "upcoming": "Próximas citas",
+    "previous": "Citas anteriores",
+    "clickNew": "Haz clic en \"Nueva cita\" para programar tu primera visita",
+    "copyright": "Todos los derechos reservados",
     "myAppointments": "Mis citas",
     "howToUse": "Cómo usar tadoc",
     "simpleSteps": "Pasos simples para comenzar:",
@@ -61,6 +66,8 @@
     "somethingWentWrong": "Algo salió mal"
   },
   "appointment": {
+    "go": "Ir",
+    "delete": "Eliminar",
     "createNew": "Crear nueva cita",
     "doctorName": "Nombre del médico",
     "date": "Fecha",

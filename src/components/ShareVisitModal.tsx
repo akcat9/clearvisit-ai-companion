@@ -9,7 +9,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Share2 } from "lucide-react";
 import MultiEmailInput from "./MultiEmailInput";
 import { shareVisitSchema, type ShareVisitFormData } from "@/lib/validation";
-import { useTranslation } from 'react-i18next';
 
 interface ShareVisitModalProps {
   visitSummary: any;
@@ -33,7 +32,6 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const { user } = useAuth();
-  const { t } = useTranslation();
 
   const handleShare = async () => {
     try {
@@ -42,8 +40,8 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
       
       if (!user) {
         toast({
-          title: t('share.authRequired'),
-          description: t('share.loginToShare'),
+          title: "Authentication required",
+          description: "Please log in to share visits",
           variant: "destructive",
         });
         return;
@@ -65,8 +63,8 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
 
       if (invalidEmails.length > 0) {
         toast({
-          title: t('share.invalidRecipients'),
-          description: `${t('share.notRegistered')}: ${invalidEmails.join(', ')}`,
+          title: "Invalid recipients",
+          description: `The following email addresses are not registered: ${invalidEmails.join(', ')}`,
           variant: "destructive",
         });
         setIsSharing(false);
@@ -99,14 +97,14 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
 
       if (errors.length > 0) {
         toast({
-          title: t('share.partialSuccess'),
-          description: `${t('share.sharedWith')} ${validatedData.recipientEmails.length - errors.length} ${t('share.of')} ${validatedData.recipientEmails.length} ${t('share.recipients')}`,
+          title: "Partial success",
+          description: `Shared with ${validatedData.recipientEmails.length - errors.length} of ${validatedData.recipientEmails.length} recipients`,
           variant: "destructive",
         });
       } else {
         toast({
-          title: t('share.shareSuccess'),
-          description: `${t('share.shareSummaryShared')} ${validatedData.recipientEmails.length} ${t('share.recipient')}${validatedData.recipientEmails.length > 1 ? 's' : ''}`,
+          title: "Visit shared successfully",
+          description: `Visit summary has been shared with ${validatedData.recipientEmails.length} recipient${validatedData.recipientEmails.length > 1 ? 's' : ''}`,
         });
       }
 
@@ -124,14 +122,14 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
         setErrors(newErrors);
         
         toast({
-          title: t('share.validationError'),
-          description: t('share.checkForm'),
+          title: "Validation Error",
+          description: "Please check the form for errors",
           variant: "destructive",
         });
       } else {
         toast({
-          title: t('share.shareFailed'),
-          description: t('share.tryAgain'),
+          title: "Failed to share visit",
+          description: "Please try again later",
           variant: "destructive",
         });
       }
@@ -146,31 +144,31 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
         {trigger || (
           <Button variant="outline" className="flex items-center gap-2">
             <Share2 className="w-4 h-4" />
-            {t('visitDetails.shareVisit')}
+            Share Visit
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto mx-2">
         <DialogHeader>
-          <DialogTitle className="text-base sm:text-lg">{t('share.title')}</DialogTitle>
+          <DialogTitle className="text-base sm:text-lg">Share Visit Summary</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 sm:space-y-4">
           <div className="space-y-1.5 sm:space-y-2">
-            <Label htmlFor="emails" className="text-sm">{t('share.recipientEmails')}</Label>
+            <Label htmlFor="emails" className="text-sm">Recipient Emails</Label>
             <MultiEmailInput
               emails={formData.recipientEmails}
               onEmailsChange={(emails) => setFormData(prev => ({ ...prev, recipientEmails: emails }))}
-              placeholder={t('share.emailPlaceholder')}
+              placeholder="Enter email addresses..."
             />
             {errors.recipientEmails && (
               <p className="text-xs sm:text-sm text-destructive">{errors.recipientEmails}</p>
             )}
           </div>
           <div className="space-y-1.5 sm:space-y-2">
-            <Label htmlFor="message" className="text-sm">{t('share.message')}</Label>
+            <Label htmlFor="message" className="text-sm">Message (Optional)</Label>
             <Textarea
               id="message"
-              placeholder={t('share.messagePlaceholder')}
+              placeholder="Add a personal message..."
               rows={3}
               value={formData.message}
               onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
@@ -182,10 +180,10 @@ const ShareVisitModal = ({ visitSummary, appointmentData, trigger }: ShareVisitM
           </div>
           <div className="flex flex-col-reverse sm:flex-row gap-2 justify-end">
             <Button variant="outline" onClick={() => setIsOpen(false)} className="text-sm">
-              {t('share.cancel')}
+              Cancel
             </Button>
             <Button onClick={handleShare} disabled={isSharing} className="text-sm">
-              {isSharing ? t('share.sharing') : t('share.share')}
+              {isSharing ? "Sharing..." : "Share"}
             </Button>
           </div>
         </div>

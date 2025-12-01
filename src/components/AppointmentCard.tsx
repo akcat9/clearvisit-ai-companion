@@ -2,7 +2,6 @@ import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Trash2, ChevronRight } from 'lucide-react';
 import { formatTime } from '@/utils/timeUtils';
-import { useTranslation } from 'react-i18next';
 
 interface AppointmentCardProps {
   id: string;
@@ -23,8 +22,6 @@ export const AppointmentCard = memo(({
   onNavigate, 
   onDelete 
 }: AppointmentCardProps) => {
-  const { t } = useTranslation();
-  
   return (
     <div 
       className="p-2 sm:p-3 lg:p-4 border rounded-lg hover:bg-muted/50 cursor-pointer group relative transition-colors"
@@ -32,22 +29,22 @@ export const AppointmentCard = memo(({
     >
       <div className="font-medium text-sm sm:text-base pr-8">{doctor_name}</div>
       <div className="text-xs sm:text-sm text-muted-foreground">
-        {date} {t('visitDetails.at')} {formatTime(time)}
+        {date} at {formatTime(time)}
       </div>
       <div className="text-xs sm:text-sm text-muted-foreground mt-1 pr-8 line-clamp-2">
         {reason}
       </div>
       <div className="flex items-center justify-between mt-2 sm:mt-3">
-          <Button
-            size="sm"
-            className="bg-success hover:bg-success/90 text-success-foreground text-xs sm:text-sm py-1 px-2 sm:py-2 sm:px-3"
-            onClick={(e) => {
-              e.stopPropagation();
-              onNavigate(id);
-            }}
-          >
-            {t('appointment.go')} <ChevronRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
-          </Button>
+        <Button
+          size="sm"
+          className="bg-success hover:bg-success/90 text-success-foreground text-xs sm:text-sm py-1 px-2 sm:py-2 sm:px-3"
+          onClick={(e) => {
+            e.stopPropagation();
+            onNavigate(id);
+          }}
+        >
+          Go <ChevronRight className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
+        </Button>
       </div>
       <Button
         variant="ghost"

@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { AppointmentModal } from "@/components/AppointmentModal";
 import { AppointmentCard } from "@/components/AppointmentCard";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useUnreadSharedVisits } from "@/hooks/useUnreadSharedVisits";
@@ -35,6 +36,7 @@ interface Appointment {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
@@ -52,8 +54,8 @@ const Dashboard = () => {
 
       if (error) {
         toast({
-          title: "Error",
-          description: "Failed to load appointments",
+          title: t('error'),
+          description: t('failedToLoad'),
           variant: "destructive"
         });
         return;
@@ -63,14 +65,12 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, t]);
 
   useEffect(() => {
     if (!user?.id) return;
     fetchAppointments();
-  }, [user?.id]); // Only depend on user.id
-
-
+  }, [user?.id]);
 
   const handleDeleteAppointment = async (appointmentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -83,8 +83,8 @@ const Dashboard = () => {
 
       if (error) {
         toast({
-          title: "Error",
-          description: "Failed to delete appointment",
+          title: t('error'),
+          description: t('failedToDelete'),
           variant: "destructive"
         });
         return;
@@ -92,13 +92,13 @@ const Dashboard = () => {
 
       setAppointments(prev => prev.filter(apt => apt.id !== appointmentId));
       toast({
-        title: "Success",
-        description: "Appointment deleted successfully"
+        title: t('success'),
+        description: t('appointmentDeleted')
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Something went wrong",
+        title: t('error'),
+        description: t('failedToDelete'),
         variant: "destructive"
       });
     }
@@ -108,7 +108,7 @@ const Dashboard = () => {
     if (!user) {
       console.error('No user found');
       toast({
-        title: "Error",
+        title: t('error'),
         description: "You must be logged in to create appointments",
         variant: "destructive"
       });
@@ -134,8 +134,8 @@ const Dashboard = () => {
       if (error) {
         console.error('Appointment creation error:', error);
         toast({
-          title: "Error",
-          description: error.message || "Failed to create appointment",
+          title: t('error'),
+          description: t('failedToCreate'),
           variant: "destructive"
         });
         return;
@@ -144,14 +144,14 @@ const Dashboard = () => {
       setAppointments(prev => [...prev, data as Appointment]);
       setShowAppointmentModal(false);
       toast({
-        title: "Success",
-        description: "Appointment created successfully"
+        title: t('success'),
+        description: t('appointmentCreated')
       });
     } catch (error: any) {
       console.error('Unexpected error creating appointment:', error);
       toast({
-        title: "Error",
-        description: error?.message || "Something went wrong",
+        title: t('error'),
+        description: t('failedToCreate'),
         variant: "destructive"
       });
     }
@@ -173,7 +173,7 @@ const Dashboard = () => {
       <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-6 py-2 sm:py-4 lg:py-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
           <div className="flex items-center gap-2 sm:gap-3">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">My Appointments</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">{t('myAppointments')}</h1>
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-6 w-6 sm:h-8 sm:w-8 p-0">
@@ -182,23 +182,23 @@ const Dashboard = () => {
               </DialogTrigger>
               <DialogContent className="mx-2 sm:mx-auto sm:max-w-md max-w-[calc(100vw-1rem)]">
                 <DialogHeader>
-                  <DialogTitle className="text-sm sm:text-base">How to Use tadoc</DialogTitle>
+                  <DialogTitle className="text-sm sm:text-base">{t('howToUse')}</DialogTitle>
                   <DialogDescription className="text-xs sm:text-sm">
-                    Simple steps to get started:
+                    {t('simpleSteps')}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
                   <div>
-                    • <strong>Create appointments</strong> - Click "New Appointment" to schedule visits
+                    • <strong>{t('createAppointments')}</strong> - {t('createAppointmentsDesc')}
                   </div>
                   <div>
-                    • <strong>Record visits</strong> - Click on any appointment to record audio during your visit
+                    • <strong>{t('recordVisits')}</strong> - {t('recordVisitsDesc')}
                   </div>
                   <div>
-                    • <strong>Share visits</strong> - Share visit recordings with family or other doctors
+                    • <strong>{t('shareVisits')}</strong> - {t('shareVisitsDesc')}
                   </div>
                   <div>
-                    • <strong>Get AI insights</strong> - Receive personalized medical insights from your visit recordings
+                    • <strong>{t('getAiInsights')}</strong> - {t('getAiInsightsDesc')}
                   </div>
                 </div>
               </DialogContent>
@@ -211,7 +211,7 @@ const Dashboard = () => {
               size="sm"
             >
               <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span>New Appointment</span>
+              <span>{t('newAppointment')}</span>
             </Button>
             <Button 
               variant="outline" 
@@ -220,7 +220,7 @@ const Dashboard = () => {
               size="sm"
             >
               <Share2 className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span>Shared Visits</span>
+              <span>{t('sharedVisits')}</span>
               {unreadCount > 0 && (
                 <div className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-destructive rounded-full" />
               )}
@@ -231,19 +231,19 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
           <Card>
             <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-base sm:text-lg">Upcoming Appointments</CardTitle>
+              <CardTitle className="text-base sm:text-lg">{t('upcomingAppointments')}</CardTitle>
             </CardHeader>
             <CardContent>
               {loading ? (
                 <div className="text-center py-6 sm:py-8">
                   <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-2 text-muted-foreground text-xs sm:text-sm">Loading appointments...</p>
+                  <p className="mt-2 text-muted-foreground text-xs sm:text-sm">{t('loadingAppointments')}</p>
                 </div>
               ) : upcomingAppointments.length === 0 ? (
                 <div className="text-center py-6 sm:py-8">
-                  <p className="text-muted-foreground text-sm">No upcoming appointments</p>
+                  <p className="text-muted-foreground text-sm">{t('noUpcomingAppointments')}</p>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                    Click "New Appointment" to schedule your first visit
+                    {t('clickNewAppointment')}
                   </p>
                 </div>
               ) : (
@@ -267,14 +267,14 @@ const Dashboard = () => {
 
           <Card>
             <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-base sm:text-lg">Previous Appointments</CardTitle>
+              <CardTitle className="text-base sm:text-lg">{t('previousAppointments')}</CardTitle>
             </CardHeader>
             <CardContent>
               {previousAppointments.length === 0 ? (
                 <div className="text-center py-6 sm:py-8">
-                  <p className="text-muted-foreground text-sm">No previous appointments</p>
+                  <p className="text-muted-foreground text-sm">{t('noPreviousAppointments')}</p>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                    Completed appointments will appear here
+                    {t('completedAppointmentsAppear')}
                   </p>
                 </div>
               ) : (
@@ -298,7 +298,7 @@ const Dashboard = () => {
         </div>
 
         <div className="text-center text-xs sm:text-sm text-muted-foreground mt-8 sm:mt-12">
-          © 2025 tadoc. All rights reserved.
+          {t('copyright')}
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,7 @@ import {
 
 export default function Settings() {
   const { user, signOut } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -31,7 +33,7 @@ export default function Settings() {
   const handleDeleteAccount = async () => {
     if (confirmText !== "DELETE") {
       toast({
-        title: "Confirmation required",
+        title: t('error'),
         description: "Please type 'DELETE' to confirm account deletion.",
         variant: "destructive",
       });
@@ -48,7 +50,7 @@ export default function Settings() {
       if (error) {
         console.error('Error deleting account:', error);
         toast({
-          title: "Error deleting account",
+          title: t('error'),
           description: "There was an error deleting your account. Please try again.",
           variant: "destructive",
         });
@@ -57,16 +59,15 @@ export default function Settings() {
       }
 
       toast({
-        title: "Account deleted",
+        title: t('success'),
         description: "Your account and all data have been permanently deleted.",
       });
 
-      // Sign out and redirect to home
       await signOut();
     } catch (error) {
       console.error('Error deleting account:', error);
       toast({
-        title: "Error deleting account",
+        title: t('error'),
         description: "There was an error deleting your account. Please try again.",
         variant: "destructive",
       });
@@ -84,26 +85,26 @@ export default function Settings() {
             className="flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
+            {t('backToDashboard')}
           </Button>
         </div>
 
         <div className="space-y-8">
           <div>
-            <h1 className="text-3xl font-bold">Settings</h1>
-            <p className="text-muted-foreground">Manage your account settings and preferences.</p>
+            <h1 className="text-3xl font-bold">{t('accountSettings')}</h1>
+            <p className="text-muted-foreground">{t('accountInformation')}</p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Account Information</CardTitle>
+              <CardTitle>{t('accountInformation')}</CardTitle>
               <CardDescription>
-                Your account details and information.
+                {t('emailReadOnly')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('email')}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -113,21 +114,21 @@ export default function Settings() {
                 />
               </div>
               <p className="text-sm text-muted-foreground">
-                Email changes are not currently supported. Contact support if you need to update your email.
+                {t('emailReadOnly')}
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Support</CardTitle>
+              <CardTitle>{t('needHelp')}</CardTitle>
               <CardDescription>
-                Need help? Get in touch with our support team.
+                {t('contactSupport')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-2">
-                For technical support, questions, or feedback, please contact us at:
+                {t('contactSupport')}
               </p>
               <p className="text-sm font-medium">
                 <a 
@@ -144,41 +145,31 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="text-destructive flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5" />
-                Danger Zone
+                {t('dangerZone')}
               </CardTitle>
               <CardDescription>
-                Irreversible and destructive actions.
+                {t('deleteAccountWarning')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="p-4 border border-destructive rounded-lg bg-destructive/5">
-                <h3 className="font-semibold mb-2">Delete Account</h3>
+                <h3 className="font-semibold mb-2">{t('deleteAccount')}</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Permanently delete your account and all associated data. This action cannot be undone.
-                  All of your appointments, visit records, shared visits, and personal information will be permanently removed.
+                  {t('deleteAccountWarning')}
                 </p>
                 
                 <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" className="flex items-center gap-2">
                       <Trash2 className="w-4 h-4" />
-                      Delete Account
+                      {t('deleteAccount')}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogTitle>{t('deleteAccountConfirm')}</AlertDialogTitle>
                       <AlertDialogDescription className="space-y-2">
-                        <p>
-                          This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
-                        </p>
-                        <p className="font-semibold">This includes:</p>
-                        <ul className="list-disc list-inside text-sm space-y-1">
-                          <li>All your appointments and visit records</li>
-                          <li>All shared visits (sent and received)</li>
-                          <li>Your profile and personal information</li>
-                          <li>All AI-generated summaries and analyses</li>
-                        </ul>
+                        <p>{t('deleteAccountDescription')}</p>
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="py-4">
@@ -195,14 +186,14 @@ export default function Settings() {
                     </div>
                     <AlertDialogFooter>
                       <AlertDialogCancel onClick={() => setConfirmText("")}>
-                        Cancel
+                        {t('cancel')}
                       </AlertDialogCancel>
                       <AlertDialogAction
                         onClick={handleDeleteAccount}
                         disabled={confirmText !== "DELETE" || isDeleting}
                         className="bg-destructive hover:bg-destructive/90"
                       >
-                        {isDeleting ? "Deleting..." : "Delete Account"}
+                        {isDeleting ? t('deleting') : t('deleteAccount')}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

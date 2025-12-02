@@ -2,10 +2,12 @@ import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 import SharedVisits from "@/components/SharedVisits";
 
 const SharedVisitsPage = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   return (
     <div className="min-h-screen bg-background">
@@ -20,9 +22,9 @@ const SharedVisitsPage = () => {
             className="flex items-center gap-2 w-full sm:w-auto"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
+            {t('backToDashboard')}
           </Button>
-          <h1 className="text-2xl sm:text-3xl font-bold">Shared Visit Summaries</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">{t('sharedVisitSummaries')}</h1>
         </div>
 
         <SharedVisits />

@@ -7,6 +7,7 @@ import { Header } from '@/components/Header';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { ArrowLeft, Mic, MicOff, FileText, BookOpen, AlertCircle } from 'lucide-react';
 import ShareVisitModal from '@/components/ShareVisitModal';
 import PreVisitEducation from '@/components/PreVisitEducation';
@@ -16,6 +17,7 @@ import { formatTime } from "@/utils/timeUtils";
 
 const VisitDetails = () => {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const [appointment, setAppointment] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [manualNotes, setManualNotes] = useState("");
@@ -105,15 +107,15 @@ const VisitDetails = () => {
       }
 
       toast({
-        title: "Appointment not found",
+        title: t('error'),
         description: "The appointment you're looking for doesn't exist.",
         variant: "destructive",
       });
       navigate("/dashboard");
     } catch (error) {
       toast({
-        title: "Error loading appointment",
-        description: "Please try again later.",
+        title: t('error'),
+        description: t('saveFailed'),
         variant: "destructive",
       });
     }
@@ -169,8 +171,8 @@ const VisitDetails = () => {
       setRecordingComplete(false);
       
       toast({
-        title: "Starting Recording...",
-        description: "Requesting microphone access.",
+        title: t('recordVisit'),
+        description: t('recordingStarted'),
       });
       
       const recorder = new AudioRecorderWhisper(
@@ -196,14 +198,14 @@ const VisitDetails = () => {
       }, 1000);
       
       toast({
-        title: "Recording Started",
-        description: "Speak now. Transcription will happen when you stop.",
+        title: t('recordVisit'),
+        description: t('recordingStarted'),
       });
     } catch (error) {
       console.error('Recording error:', error);
       toast({
-        title: "Recording Failed",
-        description: error instanceof Error ? error.message : "Could not start recording.",
+        title: t('error'),
+        description: t('recordingFailed'),
         variant: "destructive",
       });
     } finally {
@@ -211,16 +213,14 @@ const VisitDetails = () => {
     }
   };
 
-  // Removed pause/resume - not needed for simple record-stop flow
-
   const handleStopRecording = async () => {
     if (!audioRecorder || isStopping) return;
     
     setIsStopping(true);
     
     toast({
-      title: "Processing...",
-      description: "Stopping recording and transcribing audio.",
+      title: t('processing'),
+      description: t('stopRecording'),
     });
     
     // Clear the duration interval
@@ -256,20 +256,20 @@ const VisitDetails = () => {
         }
         
         toast({
-          title: "Recording Complete",
-          description: "Your audio has been transcribed successfully.",
+          title: t('success'),
+          description: t('recordingComplete'),
         });
       } else {
         toast({
-          title: "Recording Stopped",
-          description: "No transcription available. The audio may have been too short.",
+          title: t('warning'),
+          description: t('recordingStopped'),
         });
       }
     } catch (error) {
       console.error('Error stopping recording:', error);
       toast({
-        title: "Error",
-        description: "Failed to process recording.",
+        title: t('error'),
+        description: t('saveFailed'),
         variant: "destructive",
       });
     } finally {
@@ -283,8 +283,8 @@ const VisitDetails = () => {
     
     if (!contentToAnalyze) {
       toast({
-        title: "No Content",
-        description: "Please record something or add notes before analyzing.",
+        title: t('error'),
+        description: t('noContent'),
         variant: "destructive",
       });
       return;
@@ -297,14 +297,15 @@ const VisitDetails = () => {
         body: {
           fullTranscription: contentToAnalyze,
           appointmentReason: appointment?.reason || 'General consultation',
-          medicalHistory: null
+          medicalHistory: null,
+          language: language
         }
       });
 
       if (summaryError || !summaryData) {
         toast({
-          title: "AI Analysis Failed",
-          description: "Unable to analyze visit. Please try again.",
+          title: t('error'),
+          description: t('aiAnalysisFailed'),
           variant: "destructive",
         });
         return;
@@ -341,8 +342,8 @@ const VisitDetails = () => {
 
         if (saveError) {
           toast({
-            title: "Warning",
-            description: "Analysis complete but save failed.",
+            title: t('warning'),
+            description: t('aiAnalysisComplete'),
             variant: "default",
           });
           return;
@@ -358,20 +359,20 @@ const VisitDetails = () => {
           .eq('id', id);
 
         toast({
-          title: "AI Analysis Complete",
-          description: "Your visit has been analyzed and saved.",
+          title: t('success'),
+          description: t('aiAnalysisComplete'),
         });
       } catch (saveError) {
         toast({
-          title: "Save Warning",
-          description: "Analysis complete but save failed.",
+          title: t('warning'),
+          description: t('aiAnalysisComplete'),
           variant: "default",
         });
       }
     } catch (error) {
       toast({
-        title: "AI Analysis Failed",
-        description: "Please try again.",
+        title: t('error'),
+        description: t('aiAnalysisFailed'),
         variant: "destructive",
       });
     } finally {
@@ -397,13 +398,13 @@ const VisitDetails = () => {
       if (error) throw error;
 
       toast({
-        title: "Notes Saved",
-        description: "Your notes have been saved.",
+        title: t('success'),
+        description: t('notesSaved'),
       });
     } catch (error) {
       toast({
-        title: "Save Failed",
-        description: "Please try again.",
+        title: t('error'),
+        description: t('saveFailed'),
         variant: "destructive",
       });
     } finally {
@@ -412,7 +413,7 @@ const VisitDetails = () => {
   };
 
   if (!appointment) {
-    return <div className="p-6">Loading...</div>;
+    return <div className="p-6">{t('loading')}</div>;
   }
 
   return (
@@ -427,9 +428,9 @@ const VisitDetails = () => {
             className="flex items-center gap-2 w-full sm:w-auto text-sm"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
+            {t('backToDashboard')}
           </Button>
-          <h1 className="text-lg sm:text-2xl font-bold">Visit Details</h1>
+          <h1 className="text-lg sm:text-2xl font-bold">{t('visitDetails')}</h1>
         </div>
 
         {/* Appointment Info */}
@@ -437,31 +438,31 @@ const VisitDetails = () => {
           <CardHeader className="pb-3 sm:pb-6">
             <CardTitle className="text-blue-900 flex items-center gap-2 text-base sm:text-lg">
               <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-              Appointment Information
+              {t('appointmentInformation')}
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-2 sm:gap-3">
             <div className="flex flex-wrap gap-1 sm:gap-2 text-xs sm:text-sm">
-              <span className="font-semibold text-blue-800">Doctor:</span> 
+              <span className="font-semibold text-blue-800">{t('doctor')}:</span> 
               <span className="text-blue-700">{appointment.doctorName}</span>
             </div>
             <div className="flex flex-wrap gap-1 sm:gap-2 text-xs sm:text-sm">
-              <span className="font-semibold text-blue-800">Date & Time:</span> 
+              <span className="font-semibold text-blue-800">{t('dateTime')}:</span> 
               <span className="text-blue-700">{appointment.date} at {formatTime(appointment.time)}</span>
             </div>
             <div className="flex flex-wrap gap-1 sm:gap-2 text-xs sm:text-sm">
-              <span className="font-semibold text-blue-800">Reason:</span> 
+              <span className="font-semibold text-blue-800">{t('reason')}:</span> 
               <span className="text-blue-700">{appointment.reason}</span>
             </div>
             {appointment.goal && (
               <div className="flex flex-wrap gap-1 sm:gap-2 text-xs sm:text-sm">
-                <span className="font-semibold text-blue-800">Goal:</span> 
+                <span className="font-semibold text-blue-800">{t('goal')}:</span> 
                 <span className="text-blue-700">{appointment.goal}</span>
               </div>
             )}
             {appointment.symptoms && (
               <div className="flex flex-wrap gap-1 sm:gap-2 text-xs sm:text-sm">
-                <span className="font-semibold text-blue-800">Symptoms:</span> 
+                <span className="font-semibold text-blue-800">{t('symptoms')}:</span> 
                 <span className="text-blue-700">{appointment.symptoms}</span>
               </div>
             )}
@@ -483,7 +484,7 @@ const VisitDetails = () => {
         <Card className="mb-4 sm:mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
           <CardHeader className="flex flex-row items-center gap-2 pb-3 sm:pb-6">
             <Mic className="w-4 h-4 sm:w-5 sm:h-5 text-green-700" />
-            <CardTitle className="text-green-900 text-base sm:text-lg">Record Visit</CardTitle>
+            <CardTitle className="text-green-900 text-base sm:text-lg">{t('recordVisit')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 sm:space-y-4">
             <div className="flex flex-col gap-2 sm:gap-3">
@@ -494,7 +495,7 @@ const VisitDetails = () => {
                   disabled={isInitializing}
                 >
                   <Mic className="w-4 h-4" />
-                  {isInitializing ? "Initializing..." : "Start Recording"}
+                  {isInitializing ? t('initializing') : t('startRecording')}
                 </Button>
               ) : (
                 <Button 
@@ -504,14 +505,14 @@ const VisitDetails = () => {
                   disabled={isStopping}
                 >
                   <MicOff className="w-4 h-4" />
-                  {isStopping ? "Stopping..." : `Stop Recording (${Math.floor(recordingDuration / 60)}:${(recordingDuration % 60).toString().padStart(2, '0')})`}
+                  {isStopping ? t('processing') : `${t('stopRecording')} (${Math.floor(recordingDuration / 60)}:${(recordingDuration % 60).toString().padStart(2, '0')})`}
                 </Button>
               )}
 
               {isRecording && (
                 <div className="bg-yellow-50 border-2 border-yellow-300 p-2 sm:p-3 rounded-lg">
                   <p className="text-xs sm:text-sm text-yellow-800 font-medium">
-                    ⚠️ You must stop recording before you can analyze with AI
+                    ⚠️ {t('stopRecording')}
                   </p>
                 </div>
               )}
@@ -523,7 +524,7 @@ const VisitDetails = () => {
                   className="flex items-center justify-center gap-2 text-sm sm:text-base min-h-[44px]"
                 >
                   <FileText className="w-4 h-4" />
-                  {isAnalyzing ? 'Analyzing...' : 'Analyze with AI'}
+                  {isAnalyzing ? t('analyzing') : t('analyzeWithAi')}
                 </Button>
               )}
             </div>
@@ -531,7 +532,7 @@ const VisitDetails = () => {
             {/* Live Transcription */}
             {liveTranscription && (
               <div className="bg-white border-2 border-green-200 p-3 sm:p-4 rounded-lg">
-                <h4 className="font-medium mb-2 text-green-800 text-sm sm:text-base">Live Transcription:</h4>
+                <h4 className="font-medium mb-2 text-green-800 text-sm sm:text-base">{t('liveTranscription')}:</h4>
                 <div className="text-xs sm:text-sm text-green-700 max-h-40 overflow-y-auto leading-relaxed">
                   {liveTranscription}
                 </div>
@@ -540,9 +541,9 @@ const VisitDetails = () => {
 
             {/* Manual Notes */}
             <div className="space-y-2">
-              <label className="text-xs sm:text-sm font-medium">Manual Notes (Optional)</label>
+              <label className="text-xs sm:text-sm font-medium">{t('manualNotes')}</label>
               <Textarea
-                placeholder="Add any additional notes about your visit..."
+                placeholder={t('addNotesHere')}
                 value={manualNotes}
                 onChange={(e) => setManualNotes(e.target.value)}
                 className="min-h-[100px] text-sm sm:text-base"
@@ -554,7 +555,7 @@ const VisitDetails = () => {
                 size="sm"
                 className="text-sm min-h-[40px]"
               >
-                {isSavingNotes ? 'Saving...' : 'Save Notes'}
+                {isSavingNotes ? t('saving') : t('saveNotes')}
               </Button>
             </div>
           </CardContent>
@@ -566,20 +567,20 @@ const VisitDetails = () => {
             <CardHeader className="pb-3 sm:pb-6">
               <CardTitle className="text-purple-900 flex items-center gap-2 text-base sm:text-lg">
                 <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
-                AI Analysis Results
+                {t('visitSummary')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6">
               {aiGeneratedData.visitSummary && (
                 <div className="bg-white rounded-lg p-3 sm:p-4 border border-purple-200">
-                  <h4 className="font-semibold mb-2 sm:mb-3 text-purple-800 text-sm sm:text-base">Visit Summary</h4>
+                  <h4 className="font-semibold mb-2 sm:mb-3 text-purple-800 text-sm sm:text-base">{t('visitSummary')}</h4>
                   <p className="text-purple-700 leading-relaxed text-xs sm:text-sm">{aiGeneratedData.visitSummary}</p>
                 </div>
               )}
 
               {aiGeneratedData.keySymptoms?.length > 0 && (
                 <div className="bg-white rounded-lg p-4 border border-red-200">
-                  <h4 className="font-semibold mb-3 text-red-800 text-base">Key Symptoms</h4>
+                  <h4 className="font-semibold mb-3 text-red-800 text-base">{t('keySymptoms')}</h4>
                   <div className="grid grid-cols-1 gap-2">
                     {aiGeneratedData.keySymptoms.map((symptom, index) => (
                       <div key={index} className="bg-red-50 p-3 rounded-lg border border-red-100">
@@ -592,7 +593,7 @@ const VisitDetails = () => {
 
               {aiGeneratedData.keyTermsExplained && Object.keys(aiGeneratedData.keyTermsExplained).length > 0 && (
                 <div className="bg-white rounded-lg p-4 border border-blue-200">
-                  <h4 className="font-semibold mb-3 text-blue-800 text-base">Medical Terms Explained</h4>
+                  <h4 className="font-semibold mb-3 text-blue-800 text-base">{t('keyTermsExplained')}</h4>
                   <div className="space-y-3">
                     {Object.entries(aiGeneratedData.keyTermsExplained).map(([term, explanation], index) => (
                       <div key={index} className="bg-blue-50 p-3 rounded-lg border border-blue-100">
@@ -606,7 +607,7 @@ const VisitDetails = () => {
 
               {aiGeneratedData.prescriptions && (
                 <div className="bg-white rounded-lg p-4 border border-orange-200">
-                  <h4 className="font-semibold mb-3 text-orange-800 text-base">Prescriptions & Medications</h4>
+                  <h4 className="font-semibold mb-3 text-orange-800 text-base">{t('prescriptions')}</h4>
                   <div className="bg-orange-50 p-3 rounded-lg border border-orange-100">
                     <p className="text-orange-700 text-sm">{aiGeneratedData.prescriptions}</p>
                   </div>
@@ -615,7 +616,7 @@ const VisitDetails = () => {
 
               {aiGeneratedData.doctorRecommendations?.length > 0 && (
                 <div className="bg-white rounded-lg p-4 border border-green-200">
-                  <h4 className="font-semibold mb-3 text-green-800 text-base">Doctor's Recommendations</h4>
+                  <h4 className="font-semibold mb-3 text-green-800 text-base">{t('doctorRecommendations')}</h4>
                   <div className="grid grid-cols-1 gap-2">
                     {aiGeneratedData.doctorRecommendations.map((rec, index) => (
                       <div key={index} className="bg-green-50 p-3 rounded-lg border border-green-100">
@@ -628,7 +629,7 @@ const VisitDetails = () => {
 
               {aiGeneratedData.followUpActions && (
                 <div className="bg-white rounded-lg p-4 border border-yellow-200">
-                  <h4 className="font-semibold mb-3 text-yellow-800 text-base">Follow-Up Actions</h4>
+                  <h4 className="font-semibold mb-3 text-yellow-800 text-base">{t('followUpActions')}</h4>
                   <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
                     <p className="text-yellow-700 text-sm">{aiGeneratedData.followUpActions}</p>
                   </div>
@@ -637,7 +638,7 @@ const VisitDetails = () => {
 
               {aiGeneratedData.questionsForDoctor?.length > 0 && (
                 <div className="bg-white rounded-lg p-4 border border-indigo-200">
-                  <h4 className="font-semibold mb-3 text-indigo-800 text-base">Smart Questions</h4>
+                  <h4 className="font-semibold mb-3 text-indigo-800 text-base">{t('questionsForDoctor')}</h4>
                   <div className="grid grid-cols-1 gap-2">
                     {aiGeneratedData.questionsForDoctor.map((question, index) => (
                       <div key={index} className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
@@ -655,7 +656,7 @@ const VisitDetails = () => {
         {aiGeneratedData && (
           <Card>
             <CardHeader>
-              <CardTitle>Share Visit</CardTitle>
+              <CardTitle>{t('shareVisit')}</CardTitle>
             </CardHeader>
             <CardContent>
               <ShareVisitModal 

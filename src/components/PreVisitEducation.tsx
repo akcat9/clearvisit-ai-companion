@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { BookOpen, Heart, AlertCircle, Lightbulb, HelpCircle, Pill, TestTube, Clock, Activity, DollarSign } from 'lucide-react';
+import { BookOpen, Heart, AlertCircle, HelpCircle, Pill, Activity } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface EducationContent {
   causesAndPathophysiology: {
@@ -59,6 +59,7 @@ const PreVisitEducation = ({
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const { toast } = useToast();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     // If we have cached content, use it
@@ -75,14 +76,15 @@ const PreVisitEducation = ({
 
   const generateEducationContent = async (forceRegenerate = false) => {
     setIsLoading(true);
-    console.log('🔄 Starting education content generation...', { appointmentReason, goal, symptoms });
+    console.log('🔄 Starting education content generation...', { appointmentReason, goal, symptoms, language });
     
     try {
       const { data, error } = await supabase.functions.invoke('generate-previsit-education', {
         body: {
           appointmentReason: appointmentReason || '',
           goal: goal || '',
-          symptoms: symptoms || ''
+          symptoms: symptoms || '',
+          language: language
         }
       });
 
@@ -91,7 +93,7 @@ const PreVisitEducation = ({
       if (error) {
         console.error('❌ Error generating education content:', error);
         toast({
-          title: "Education content unavailable",
+          title: t('error'),
           description: `Unable to load pre-visit information. ${error.message || ''}`,
           variant: "destructive",
         });
@@ -112,8 +114,8 @@ const PreVisitEducation = ({
 
       if (forceRegenerate) {
         toast({
-          title: "Content refreshed",
-          description: "Pre-visit education has been regenerated.",
+          title: t('success'),
+          description: t('preVisitEducation'),
         });
       }
     } catch (error) {
@@ -129,14 +131,14 @@ const PreVisitEducation = ({
         <CardHeader className="pb-4">
           <div className="flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-primary" />
-            <CardTitle className="text-lg">Pre-Visit Education</CardTitle>
+            <CardTitle className="text-lg">{t('preVisitEducation')}</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-              <p className="text-sm text-muted-foreground">Generating personalized education content...</p>
+              <p className="text-sm text-muted-foreground">{t('generating')}...</p>
             </div>
           </div>
         </CardContent>
@@ -152,7 +154,6 @@ const PreVisitEducation = ({
     {
       id: 'causesAndPathophysiology',
       title: educationContent.causesAndPathophysiology.title,
-      description: 'Scientific explanation of what causes your condition',
       content: educationContent.causesAndPathophysiology,
       icon: <Activity className="w-5 h-5" />,
       color: 'bg-blue-50 border-blue-200 text-blue-800'
@@ -160,7 +161,6 @@ const PreVisitEducation = ({
     {
       id: 'treatmentRecommendations',
       title: educationContent.treatmentRecommendations.title,
-      description: 'Evidence-based treatment approaches and expected outcomes',
       content: educationContent.treatmentRecommendations,
       icon: <Heart className="w-5 h-5" />,
       color: 'bg-green-50 border-green-200 text-green-800'
@@ -168,7 +168,6 @@ const PreVisitEducation = ({
     {
       id: 'medicationInformation',
       title: educationContent.medicationInformation.title,
-      description: 'Common medications, mechanisms, and side effects',
       content: educationContent.medicationInformation,
       icon: <Pill className="w-5 h-5" />,
       color: 'bg-purple-50 border-purple-200 text-purple-800'
@@ -176,7 +175,6 @@ const PreVisitEducation = ({
     {
       id: 'keyPointsForDoctor',
       title: educationContent.keyPointsForDoctor.title,
-      description: 'Critical questions to maximize your appointment',
       content: educationContent.keyPointsForDoctor,
       icon: <HelpCircle className="w-5 h-5" />,
       color: 'bg-orange-50 border-orange-200 text-orange-800'
@@ -184,7 +182,6 @@ const PreVisitEducation = ({
     {
       id: 'clinicalContext',
       title: educationContent.clinicalContext.title,
-      description: 'Medical background and warning signs to watch',
       content: educationContent.clinicalContext,
       icon: <AlertCircle className="w-5 h-5" />,
       color: 'bg-red-50 border-red-200 text-red-800'
@@ -198,11 +195,8 @@ const PreVisitEducation = ({
           <div>
             <div className="flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-primary" />
-              <CardTitle className="text-lg">Pre-Visit Education</CardTitle>
+              <CardTitle className="text-lg">{t('preVisitEducation')}</CardTitle>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Scientific medical education for your condition
-            </p>
           </div>
           {educationContent && (
             <Button
@@ -211,7 +205,7 @@ const PreVisitEducation = ({
               onClick={() => generateEducationContent(true)}
               disabled={isLoading}
             >
-              Regenerate
+              {t('generateEducation')}
             </Button>
           )}
         </div>
@@ -237,9 +231,6 @@ const PreVisitEducation = ({
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-sm">{section.title}</h3>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {section.description}
-                  </p>
                 </div>
               </div>
             </div>
@@ -259,7 +250,6 @@ const PreVisitEducation = ({
                   {selectedSection === 'causesAndPathophysiology' && 'primaryCauses' in section.content ? (
                     <div className="space-y-3">
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Primary Causes</h5>
                         <div className="space-y-1">
                           {section.content.primaryCauses.map((cause, index) => (
                             <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{cause}</div>
@@ -267,7 +257,6 @@ const PreVisitEducation = ({
                         </div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Risk Factors</h5>
                         <div className="space-y-1">
                           {section.content.riskFactors.map((factor, index) => (
                             <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{factor}</div>
@@ -275,7 +264,6 @@ const PreVisitEducation = ({
                         </div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Biological Mechanisms</h5>
                         <div className="space-y-1">
                           {section.content.underlyingMechanisms.map((mechanism, index) => (
                             <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{mechanism}</div>
@@ -286,7 +274,6 @@ const PreVisitEducation = ({
                   ) : selectedSection === 'treatmentRecommendations' && 'firstLineTherapies' in section.content ? (
                     <div className="space-y-3">
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">First-Line Therapies</h5>
                         <div className="space-y-1">
                           {section.content.firstLineTherapies.map((therapy, index) => (
                             <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{therapy}</div>
@@ -294,7 +281,6 @@ const PreVisitEducation = ({
                         </div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Alternative Approaches</h5>
                         <div className="space-y-1">
                           {section.content.alternativeApproaches.map((approach, index) => (
                             <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{approach}</div>
@@ -302,7 +288,6 @@ const PreVisitEducation = ({
                         </div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Expected Outcomes</h5>
                         <div className="space-y-1">
                           {section.content.expectedOutcomes.map((outcome, index) => (
                             <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{outcome}</div>
@@ -310,7 +295,6 @@ const PreVisitEducation = ({
                         </div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Lifestyle Modifications</h5>
                         <div className="space-y-1">
                           {section.content.lifestyleModifications.map((mod, index) => (
                             <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{mod}</div>
@@ -321,7 +305,6 @@ const PreVisitEducation = ({
                   ) : selectedSection === 'medicationInformation' && 'commonMedications' in section.content ? (
                     <div className="space-y-3">
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Common Medications</h5>
                         <div className="space-y-1">
                           {section.content.commonMedications.map((med, index) => (
                             <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{med}</div>
@@ -329,7 +312,6 @@ const PreVisitEducation = ({
                         </div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Side Effects</h5>
                         <div className="space-y-1">
                           {section.content.sideEffects.map((effect, index) => (
                             <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{effect}</div>
@@ -337,7 +319,6 @@ const PreVisitEducation = ({
                         </div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Drug Interactions</h5>
                         <div className="space-y-1">
                           {section.content.drugInteractions.map((interaction, index) => (
                             <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{interaction}</div>
@@ -348,7 +329,6 @@ const PreVisitEducation = ({
                   ) : selectedSection === 'keyPointsForDoctor' && 'diagnosticQuestions' in section.content ? (
                     <div className="space-y-3">
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Diagnostic Questions</h5>
                         <div className="space-y-1">
                           {section.content.diagnosticQuestions.map((q, index) => (
                             <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{q}</div>
@@ -356,7 +336,6 @@ const PreVisitEducation = ({
                         </div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Treatment Questions</h5>
                         <div className="space-y-1">
                           {section.content.treatmentQuestions.map((q, index) => (
                             <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{q}</div>
@@ -364,7 +343,6 @@ const PreVisitEducation = ({
                         </div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Prognosis Questions</h5>
                         <div className="space-y-1">
                           {section.content.prognosisQuestions.map((q, index) => (
                             <div key={index} className="text-xs text-gray-700 bg-white p-2 rounded">{q}</div>
@@ -375,15 +353,12 @@ const PreVisitEducation = ({
                   ) : selectedSection === 'clinicalContext' && 'prevalence' in section.content ? (
                     <div className="space-y-3">
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Prevalence</h5>
                         <div className="text-xs text-gray-700 bg-white p-2 rounded">{section.content.prevalence}</div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Typical Presentation</h5>
                         <div className="text-xs text-gray-700 bg-white p-2 rounded">{section.content.typicalPresentation}</div>
                       </div>
                       <div className="border rounded-lg p-3 bg-gray-50">
-                        <h5 className="font-medium text-sm mb-2">Red Flags - Seek Immediate Care</h5>
                         <div className="space-y-1">
                           {section.content.redFlags.map((flag, index) => (
                             <div key={index} className="text-xs text-red-700 bg-red-50 p-2 rounded font-medium border border-red-200">{flag}</div>

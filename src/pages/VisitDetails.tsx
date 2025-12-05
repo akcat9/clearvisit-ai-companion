@@ -358,68 +358,6 @@ const VisitDetails = () => {
           })
           .eq('id', id);
 
-        // Auto-update medical history with visit data
-        try {
-          const newVisitEntry = {
-            date: appointment?.date || new Date().toISOString().split('T')[0],
-            doctor: appointment?.doctorName || 'Unknown',
-            reason: appointment?.reason || 'General consultation',
-            keyFindings: aiData.keySymptoms || [],
-            newMedications: aiData.prescriptions ? [aiData.prescriptions] : []
-          };
-
-          // Get existing medical history
-          const { data: existingHistory } = await (supabase as any)
-            .from('medical_history')
-            .select('visit_derived_data')
-            .eq('user_id', user?.id)
-            .single();
-
-          const existingVisitData = existingHistory?.visit_derived_data || {};
-          const visitHistory = existingVisitData.visitHistory || [];
-          const allMedicationsFromVisits = existingVisitData.allMedicationsFromVisits || [];
-          const conditionsMentioned = existingVisitData.conditionsMentioned || [];
-
-          // Add new visit to history
-          visitHistory.push(newVisitEntry);
-
-          // Update medications list
-          if (aiData.prescriptions) {
-            const newMeds = aiData.prescriptions.split(',').map((m: string) => m.trim()).filter(Boolean);
-            newMeds.forEach((med: string) => {
-              if (!allMedicationsFromVisits.includes(med)) {
-                allMedicationsFromVisits.push(med);
-              }
-            });
-          }
-
-          // Update conditions list
-          if (aiData.keySymptoms && Array.isArray(aiData.keySymptoms)) {
-            aiData.keySymptoms.forEach((symptom: string) => {
-              if (!conditionsMentioned.includes(symptom)) {
-                conditionsMentioned.push(symptom);
-              }
-            });
-          }
-
-          const updatedVisitDerivedData = {
-            visitHistory,
-            allMedicationsFromVisits,
-            conditionsMentioned
-          };
-
-          await (supabase as any)
-            .from('medical_history')
-            .upsert({
-              user_id: user?.id,
-              visit_derived_data: updatedVisitDerivedData,
-              last_visit_sync: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-        } catch (historyError) {
-          console.log('Could not update medical history:', historyError);
-        }
-
         toast({
           title: t('success'),
           description: t('aiAnalysisComplete'),

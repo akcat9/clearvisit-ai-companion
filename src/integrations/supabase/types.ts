@@ -86,54 +86,6 @@ export type Database = {
         }
         Relationships: []
       }
-      medical_history: {
-        Row: {
-          allergies: Json | null
-          blood_type: string | null
-          chronic_conditions: Json | null
-          created_at: string
-          current_medications: Json | null
-          emergency_contact: Json | null
-          family_history: string | null
-          id: string
-          last_visit_sync: string | null
-          past_surgeries: Json | null
-          updated_at: string
-          user_id: string
-          visit_derived_data: Json | null
-        }
-        Insert: {
-          allergies?: Json | null
-          blood_type?: string | null
-          chronic_conditions?: Json | null
-          created_at?: string
-          current_medications?: Json | null
-          emergency_contact?: Json | null
-          family_history?: string | null
-          id?: string
-          last_visit_sync?: string | null
-          past_surgeries?: Json | null
-          updated_at?: string
-          user_id: string
-          visit_derived_data?: Json | null
-        }
-        Update: {
-          allergies?: Json | null
-          blood_type?: string | null
-          chronic_conditions?: Json | null
-          created_at?: string
-          current_medications?: Json | null
-          emergency_contact?: Json | null
-          family_history?: string | null
-          id?: string
-          last_visit_sync?: string | null
-          past_surgeries?: Json | null
-          updated_at?: string
-          user_id?: string
-          visit_derived_data?: Json | null
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           ai_generated_history: Json | null

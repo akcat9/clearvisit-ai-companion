@@ -110,7 +110,7 @@ const MedicalHistory = () => {
 
   const fetchMedicalHistory = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('medical_history')
         .select('*')
         .eq('user_id', user?.id)
@@ -123,13 +123,16 @@ const MedicalHistory = () => {
 
       if (data) {
         setMedicalHistory({
-          ...data,
-          current_medications: (data.current_medications as unknown as Medication[]) || [],
-          allergies: (data.allergies as unknown as Allergy[]) || [],
-          chronic_conditions: (data.chronic_conditions as unknown as Condition[]) || [],
-          past_surgeries: (data.past_surgeries as unknown as Surgery[]) || [],
-          emergency_contact: data.emergency_contact as unknown as EmergencyContact | null,
-          visit_derived_data: (data.visit_derived_data as unknown as VisitDerivedData) || {}
+          id: data.id,
+          user_id: data.user_id,
+          current_medications: data.current_medications || [],
+          allergies: data.allergies || [],
+          chronic_conditions: data.chronic_conditions || [],
+          past_surgeries: data.past_surgeries || [],
+          family_history: data.family_history || '',
+          blood_type: data.blood_type || '',
+          emergency_contact: data.emergency_contact || null,
+          visit_derived_data: data.visit_derived_data || {}
         });
       }
     } finally {
@@ -142,17 +145,17 @@ const MedicalHistory = () => {
     
     setSaving(true);
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('medical_history')
         .upsert({
           user_id: user.id,
-          current_medications: medicalHistory.current_medications as unknown as any,
-          allergies: medicalHistory.allergies as unknown as any,
-          chronic_conditions: medicalHistory.chronic_conditions as unknown as any,
-          past_surgeries: medicalHistory.past_surgeries as unknown as any,
+          current_medications: medicalHistory.current_medications,
+          allergies: medicalHistory.allergies,
+          chronic_conditions: medicalHistory.chronic_conditions,
+          past_surgeries: medicalHistory.past_surgeries,
           family_history: medicalHistory.family_history,
           blood_type: medicalHistory.blood_type,
-          emergency_contact: medicalHistory.emergency_contact as unknown as any,
+          emergency_contact: medicalHistory.emergency_contact,
           updated_at: new Date().toISOString()
         });
 

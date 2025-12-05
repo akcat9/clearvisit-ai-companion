@@ -87,8 +87,9 @@ const MedicalHistory = () => {
   const { toast } = useToast();
   
   const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
   
   const [medicalHistory, setMedicalHistory] = useState<MedicalHistoryData>({
     user_id: user?.id || '',
@@ -102,13 +103,15 @@ const MedicalHistory = () => {
     visit_derived_data: {}
   });
 
+  // Only fetch when expanded for the first time
   useEffect(() => {
-    if (user?.id) {
+    if (isOpen && !hasFetched && user?.id) {
       fetchMedicalHistory();
     }
-  }, [user?.id]);
+  }, [isOpen, hasFetched, user?.id]);
 
   const fetchMedicalHistory = async () => {
+    setLoading(true);
     try {
       const { data, error } = await (supabase as any)
         .from('medical_history')
@@ -137,6 +140,7 @@ const MedicalHistory = () => {
       }
     } finally {
       setLoading(false);
+      setHasFetched(true);
     }
   };
 

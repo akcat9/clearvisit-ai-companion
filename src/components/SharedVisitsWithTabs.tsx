@@ -20,28 +20,30 @@ const SharedVisitsWithTabs = () => {
 
   return (
     <div className="max-w-6xl mx-auto h-[calc(100vh-200px)]">
-      <div className="bg-card rounded-lg shadow-sm border h-full flex flex-col">
+      <div className="bg-card rounded-lg shadow-sm border h-full overflow-hidden">
         {!selectedConversation ? (
-          <>
-            <div className="p-4 border-b">
+          <div className="h-full flex flex-col">
+            <div className="p-4 border-b flex-shrink-0">
               <h2 className="text-lg font-semibold">Messages</h2>
               <p className="text-sm text-muted-foreground">Shared visit summaries</p>
             </div>
-            <Tabs defaultValue="received" className="flex-1 flex flex-col overflow-hidden">
-              <div className="px-4 pt-2">
+            <Tabs defaultValue="received" className="flex-1 flex flex-col min-h-0">
+              <div className="px-4 pt-2 flex-shrink-0">
                 <TabsList className="w-full">
                   <TabsTrigger value="received" className="flex-1">Received</TabsTrigger>
                   <TabsTrigger value="sent" className="flex-1">Sent</TabsTrigger>
                 </TabsList>
               </div>
-              <TabsContent value="received" className="p-4 flex-1 overflow-auto m-0">
-                <ConversationList onSelectConversation={handleSelectConversation} />
-              </TabsContent>
-              <TabsContent value="sent" className="p-4 flex-1 overflow-auto m-0">
-                <SentMessagesList />
-              </TabsContent>
+              <div className="flex-1 overflow-auto p-4">
+                <TabsContent value="received" className="mt-0">
+                  <ConversationList onSelectConversation={handleSelectConversation} />
+                </TabsContent>
+                <TabsContent value="sent" className="mt-0">
+                  <SentMessagesList />
+                </TabsContent>
+              </div>
             </Tabs>
-          </>
+          </div>
         ) : (
           <ConversationView
             senderId={selectedConversation.senderId}

@@ -369,13 +369,13 @@ const VisitDetails = () => {
           };
 
           // Get existing medical history
-          const { data: existingHistory } = await supabase
+          const { data: existingHistory } = await (supabase as any)
             .from('medical_history')
             .select('visit_derived_data')
             .eq('user_id', user?.id)
             .single();
 
-          const existingVisitData = (existingHistory?.visit_derived_data as any) || {};
+          const existingVisitData = existingHistory?.visit_derived_data || {};
           const visitHistory = existingVisitData.visitHistory || [];
           const allMedicationsFromVisits = existingVisitData.allMedicationsFromVisits || [];
           const conditionsMentioned = existingVisitData.conditionsMentioned || [];
@@ -408,7 +408,7 @@ const VisitDetails = () => {
             conditionsMentioned
           };
 
-          await supabase
+          await (supabase as any)
             .from('medical_history')
             .upsert({
               user_id: user?.id,

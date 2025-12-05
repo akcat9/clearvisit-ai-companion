@@ -6,6 +6,7 @@ import { Plus, Share2, HelpCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppointmentModal } from "@/components/AppointmentModal";
 import { AppointmentCard } from "@/components/AppointmentCard";
+import { MedicalHistory } from "@/components/MedicalHistory";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -295,6 +296,11 @@ const Dashboard = () => {
               )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* Medical History Section */}
+        <div className="mt-4 sm:mt-6">
+          <MedicalHistory />
         </div>
 
         <div className="text-center text-xs sm:text-sm text-muted-foreground mt-8 sm:mt-12">

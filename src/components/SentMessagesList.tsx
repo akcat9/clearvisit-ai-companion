@@ -119,13 +119,13 @@ const SentMessagesList = () => {
                 <div className="mt-2 space-y-2">
                   {message.visit_summary.visitSummary && (
                     <div>
-                      <p className="text-gray-700">{message.visit_summary.visitSummary}</p>
+                      <p className="text-foreground">{message.visit_summary.visitSummary}</p>
                     </div>
                   )}
                   
                   {message.visit_summary.keySymptoms && (
                     <div>
-                      <em className="text-gray-600">Symptoms:</em> 
+                      <em className="text-muted-foreground">Symptoms:</em> 
                       <span className="ml-1">
                         {Array.isArray(message.visit_summary.keySymptoms) 
                           ? message.visit_summary.keySymptoms.join(', ')
@@ -136,7 +136,7 @@ const SentMessagesList = () => {
                   
                   {message.visit_summary.prescriptions && (
                     <div>
-                      <em className="text-gray-600">Prescriptions:</em>
+                      <em className="text-muted-foreground">Prescriptions:</em>
                       <span className="ml-1">
                         {Array.isArray(message.visit_summary.prescriptions) 
                           ? message.visit_summary.prescriptions.join(', ')
@@ -147,7 +147,7 @@ const SentMessagesList = () => {
                   
                   {message.visit_summary.doctorRecommendations && (
                     <div>
-                      <em className="text-gray-600">Recommendations:</em>
+                      <em className="text-muted-foreground">Recommendations:</em>
                       <span className="ml-1">
                         {Array.isArray(message.visit_summary.doctorRecommendations) 
                           ? message.visit_summary.doctorRecommendations.join(', ')

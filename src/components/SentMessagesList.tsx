@@ -94,7 +94,7 @@ const SentMessagesList = () => {
             </div>
             
             {message.appointment_data && (
-              <div className="bg-gray-50 rounded-lg p-3 mb-2">
+              <div className="bg-muted rounded-lg p-3 mb-2">
                 <div className="text-sm">
                   <strong>Visit:</strong> {message.appointment_data.doctor_name}
                 </div>
@@ -108,13 +108,13 @@ const SentMessagesList = () => {
             )}
             
             {message.message && (
-              <div className="text-sm bg-blue-50 rounded-lg p-3 mb-2">
+              <div className="text-sm bg-primary/10 rounded-lg p-3 mb-2">
                 <strong>Message:</strong> {message.message}
               </div>
             )}
             
             {message.visit_summary && (
-              <div className="text-sm bg-green-50 rounded-lg p-3">
+              <div className="text-sm bg-secondary rounded-lg p-3">
                 <strong>Visit Summary:</strong>
                 <div className="mt-2 space-y-2">
                   {message.visit_summary.visitSummary && (

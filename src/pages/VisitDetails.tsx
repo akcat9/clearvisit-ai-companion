@@ -362,6 +362,12 @@ const VisitDetails = () => {
           title: t('success'),
           description: t('aiAnalysisComplete'),
         });
+
+        // Update medical history in background (don't await)
+        supabase.functions.invoke('update-medical-history', {
+          body: { visitSummary: aiData, appointmentId: id }
+        }).catch(err => console.log('Medical history update:', err));
+
       } catch (saveError) {
         toast({
           title: t('warning'),

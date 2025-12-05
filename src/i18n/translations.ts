@@ -148,6 +148,15 @@ export const translations = {
     sharedOn: 'Shared on',
     viewDetails: 'View Details',
     loading: 'Loading...',
+
+    // Medical History
+    medicalHistory: 'Medical History',
+    noMedicalHistory: 'No medical history yet',
+    medicalHistoryWillUpdate: 'Your history will update automatically after visits',
+    currentMedications: 'Current Medications',
+    chronicConditions: 'Conditions',
+    allergies: 'Allergies',
+    recentFindings: 'Recent Findings',
   },
   es: {
     // Header
@@ -296,6 +305,15 @@ export const translations = {
     sharedOn: 'Compartido el',
     viewDetails: 'Ver Detalles',
     loading: 'Cargando...',
+
+    // Medical History
+    medicalHistory: 'Historial Médico',
+    noMedicalHistory: 'Sin historial médico todavía',
+    medicalHistoryWillUpdate: 'Tu historial se actualizará automáticamente después de las visitas',
+    currentMedications: 'Medicamentos Actuales',
+    chronicConditions: 'Condiciones',
+    allergies: 'Alergias',
+    recentFindings: 'Hallazgos Recientes',
   },
   ar: {
     // Header
@@ -444,6 +462,15 @@ export const translations = {
     sharedOn: 'تمت المشاركة في',
     viewDetails: 'عرض التفاصيل',
     loading: 'جاري التحميل...',
+
+    // Medical History
+    medicalHistory: 'السجل الطبي',
+    noMedicalHistory: 'لا يوجد سجل طبي بعد',
+    medicalHistoryWillUpdate: 'سيتم تحديث سجلك تلقائياً بعد الزيارات',
+    currentMedications: 'الأدوية الحالية',
+    chronicConditions: 'الحالات',
+    allergies: 'الحساسية',
+    recentFindings: 'النتائج الأخيرة',
   },
 } as const;
 

@@ -117,7 +117,7 @@ const SentMessagesList = () => {
               <div className="text-sm bg-secondary rounded-lg p-3">
                 <strong>Visit Summary:</strong>
                 <div className="mt-2 space-y-2">
-                  {message.visit_summary.visitSummary && (
+                  {message.visit_summary.visitSummary && typeof message.visit_summary.visitSummary === 'string' && (
                     <div>
                       <p className="text-foreground">{message.visit_summary.visitSummary}</p>
                     </div>
@@ -128,8 +128,10 @@ const SentMessagesList = () => {
                       <em className="text-muted-foreground">Symptoms:</em> 
                       <span className="ml-1">
                         {Array.isArray(message.visit_summary.keySymptoms) 
-                          ? message.visit_summary.keySymptoms.join(', ')
-                          : message.visit_summary.keySymptoms}
+                          ? message.visit_summary.keySymptoms.filter((s: any) => typeof s === 'string').join(', ')
+                          : typeof message.visit_summary.keySymptoms === 'string' 
+                            ? message.visit_summary.keySymptoms 
+                            : ''}
                       </span>
                     </div>
                   )}
@@ -139,8 +141,10 @@ const SentMessagesList = () => {
                       <em className="text-muted-foreground">Prescriptions:</em>
                       <span className="ml-1">
                         {Array.isArray(message.visit_summary.prescriptions) 
-                          ? message.visit_summary.prescriptions.join(', ')
-                          : message.visit_summary.prescriptions}
+                          ? message.visit_summary.prescriptions.filter((s: any) => typeof s === 'string').join(', ')
+                          : typeof message.visit_summary.prescriptions === 'string'
+                            ? message.visit_summary.prescriptions
+                            : ''}
                       </span>
                     </div>
                   )}
@@ -150,8 +154,10 @@ const SentMessagesList = () => {
                       <em className="text-muted-foreground">Recommendations:</em>
                       <span className="ml-1">
                         {Array.isArray(message.visit_summary.doctorRecommendations) 
-                          ? message.visit_summary.doctorRecommendations.join(', ')
-                          : message.visit_summary.doctorRecommendations}
+                          ? message.visit_summary.doctorRecommendations.filter((s: any) => typeof s === 'string').join(', ')
+                          : typeof message.visit_summary.doctorRecommendations === 'string'
+                            ? message.visit_summary.doctorRecommendations
+                            : ''}
                       </span>
                     </div>
                   )}

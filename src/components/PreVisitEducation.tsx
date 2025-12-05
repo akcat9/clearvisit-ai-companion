@@ -48,6 +48,18 @@ interface PreVisitEducationProps {
   cachedContent?: EducationContent | null;
 }
 
+// Validate that cached content matches expected structure
+const isValidEducationContent = (content: any): content is EducationContent => {
+  return content &&
+    typeof content === 'object' &&
+    'causesAndPathophysiology' in content &&
+    'treatmentRecommendations' in content &&
+    'medicationInformation' in content &&
+    'keyPointsForDoctor' in content &&
+    'clinicalContext' in content &&
+    Array.isArray(content.causesAndPathophysiology?.primaryCauses);
+};
+
 const PreVisitEducation = ({ 
   appointmentId, 
   appointmentReason, 
@@ -55,24 +67,27 @@ const PreVisitEducation = ({
   symptoms,
   cachedContent 
 }: PreVisitEducationProps) => {
-  const [educationContent, setEducationContent] = useState<EducationContent | null>(cachedContent || null);
+  // Only use cached content if it matches expected structure
+  const validCachedContent = cachedContent && isValidEducationContent(cachedContent) ? cachedContent : null;
+  
+  const [educationContent, setEducationContent] = useState<EducationContent | null>(validCachedContent);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const { toast } = useToast();
   const { t, language } = useLanguage();
 
   useEffect(() => {
-    // If we have cached content, use it
-    if (cachedContent) {
-      setEducationContent(cachedContent);
+    // If we have valid cached content, use it
+    if (validCachedContent) {
+      setEducationContent(validCachedContent);
       return;
     }
 
-    // Otherwise, generate new content
+    // Otherwise, generate new content (including when cached content has old structure)
     if (appointmentReason) {
       generateEducationContent();
     }
-  }, [appointmentId, appointmentReason, goal, symptoms, cachedContent]);
+  }, [appointmentId, appointmentReason, goal, symptoms, validCachedContent]);
 
   const generateEducationContent = async (forceRegenerate = false) => {
     setIsLoading(true);

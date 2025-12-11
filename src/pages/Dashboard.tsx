@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/Header";
-import { Plus, Share2, HelpCircle } from "lucide-react";
+import { Plus, Share2, HelpCircle, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppointmentModal } from "@/components/AppointmentModal";
 import { AppointmentCard } from "@/components/AppointmentCard";
@@ -20,6 +20,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 interface Appointment {
   id: string;
@@ -249,6 +256,27 @@ const Dashboard = () => {
                 <div className="absolute -top-1 -right-1 w-2 h-2 sm:w-3 sm:h-3 bg-destructive rounded-full" />
               )}
             </Button>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button 
+                  variant="outline"
+                  className="flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm py-2 px-3 border-purple-300 text-purple-700 hover:bg-purple-50"
+                  size="sm"
+                >
+                  <Activity className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span>{t('medicalHistory')}</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
+                <SheetHeader className="mb-4">
+                  <SheetTitle className="flex items-center gap-2 text-purple-900">
+                    <Activity className="w-5 h-5" />
+                    {t('medicalHistory')}
+                  </SheetTitle>
+                </SheetHeader>
+                <MedicalHistory />
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
 
@@ -321,10 +349,6 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Medical History Section */}
-        <div className="mt-4 sm:mt-6">
-          <MedicalHistory />
-        </div>
 
         <div className="text-center text-xs sm:text-sm text-muted-foreground mt-8 sm:mt-12">
           {t('copyright')}

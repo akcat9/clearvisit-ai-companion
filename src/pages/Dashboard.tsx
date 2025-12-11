@@ -148,6 +148,29 @@ const Dashboard = () => {
         title: t('success'),
         description: t('appointmentCreated')
       });
+
+      // Pre-generate education content in background (fire-and-forget)
+      if (data && appointmentData.reason) {
+        supabase.functions.invoke('generate-previsit-education', {
+          body: {
+            appointmentReason: appointmentData.reason,
+            goal: appointmentData.goal || '',
+            symptoms: appointmentData.symptoms || '',
+            language: 'en'
+          }
+        }).then(async ({ data: educationData, error: eduError }) => {
+          if (!eduError && educationData) {
+            // Cache the generated content
+            await supabase
+              .from('appointments')
+              .update({ education_content: educationData })
+              .eq('id', data.id);
+            console.log('✅ Pre-generated education content cached for appointment', data.id);
+          }
+        }).catch(err => {
+          console.warn('Background education generation failed:', err);
+        });
+      }
     } catch (error: any) {
       console.error('Unexpected error creating appointment:', error);
       toast({

@@ -8,9 +8,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Pill, Heart, AlertTriangle, Activity, Clock } from 'lucide-react';
 
 interface MedicalHistoryData {
-  current_medications: string[];
-  chronic_conditions: string[];
-  allergies: string[];
+  current_medications: any[];
+  chronic_conditions: any[];
+  allergies: any[];
   blood_type: string | null;
   family_history: string | null;
   visit_derived_data: Record<string, {
@@ -20,6 +20,38 @@ interface MedicalHistoryData {
   }>;
   last_visit_sync: string | null;
 }
+
+// Helper to format medication entries properly
+const formatMedication = (med: any): string | null => {
+  if (!med) return null;
+  if (typeof med === 'string') {
+    const trimmed = med.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (typeof med === 'object') {
+    const name = med.name?.toString().trim();
+    if (!name) return null;
+    const parts = [name];
+    if (med.dosage?.toString().trim()) parts.push(med.dosage.toString().trim());
+    if (med.frequency?.toString().trim()) parts.push(`- ${med.frequency.toString().trim()}`);
+    return parts.join(' ');
+  }
+  return null;
+};
+
+// Helper to format condition/allergy entries
+const formatEntry = (entry: any): string | null => {
+  if (!entry) return null;
+  if (typeof entry === 'string') {
+    const trimmed = entry.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (typeof entry === 'object') {
+    const name = entry.name?.toString().trim() || entry.condition?.toString().trim();
+    return name && name.length > 0 ? name : null;
+  }
+  return null;
+};
 
 export const MedicalHistory = () => {
   const { user } = useAuth();
@@ -43,9 +75,9 @@ export const MedicalHistory = () => {
 
       if (!error && data) {
         setHistory({
-          current_medications: (data.current_medications as string[]) || [],
-          chronic_conditions: (data.chronic_conditions as string[]) || [],
-          allergies: (data.allergies as string[]) || [],
+          current_medications: (data.current_medications as any[]) || [],
+          chronic_conditions: (data.chronic_conditions as any[]) || [],
+          allergies: (data.allergies as any[]) || [],
           blood_type: data.blood_type,
           family_history: data.family_history,
           visit_derived_data: (data.visit_derived_data as Record<string, any>) || {},
@@ -73,11 +105,20 @@ export const MedicalHistory = () => {
     );
   }
 
-  const hasData = history && (
-    history.current_medications.length > 0 ||
-    history.chronic_conditions.length > 0 ||
-    history.allergies.length > 0
-  );
+  // Format and filter entries
+  const medications = history?.current_medications
+    .map(formatMedication)
+    .filter((m): m is string => m !== null) || [];
+  
+  const conditions = history?.chronic_conditions
+    .map(formatEntry)
+    .filter((c): c is string => c !== null) || [];
+  
+  const allergies = history?.allergies
+    .map(formatEntry)
+    .filter((a): a is string => a !== null) || [];
+
+  const hasData = medications.length > 0 || conditions.length > 0 || allergies.length > 0;
 
   const recentFindings = history?.visit_derived_data 
     ? Object.entries(history.visit_derived_data)
@@ -111,16 +152,16 @@ export const MedicalHistory = () => {
         ) : (
           <>
             {/* Current Medications */}
-            {history.current_medications.length > 0 && (
+            {medications.length > 0 && (
               <div>
                 <h4 className="text-sm font-semibold text-purple-800 flex items-center gap-2 mb-2">
                   <Pill className="w-4 h-4" />
                   {t('currentMedications') || 'Current Medications'}
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  {history.current_medications.map((med, i) => (
+                  {medications.map((med, i) => (
                     <Badge key={i} variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
-                      {typeof med === 'string' ? med : (med as any)?.name || JSON.stringify(med)}
+                      {med}
                     </Badge>
                   ))}
                 </div>
@@ -128,16 +169,16 @@ export const MedicalHistory = () => {
             )}
 
             {/* Chronic Conditions */}
-            {history.chronic_conditions.length > 0 && (
+            {conditions.length > 0 && (
               <div>
                 <h4 className="text-sm font-semibold text-purple-800 flex items-center gap-2 mb-2">
                   <Heart className="w-4 h-4" />
                   {t('chronicConditions') || 'Conditions'}
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  {history.chronic_conditions.map((condition, i) => (
+                  {conditions.map((condition, i) => (
                     <Badge key={i} variant="outline" className="border-purple-300 text-purple-700 text-xs">
-                      {typeof condition === 'string' ? condition : JSON.stringify(condition)}
+                      {condition}
                     </Badge>
                   ))}
                 </div>
@@ -145,16 +186,16 @@ export const MedicalHistory = () => {
             )}
 
             {/* Allergies */}
-            {history.allergies.length > 0 && (
+            {allergies.length > 0 && (
               <div>
                 <h4 className="text-sm font-semibold text-red-700 flex items-center gap-2 mb-2">
                   <AlertTriangle className="w-4 h-4" />
                   {t('allergies') || 'Allergies'}
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  {history.allergies.map((allergy, i) => (
+                  {allergies.map((allergy, i) => (
                     <Badge key={i} variant="destructive" className="text-xs">
-                      {typeof allergy === 'string' ? allergy : JSON.stringify(allergy)}
+                      {allergy}
                     </Badge>
                   ))}
                 </div>

@@ -61,19 +61,13 @@ serve(async (req) => {
       });
     }
 
-    const existingData = existingHistory || {
-      current_medications: [],
-      chronic_conditions: [],
-      allergies: [],
-      visit_derived_data: {}
-    };
+    // Extract existing visit-derived data (preserve manual entries)
+    const existingData = existingHistory || {};
+    const existingVisitMeds = existingData.current_medications?.from_visits || [];
+    const existingVisitConditions = existingData.chronic_conditions?.from_visits || [];
+    const existingVisitAllergies = existingData.allergies?.from_visits || [];
 
-    const prompt = `Extract medical information from this visit summary and merge with existing history.
-
-EXISTING MEDICAL HISTORY:
-- Current Medications: ${JSON.stringify(existingData.current_medications || [])}
-- Chronic Conditions: ${JSON.stringify(existingData.chronic_conditions || [])}
-- Allergies: ${JSON.stringify(existingData.allergies || [])}
+    const prompt = `Extract medical information from this visit summary.
 
 VISIT SUMMARY:
 ${JSON.stringify(visitSummary)}
@@ -85,7 +79,7 @@ Extract and return JSON with:
 4. key_findings: Array of important findings from this visit
 5. recommendations: Array of doctor recommendations
 
-Only include NEW information not already in existing history. Return valid JSON only:
+Return valid JSON only:
 {
   "new_medications": [],
   "new_conditions": [],
@@ -130,10 +124,10 @@ Only include NEW information not already in existing history. Return valid JSON 
       extractedData = { new_medications: [], new_conditions: [], new_allergies: [], key_findings: [], recommendations: [] };
     }
 
-    // Merge new data with existing
-    const updatedMedications = mergeArrays(existingData.current_medications || [], extractedData.new_medications || []);
-    const updatedConditions = mergeArrays(existingData.chronic_conditions || [], extractedData.new_conditions || []);
-    const updatedAllergies = mergeArrays(existingData.allergies || [], extractedData.new_allergies || []);
+    // Merge new data with existing visit-derived data (preserve manual entries)
+    const updatedVisitMeds = mergeArrays(existingVisitMeds, extractedData.new_medications || []);
+    const updatedVisitConditions = mergeArrays(existingVisitConditions, extractedData.new_conditions || []);
+    const updatedVisitAllergies = mergeArrays(existingVisitAllergies, extractedData.new_allergies || []);
 
     // Update visit derived data with timestamp
     const visitDerivedData = existingData.visit_derived_data || {};
@@ -145,10 +139,20 @@ Only include NEW information not already in existing history. Return valid JSON 
       };
     }
 
+    // Only update the from_visits sections, preserving manual entries
     await updateHistoryRecord(supabaseClient, user.id, existingHistory, {
-      current_medications: updatedMedications,
-      chronic_conditions: updatedConditions,
-      allergies: updatedAllergies,
+      current_medications: {
+        manual: existingData.current_medications?.manual || [],
+        from_visits: updatedVisitMeds
+      },
+      chronic_conditions: {
+        manual: existingData.chronic_conditions?.manual || [],
+        from_visits: updatedVisitConditions
+      },
+      allergies: {
+        manual: existingData.allergies?.manual || [],
+        from_visits: updatedVisitAllergies
+      },
       visit_derived_data: visitDerivedData
     }, appointmentId);
 

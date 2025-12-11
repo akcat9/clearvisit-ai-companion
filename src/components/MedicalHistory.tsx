@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Pill, Heart, AlertTriangle, Activity, Clock } from 'lucide-react';
+import { Activity, User, Stethoscope } from 'lucide-react';
+import { toast } from 'sonner';
+import { MedicalHistoryManualForm, MedicalHistoryFormData } from './MedicalHistoryManualForm';
+import { MedicalHistoryFromVisits } from './MedicalHistoryFromVisits';
 
 interface MedicalHistoryData {
-  current_medications: any[];
-  chronic_conditions: any[];
-  allergies: any[];
+  current_medications: any;
+  chronic_conditions: any;
+  allergies: any;
   blood_type: string | null;
   family_history: string | null;
+  emergency_contact: any;
   visit_derived_data: Record<string, {
     date: string;
     key_findings: string[];
@@ -21,36 +25,56 @@ interface MedicalHistoryData {
   last_visit_sync: string | null;
 }
 
-// Helper to format medication entries properly
-const formatMedication = (med: any): string | null => {
-  if (!med) return null;
-  if (typeof med === 'string') {
-    const trimmed = med.trim();
-    return trimmed.length > 0 ? trimmed : null;
+// Helper to extract manual entries from stored data
+const extractManualData = (field: any): any[] => {
+  if (!field) return [];
+  if (Array.isArray(field)) {
+    // Check if it's new format with manual/from_visits or old flat array
+    if (field.length > 0 && typeof field[0] === 'object' && 'manual' in field[0]) {
+      return field[0].manual || [];
+    }
+    // Old format - treat as manual data
+    return field.filter((item: any) => {
+      if (typeof item === 'object' && item !== null) {
+        return !item.from_visit;
+      }
+      return true;
+    });
   }
-  if (typeof med === 'object') {
-    const name = med.name?.toString().trim();
-    if (!name) return null;
-    const parts = [name];
-    if (med.dosage?.toString().trim()) parts.push(med.dosage.toString().trim());
-    if (med.frequency?.toString().trim()) parts.push(`- ${med.frequency.toString().trim()}`);
-    return parts.join(' ');
+  if (typeof field === 'object' && field !== null) {
+    return field.manual || [];
   }
-  return null;
+  return [];
 };
 
-// Helper to format condition/allergy entries
-const formatEntry = (entry: any): string | null => {
-  if (!entry) return null;
-  if (typeof entry === 'string') {
-    const trimmed = entry.trim();
-    return trimmed.length > 0 ? trimmed : null;
+// Helper to extract visit-derived entries
+const extractVisitData = (field: any): string[] => {
+  if (!field) return [];
+  if (Array.isArray(field)) {
+    if (field.length > 0 && typeof field[0] === 'object' && 'from_visits' in field[0]) {
+      return field[0].from_visits || [];
+    }
+    return field
+      .filter((item: any) => typeof item === 'object' && item?.from_visit)
+      .map((item: any) => formatVisitEntry(item));
   }
-  if (typeof entry === 'object') {
-    const name = entry.name?.toString().trim() || entry.condition?.toString().trim();
-    return name && name.length > 0 ? name : null;
+  if (typeof field === 'object' && field !== null) {
+    return (field.from_visits || []).map(formatVisitEntry);
   }
-  return null;
+  return [];
+};
+
+const formatVisitEntry = (item: any): string => {
+  if (typeof item === 'string') return item;
+  if (typeof item === 'object' && item !== null) {
+    const name = item.name?.toString().trim();
+    if (!name) return '';
+    const parts = [name];
+    if (item.dosage?.toString().trim()) parts.push(item.dosage.toString().trim());
+    if (item.frequency?.toString().trim()) parts.push(`- ${item.frequency.toString().trim()}`);
+    return parts.join(' ');
+  }
+  return '';
 };
 
 export const MedicalHistory = () => {
@@ -58,6 +82,7 @@ export const MedicalHistory = () => {
   const { t } = useLanguage();
   const [history, setHistory] = useState<MedicalHistoryData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -71,15 +96,16 @@ export const MedicalHistory = () => {
         .from('medical_history')
         .select('*')
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
 
       if (!error && data) {
         setHistory({
-          current_medications: (data.current_medications as any[]) || [],
-          chronic_conditions: (data.chronic_conditions as any[]) || [],
-          allergies: (data.allergies as any[]) || [],
+          current_medications: data.current_medications || { manual: [], from_visits: [] },
+          chronic_conditions: data.chronic_conditions || { manual: [], from_visits: [] },
+          allergies: data.allergies || { manual: [], from_visits: [] },
           blood_type: data.blood_type,
           family_history: data.family_history,
+          emergency_contact: data.emergency_contact,
           visit_derived_data: (data.visit_derived_data as Record<string, any>) || {},
           last_visit_sync: data.last_visit_sync
         });
@@ -88,6 +114,52 @@ export const MedicalHistory = () => {
       console.error('Error fetching medical history:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSaveManualData = async (formData: MedicalHistoryFormData) => {
+    if (!user?.id) return;
+    setIsSaving(true);
+
+    try {
+      // Preserve visit-derived data when saving manual entries
+      const existingVisitMeds = extractVisitData(history?.current_medications);
+      const existingVisitConditions = extractVisitData(history?.chronic_conditions);
+      const existingVisitAllergies = extractVisitData(history?.allergies);
+
+      const dataToSave = {
+        user_id: user.id,
+        current_medications: {
+          manual: formData.current_medications,
+          from_visits: existingVisitMeds
+        },
+        chronic_conditions: {
+          manual: formData.chronic_conditions,
+          from_visits: existingVisitConditions
+        },
+        allergies: {
+          manual: formData.allergies,
+          from_visits: existingVisitAllergies
+        },
+        blood_type: formData.blood_type,
+        emergency_contact: formData.emergency_contact,
+        family_history: formData.family_history,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('medical_history')
+        .upsert(dataToSave, { onConflict: 'user_id' });
+
+      if (error) throw error;
+
+      toast.success(t('medicalHistorySaved'));
+      fetchMedicalHistory();
+    } catch (error) {
+      console.error('Error saving medical history:', error);
+      toast.error(t('saveFailed'));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -105,125 +177,70 @@ export const MedicalHistory = () => {
     );
   }
 
-  // Format and filter entries
-  const medications = history?.current_medications
-    .map(formatMedication)
-    .filter((m): m is string => m !== null) || [];
-  
-  const conditions = history?.chronic_conditions
-    .map(formatEntry)
-    .filter((c): c is string => c !== null) || [];
-  
-  const allergies = history?.allergies
-    .map(formatEntry)
-    .filter((a): a is string => a !== null) || [];
+  // Prepare data for forms
+  const manualMedications = extractManualData(history?.current_medications)
+    .filter((m: any) => m && (typeof m === 'string' ? m.trim() : m.name?.trim()))
+    .map((m: any) => typeof m === 'string' ? { name: m, dosage: '', frequency: '' } : m);
 
-  const hasData = medications.length > 0 || conditions.length > 0 || allergies.length > 0;
+  const manualConditions = extractManualData(history?.chronic_conditions)
+    .filter((c: any) => c && (typeof c === 'string' ? c.trim() : c.name?.trim()))
+    .map((c: any) => typeof c === 'string' ? c : (c.name || c.condition || ''));
 
-  const recentFindings = history?.visit_derived_data 
-    ? Object.entries(history.visit_derived_data)
-        .sort((a, b) => new Date(b[1].date).getTime() - new Date(a[1].date).getTime())
-        .slice(0, 3)
-    : [];
+  const manualAllergies = extractManualData(history?.allergies)
+    .filter((a: any) => a && (typeof a === 'string' ? a.trim() : a.name?.trim()))
+    .map((a: any) => typeof a === 'string' ? a : (a.name || ''));
+
+  const visitMedications = extractVisitData(history?.current_medications).filter(Boolean);
+  const visitConditions = extractVisitData(history?.chronic_conditions).filter(Boolean);
+  const visitAllergies = extractVisitData(history?.allergies).filter(Boolean);
+
+  const formData: MedicalHistoryFormData = {
+    current_medications: manualMedications,
+    chronic_conditions: manualConditions,
+    allergies: manualAllergies,
+    blood_type: history?.blood_type || null,
+    emergency_contact: history?.emergency_contact || null,
+    family_history: history?.family_history || null
+  };
 
   return (
     <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
       <CardHeader className="pb-3">
         <CardTitle className="text-purple-900 flex items-center gap-2 text-base sm:text-lg">
           <Activity className="w-5 h-5" />
-          {t('medicalHistory') || 'Medical History'}
+          {t('medicalHistory')}
         </CardTitle>
-        {history?.last_visit_sync && (
-          <p className="text-xs text-purple-600 flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            Last updated: {new Date(history.last_visit_sync).toLocaleDateString()}
-          </p>
-        )}
       </CardHeader>
-      <CardContent className="space-y-4">
-        {!hasData ? (
-          <div className="text-center py-6 text-purple-600">
-            <Activity className="w-10 h-10 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">{t('noMedicalHistory') || 'No medical history yet'}</p>
-            <p className="text-xs mt-1 opacity-75">
-              {t('medicalHistoryWillUpdate') || 'Your history will update automatically after visits'}
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Current Medications */}
-            {medications.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-purple-800 flex items-center gap-2 mb-2">
-                  <Pill className="w-4 h-4" />
-                  {t('currentMedications') || 'Current Medications'}
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {medications.map((med, i) => (
-                    <Badge key={i} variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
-                      {med}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+      <CardContent>
+        <Tabs defaultValue="manual" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="manual" className="gap-2 text-xs sm:text-sm">
+              <User className="w-4 h-4" />
+              {t('myInformation')}
+            </TabsTrigger>
+            <TabsTrigger value="visits" className="gap-2 text-xs sm:text-sm">
+              <Stethoscope className="w-4 h-4" />
+              {t('fromVisits')}
+            </TabsTrigger>
+          </TabsList>
 
-            {/* Chronic Conditions */}
-            {conditions.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-purple-800 flex items-center gap-2 mb-2">
-                  <Heart className="w-4 h-4" />
-                  {t('chronicConditions') || 'Conditions'}
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {conditions.map((condition, i) => (
-                    <Badge key={i} variant="outline" className="border-purple-300 text-purple-700 text-xs">
-                      {condition}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+          <TabsContent value="manual">
+            <MedicalHistoryManualForm
+              data={formData}
+              onSave={handleSaveManualData}
+              isSaving={isSaving}
+            />
+          </TabsContent>
 
-            {/* Allergies */}
-            {allergies.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-red-700 flex items-center gap-2 mb-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  {t('allergies') || 'Allergies'}
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {allergies.map((allergy, i) => (
-                    <Badge key={i} variant="destructive" className="text-xs">
-                      {allergy}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Recent Visit Findings */}
-            {recentFindings.length > 0 && (
-              <div className="pt-2 border-t border-purple-200">
-                <h4 className="text-sm font-semibold text-purple-800 mb-2">
-                  {t('recentFindings') || 'Recent Findings'}
-                </h4>
-                <div className="space-y-2">
-                  {recentFindings.map(([id, data]) => (
-                    <div key={id} className="text-xs bg-white/50 rounded p-2">
-                      <p className="text-purple-600 mb-1">
-                        {new Date(data.date).toLocaleDateString()}
-                      </p>
-                      {data.key_findings?.slice(0, 2).map((finding, i) => (
-                        <p key={i} className="text-purple-700">• {finding}</p>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
+          <TabsContent value="visits">
+            <MedicalHistoryFromVisits
+              medications={visitMedications}
+              conditions={visitConditions}
+              allergies={visitAllergies}
+              visitData={history?.visit_derived_data || {}}
+            />
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );

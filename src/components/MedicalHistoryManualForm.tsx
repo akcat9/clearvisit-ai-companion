@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,6 +30,11 @@ export const MedicalHistoryManualForm = ({ data, onSave, isSaving }: Props) => {
   const [newMedication, setNewMedication] = useState({ name: '', dosage: '', frequency: '' });
   const [newCondition, setNewCondition] = useState('');
   const [newAllergy, setNewAllergy] = useState('');
+
+  // Sync form state when parent data changes (after save/fetch)
+  useEffect(() => {
+    setFormData(data);
+  }, [data]);
 
   const addMedication = () => {
     if (newMedication.name.trim()) {

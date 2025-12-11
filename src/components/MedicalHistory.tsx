@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Activity, User, Stethoscope } from 'lucide-react';
+import { User, Stethoscope } from 'lucide-react';
 import { toast } from 'sonner';
 import { MedicalHistoryManualForm, MedicalHistoryFormData } from './MedicalHistoryManualForm';
 import { MedicalHistoryFromVisits } from './MedicalHistoryFromVisits';
@@ -165,15 +164,11 @@ export const MedicalHistory = () => {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-48" />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full" />
+      </div>
     );
   }
 
@@ -204,45 +199,37 @@ export const MedicalHistory = () => {
   };
 
   return (
-    <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-purple-900 flex items-center gap-2 text-base sm:text-lg">
-          <Activity className="w-5 h-5" />
-          {t('medicalHistory')}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="manual" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="manual" className="gap-2 text-xs sm:text-sm">
-              <User className="w-4 h-4" />
-              {t('myInformation')}
-            </TabsTrigger>
-            <TabsTrigger value="visits" className="gap-2 text-xs sm:text-sm">
-              <Stethoscope className="w-4 h-4" />
-              {t('fromVisits')}
-            </TabsTrigger>
-          </TabsList>
+    <div className="space-y-4">
+      <Tabs defaultValue="manual" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsTrigger value="manual" className="gap-2 text-xs sm:text-sm">
+            <User className="w-4 h-4" />
+            {t('myInformation')}
+          </TabsTrigger>
+          <TabsTrigger value="visits" className="gap-2 text-xs sm:text-sm">
+            <Stethoscope className="w-4 h-4" />
+            {t('fromVisits')}
+          </TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="manual">
-            <MedicalHistoryManualForm
-              data={formData}
-              onSave={handleSaveManualData}
-              isSaving={isSaving}
-            />
-          </TabsContent>
+        <TabsContent value="manual">
+          <MedicalHistoryManualForm
+            data={formData}
+            onSave={handleSaveManualData}
+            isSaving={isSaving}
+          />
+        </TabsContent>
 
-          <TabsContent value="visits">
-            <MedicalHistoryFromVisits
-              medications={visitMedications}
-              conditions={visitConditions}
-              allergies={visitAllergies}
-              visitData={history?.visit_derived_data || {}}
-            />
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+        <TabsContent value="visits">
+          <MedicalHistoryFromVisits
+            medications={visitMedications}
+            conditions={visitConditions}
+            allergies={visitAllergies}
+            visitData={history?.visit_derived_data || {}}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

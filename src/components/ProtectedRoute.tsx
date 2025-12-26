@@ -1,7 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Navigate } from 'react-router-dom';
-import SubscriptionGate from '@/components/SubscriptionGate';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,9 +7,8 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading: authLoading } = useAuth();
-  const { hasActiveSubscription, loading: subLoading } = useSubscription();
 
-  if (authLoading || subLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -24,10 +21,6 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (!user) {
     return <Navigate to="/" replace />;
-  }
-
-  if (!hasActiveSubscription) {
-    return <SubscriptionGate />;
   }
 
   return <>{children}</>;

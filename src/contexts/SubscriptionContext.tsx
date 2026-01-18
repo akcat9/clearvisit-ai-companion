@@ -21,8 +21,9 @@ export const useSubscription = () => {
 
 export const SubscriptionProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
-  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Payment wall disabled - app is now free for all users
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [lastChecked, setLastChecked] = useState<number | null>(null);
   const checkingRef = useRef(false);
   const cacheTimeMs = 30000; // 30 seconds cache
